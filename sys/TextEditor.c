@@ -1,6 +1,6 @@
 /* TextEditor.c
  *
- * Copyright (C) 1997-2009 Paul Boersma
+ * Copyright (C) 1997-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,8 @@
  * pb 2008/01/04 guard against multiple opening of same file
  * pb 2008/03/21 new Editor API
  * pb 2009/01/18 arguments to UiForm callbacks
+ * pb 2010/01/20 Reopen from disk
+ * pb 2010/01/20 guard against Find Again before Find
  */
 
 #include "TextEditor.h"
@@ -139,10 +141,12 @@ static void closeDocument (TextEditor me) {
 	forget (me);
 }
 
-static int cb_open_ok (UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter, I) {
+static int cb_open_ok (UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter, const wchar_t *invokingButtonTitle, bool modified, I) {
 	iam (TextEditor);
 	(void) sendingString;
 	(void) interpreter;
+	(void) invokingButtonTitle;
+	(void) modified;
 	MelderFile file = UiFile_getFile (sendingForm);
 	if (! openDocument (me, file)) return 0;
 	return 1;
@@ -154,14 +158,16 @@ static void cb_showOpen (EditorCommand cmd, UiForm sendingForm, const wchar_t *s
 	(void) sendingString;
 	(void) interpreter;
 	if (! my openDialog)
-		my openDialog = UiInfile_create (my dialog, L"Open", cb_open_ok, me, 0);
+		my openDialog = UiInfile_create (my dialog, L"Open", cb_open_ok, me, NULL, NULL, false);
 	UiInfile_do (my openDialog);
 }
 
-static int cb_saveAs_ok (UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter, I) {
+static int cb_saveAs_ok (UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter, const wchar_t *invokingButtonTitle, bool modified, I) {
 	iam (TextEditor);
 	(void) sendingString;
 	(void) interpreter;
+	(void) invokingButtonTitle;
+	(void) modified;
 	MelderFile file = UiFile_getFile (sendingForm);
 	if (! saveDocument (me, file)) return 0;
 	return 1;
@@ -171,7 +177,7 @@ static int menu_cb_saveAs (EDITOR_ARGS) {
 	EDITOR_IAM (TextEditor);
 	wchar_t defaultName [300];
 	if (! my saveDialog)
-		my saveDialog = UiOutfile_create (my dialog, L"Save", cb_saveAs_ok, me, 0);
+		my saveDialog = UiOutfile_create (my dialog, L"Save", cb_saveAs_ok, me, NULL, NULL);
 	swprintf (defaultName, 300, ! our fileBased ? L"info.txt" : my name ? MelderFile_name (& my file) : L"");
 	UiOutfile_do (my saveDialog, defaultName);
 	return 1;
@@ -302,6 +308,16 @@ static int menu_cb_save (EDITOR_ARGS) {
 	return 1;
 }
 
+static int menu_cb_reopen (EDITOR_ARGS) {
+	EDITOR_IAM (TextEditor);
+	if (my name) {
+		if (! openDocument (me, & my file)) return 0;
+	} else {
+		return Melder_error1 (L"Cannot reopen from disk, because the text has never been saved yet.");
+	}
+	return 1;
+}
+
 static void gui_button_cb_saveAndClose (I, GuiButtonEvent event) {
 	(void) event;
 	iam (TextEditor);
@@ -401,6 +417,7 @@ static int getSelectedLines (TextEditor me, long *firstLine, long *lastLine) {
 
 static wchar_t *theFindString = NULL, *theReplaceString = NULL;
 static void do_find (TextEditor me) {
+	if (theFindString == NULL) return;   // e.g. when the user does "Find again" before having done any "Find"
 	long left, right;
 	wchar_t *text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
 	wchar_t *location = wcsstr (text + right, theFindString);
@@ -423,6 +440,7 @@ static void do_find (TextEditor me) {
 }
 
 static void do_replace (TextEditor me) {
+	if (theReplaceString == NULL) return;   // e.g. when the user does "Replace again" before having done any "Replace"
 	long left, right;
 	wchar_t *text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
 	wchar_t *selection = GuiText_getSelection (my textWidget);
@@ -581,6 +599,7 @@ static void classTextEditor_createMenus (TextEditor me) {
 	if (our fileBased) {
 		Editor_addCommand (me, L"File", L"New", 'N', menu_cb_new);
 		Editor_addCommand (me, L"File", L"Open...", 'O', menu_cb_open);
+		Editor_addCommand (me, L"File", L"Reopen from disk", 0, menu_cb_reopen);
 	} else {
 		Editor_addCommand (me, L"File", L"Clear", 'N', menu_cb_clear);
 	}
