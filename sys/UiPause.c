@@ -174,7 +174,7 @@ int UiPause_end (int numberOfContinueButtons, int defaultContinueButton,
 	int wasBackgrounding = Melder_backgrounding;
 	structMelderDir dir = { { 0 } };
 	Melder_getDefaultDir (& dir);
-	if (theCurrentPraat -> batch) goto end;
+	if (theCurrentPraatApplication -> batch) goto end;
 	UiFile_hide ();
 	if (wasBackgrounding) praat_foreground ();
 	/*
@@ -189,11 +189,13 @@ int UiPause_end (int numberOfContinueButtons, int defaultContinueButton,
 		thePauseForm_clicked = 0;
 		Melder_assert (theEventLoopDepth == 0);
 		theEventLoopDepth ++;
+		#if ! gtk
 		do {
 			XEvent event;
 			XtAppNextEvent (Melder_appContext, & event);
 			XtDispatchEvent (& event);
 		} while (! thePauseForm_clicked);
+		#endif
 		theEventLoopDepth --;
 		if (wasBackgrounding) praat_background ();
 		Melder_setDefaultDir (& dir);

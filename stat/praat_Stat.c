@@ -380,11 +380,11 @@ end:
 END
 
 DIRECT (Table_edit)
-	if (theCurrentPraat -> batch) {
+	if (theCurrentPraatApplication -> batch) {
 		return Melder_error1 (L"Cannot edit a Table from batch.");
 	} else {
 		WHERE (SELECTED) {
-			TableEditor editor = TableEditor_create (theCurrentPraat -> topShell, ID_AND_FULL_NAME, ONLY_OBJECT);
+			TableEditor editor = TableEditor_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME, ONLY_OBJECT);
 			if (! praat_installEditor (editor, IOBJECT)) return 0;
 		}
 	}
@@ -917,7 +917,7 @@ END
 FORM (Table_setNumericValue, L"Table: Set numeric value", 0)
 	NATURAL (L"Row number", L"1")
 	WORD (L"Column label", L"")
-	REAL (L"Numeric value", L"1.5")
+	REAL_OR_UNDEFINED (L"Numeric value", L"1.5")
 	OK
 DO
 	WHERE (SELECTED) {
@@ -1352,7 +1352,7 @@ END
 FORM (TableOfReal_setValue, L"Set value", L"TableOfReal: Set value...")
 	NATURAL (L"Row number", L"1")
 	NATURAL (L"Column number", L"1")
-	REAL (L"New value", L"0.0")
+	REAL_OR_UNDEFINED (L"New value", L"0.0")
 	OK
 DO
 	WHERE (SELECTED) {
