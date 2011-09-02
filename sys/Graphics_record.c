@@ -1,6 +1,6 @@
 /* Graphics_record.c
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2009 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
  * pb 2007/08/08 text is saved as UTF-8
  * pb 2008/01/19 removed 16M limitation on number of elements (-> double)
  * sdk 2008/03/24 cairo
+ * pb 2009/07/09 RGB colours
+ * pb 2009/08/10 image from file
  */
 
 #include "GraphicsP.h"
@@ -300,6 +302,14 @@ void Graphics_play (Graphics me, Graphics thee) {
 			case DOUBLE_ARROW:
 			{  double x1 = get, y1 = get, x2 = get, y2 = get;
 				Graphics_doubleArrow (thee, x1, y1, x2, y2);
+			}  break;
+			case SET_RGB_COLOUR:
+			{  double red = get, green = get, blue = get;
+				Graphics_setRGBColour (thee, red, green, blue);
+			} break;
+			case IMAGE_FROM_FILE:
+			{  double x1 = get, x2 = get, y1 = get, y2 = get; long length = get; char *text_utf8 = sget (length);
+				Graphics_imageFromFile (thee, Melder_peekUtf8ToWcs (text_utf8), x1, x2, y1, y2);
 			}  break;
 			default:
 				my recording = wasRecording;

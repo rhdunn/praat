@@ -452,6 +452,8 @@ if (! my printing) {
 			theCurrentPraatObjects = my praatObjects;
 			theCurrentPraatPicture = my praatPicture;
 			theCurrentPraatPicture -> graphics = my g;   // has to draw into HyperPage rather than Picture window
+			theCurrentPraatPicture -> font = font;
+			theCurrentPraatPicture -> fontSize = size;
 			theCurrentPraatPicture -> lineType = Graphics_DRAWN;
 			theCurrentPraatPicture -> colour = Graphics_BLACK;
 			theCurrentPraatPicture -> lineWidth = 1.0;
@@ -523,6 +525,8 @@ if (! my printing) {
 		theCurrentPraatObjects = my praatObjects;
 		theCurrentPraatPicture = my praatPicture;
 		theCurrentPraatPicture -> graphics = my ps;
+		theCurrentPraatPicture -> font = font;
+		theCurrentPraatPicture -> fontSize = size;
 		theCurrentPraatPicture -> lineType = Graphics_DRAWN;
 		theCurrentPraatPicture -> colour = Graphics_BLACK;
 		theCurrentPraatPicture -> lineWidth = 1.0;
@@ -1068,7 +1072,7 @@ class_methods (HyperPage, Editor) {
 	class_method (destroy)
 	class_method (dataChanged)
 	class_method (draw)
-	us -> editable = FALSE;
+	us -> editable = false;
 	class_method (createMenus)
 	class_method (createChildren)
 	class_method (defaultHeaders)

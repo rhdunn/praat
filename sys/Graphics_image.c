@@ -1,6 +1,6 @@
 /* Graphics_image.c
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2009 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
  * pb 2007/04/25 better image drawing on the Mac
  * pb 2007/08/03 Quartz
  * pb 2008/01/19 double
+ * pb 2009/08/10 image from file
  */
 
 #include "GraphicsP.h"
@@ -31,6 +32,11 @@
 	#include "macport_on.h"
 	#include <QDOffscreen.h>
 	static RGBColor theBlackColour = { 0, 0, 0 };
+	static void _mac_releaseDataCallback (void *info, const void *data, size_t size) {
+		(void) info;
+		(void) size;
+		Melder_free (data);
+	}
 #endif
 
 #define wdx(x)  ((x) * my scaleX + my deltaX)
@@ -66,6 +72,7 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 	#endif
 	if (x2DC <= x1DC || y1DC <= y2DC) return;
 	/* Clip by the intersection of the world window and the outline of the cells. */
+	//Melder_casual ("clipy1 %d clipy2 %d", clipy1, clipy2);
 	if (clipx1 < x1DC) clipx1 = x1DC;
 	if (clipx2 > x2DC) clipx2 = x2DC;
 	if (clipy1 > y1DC) clipy1 = y1DC;
@@ -120,7 +127,7 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 				if (left < clipx1) left = clipx1;
 				if (right > clipx2) right = clipx2;
 				#if xwin
-					XSetForeground (my display, my gc, grey [value <= 0 ? 0 : value >= 100 ? 100 : value]);
+					XSetForeground (my display, my gc, xwinGreys [value <= 0 ? 0 : value >= 100 ? 100 : value]);
 					XFillRectangle (my display, my window, my gc, left, top,
 						right - left + 1, bottom - top + 1);
 				#elif win
@@ -210,11 +217,14 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 			 * Quartz requirements.
 			 */
 			unsigned char *imageData;
-			long bytesPerRow;
+			long bytesPerRow, numberOfRows;
 			bool useQuartzForImages = my useQuartz && 1;
-			if (useQuartzForImages && MAC_USE_QUARTZ) {
+			if (useQuartzForImages) {
 				bytesPerRow = (clipx2 - clipx1) * 4;
-				imageData = Melder_malloc (unsigned char, bytesPerRow * (clipy1 - clipy2));
+				Melder_assert (bytesPerRow > 0);
+				numberOfRows = clipy1 - clipy2;
+				Melder_assert (numberOfRows > 0);
+				imageData = Melder_malloc (unsigned char, bytesPerRow * numberOfRows);
 				Melder_assert (imageData != NULL);
 			} else {
 				GetGWorld (& savePort, & saveDevice);
@@ -263,18 +273,18 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 		#elif xwin
 			#define ROW_START_ADDRESS  ((unsigned char *) image -> data + (yDC - clipy2) * image -> bytes_per_line)
 			#define PUT_PIXEL \
-				if (mayOptimize) *pixelAddress ++ = grey [value <= 0 ? 0 : value >= 100 ? 100 : (int) value]; \
+				if (mayOptimize) *pixelAddress ++ = xwinGreys [value <= 0 ? 0 : value >= 100 ? 100 : (int) value]; \
 				else XPutPixel (image, xDC - clipx1, yDC - clipy2, \
-					grey [value <= 0 ? 0 : value >= 100 ? 100 : (int) value]);
+					xwinGreys [value <= 0 ? 0 : value >= 100 ? 100 : (int) value]);
 		#elif win
 			#define ROW_START_ADDRESS  (bits + (clipy1 - 1 - yDC) * scanLineLength)
 			#define PUT_PIXEL  *pixelAddress ++ = value <= 0 ? 0 : value >= 255 ? 255 : (int) value;
 		#elif mac
 			#define ROW_START_ADDRESS \
-				(useQuartzForImages && MAC_USE_QUARTZ ? (imageData + (yDC - clipy2) * bytesPerRow) : \
+				(useQuartzForImages ? (imageData + (clipy1 - 1 - yDC) * bytesPerRow) : \
 				(offscreenPixels + (yDC - clipy2) * offscreenRowBytes / undersampling))
 			#define PUT_PIXEL \
-				if (useQuartzForImages && MAC_USE_QUARTZ) { \
+				if (useQuartzForImages) { \
 					unsigned char kar = value <= 0 ? 0 : value >= 255 ? 255 : (int) value; \
 					*pixelAddress ++ = kar; \
 					*pixelAddress ++ = kar; \
@@ -370,20 +380,37 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 			SetDIBitsToDevice (my dc, clipx1, clipy2, bitmapWidth, bitmapHeight, 0, 0, 0, bitmapHeight,
 				bits, (CONST BITMAPINFO *) & bitmapInfo, DIB_RGB_COLORS);
 		#elif mac
-			if (useQuartzForImages && MAC_USE_QUARTZ) {
-				CGColorSpaceRef colourSpace = CGColorSpaceCreateWithName (kCGColorSpaceUserRGB);
+			if (useQuartzForImages) {
+				CGImageRef image;
+				CGColorSpaceRef colourSpace = CGColorSpaceCreateWithName (kCGColorSpaceGenericRGB);   // used to be kCGColorSpaceUserRGB
 				Melder_assert (colourSpace != NULL);
-				CGDataProviderRef dataProvider = CGDataProviderCreateWithData (NULL, imageData, bytesPerRow * (clipy1 - clipy2), NULL);
-				Melder_assert (dataProvider != NULL);
-				CGImageRef image = CGImageCreate (clipx2 - clipx1, clipy1 - clipy2, 8, 32, bytesPerRow, colourSpace, kCGImageAlphaNone, dataProvider, NULL, false, kCGRenderingIntentDefault);
+				if (1) {
+					CGDataProviderRef dataProvider = CGDataProviderCreateWithData (NULL,
+						imageData,
+						bytesPerRow * numberOfRows,
+						_mac_releaseDataCallback   // we need this because we cannot release the image data immediately after drawing,
+							// because in PDF files the imageData has to stay available through EndPage
+					);
+					Melder_assert (dataProvider != NULL);
+					image = CGImageCreate (clipx2 - clipx1, numberOfRows,
+						8, 32, bytesPerRow, colourSpace, kCGImageAlphaNone, dataProvider, NULL, false, kCGRenderingIntentDefault);
+					CGDataProviderRelease (dataProvider);
+				} else if (0) {
+					Melder_assert (CGBitmapContextCreate != NULL);
+					CGContextRef bitmaptest = CGBitmapContextCreate (imageData, 100, 100,
+						8, 800, colourSpace, 0);
+					Melder_assert (bitmaptest != NULL);
+					CGContextRef bitmap = CGBitmapContextCreate (NULL/*imageData*/, clipx2 - clipx1, numberOfRows,
+						8, bytesPerRow, colourSpace, kCGImageAlphaLast);
+					Melder_assert (bitmap != NULL);
+					image = CGBitmapContextCreateImage (bitmap);
+					// release bitmap?
+				}
 				Melder_assert (image != NULL);
-				CGDataProviderRelease (dataProvider);
+				GraphicsQuartz_initDraw (me);
+				CGContextDrawImage (my macGraphicsContext, CGRectMake (clipx1, clipy2, clipx2 - clipx1, clipy1 - clipy2), image);
+				GraphicsQuartz_exitDraw (me);
 				CGColorSpaceRelease (colourSpace);
-				QDBeginCGContext (my macPort, & my macGraphicsContext);
-				int shellHeight = GuiMac_clipOn_graphicsContext (my drawingArea, my macGraphicsContext);
-				CGContextDrawImage (my macGraphicsContext, CGRectMake (clipx1, shellHeight - clipy1, clipx2 - clipx1, clipy1 - clipy2), image);
-				CGContextSynchronize (my macGraphicsContext);
-				QDEndCGContext (my macPort, & my macGraphicsContext);
 				CGImageRelease (image);
 			} else {
 				SetGWorld (savePort, saveDevice);
@@ -413,8 +440,8 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 			DeleteBitmap (bitmap);
 		#elif mac
 			cleanUp:
-			if (useQuartzForImages && MAC_USE_QUARTZ) {
-				Melder_free (imageData);
+			if (useQuartzForImages) {
+				//Melder_free (imageData);
 			} else {
 				UnlockPixels (offscreenPixMap);
 				DisposeGWorld (offscreenWorld);
@@ -426,9 +453,11 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 		return;
 	#elif mac
 		end:
-		RGBForeColor (& theBlackColour);
-		SetPort (my macPort);
-		RGBForeColor (& theBlackColour);
+		if (my macPort != NULL) {
+			RGBForeColor (& theBlackColour);
+			SetPort (my macPort);
+			RGBForeColor (& theBlackColour);
+		}
 	#endif
 	/*Melder_information2("duration ",Melder_integer(clock()-t));*/
 }
@@ -692,7 +721,7 @@ static void _cellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 			my printf (my file, ">\n");*/
 		my printf (my file, "grestore\n");
 	}
-	_Graphics_setColour (me, my colour);
+	_Graphics_setRGBColour (me, my red, my green, my blue);
 }
 
 static void cellArrayOrImage (I, double **z_float, unsigned char **z_byte,
@@ -734,5 +763,61 @@ void Graphics_image (I, double **z, long ix1, long ix2, double x1WC, double x2WC
 void Graphics_image8 (I, unsigned char **z, long ix1, long ix2, double x1WC, double x2WC,
 	long iy1, long iy2, double y1WC, double y2WC, unsigned char minimum, unsigned char maximum)
 { cellArrayOrImage (void_me, NULL, z, ix1, ix2, x1WC, x2WC, iy1, iy2, y1WC, y2WC, minimum, maximum, TRUE); }
+
+void Graphics_imageFromFile (I, const wchar_t *relativeFileName, double x1, double x2, double y1, double y2) {
+	iam (Graphics);
+	short x1DC = wdx (x1), x2DC = wdx (x2), y1DC = wdy (y1), y2DC = wdy (y2);
+	short width = x2DC - x1DC, height = my yIsZeroAtTheTop ? y1DC - y2DC : y2DC - y1DC;
+	if (my screen) {
+		iam (GraphicsScreen);
+		#if mac
+			if (my useQuartz) {
+				structMelderFile file;
+				if (Melder_relativePathToFile (relativeFileName, & file)) {
+					char utf8 [500];
+					Melder_wcsTo8bitFileRepresentation_inline (file. path, utf8);
+					CFStringRef path = CFStringCreateWithCString (NULL, utf8, kCFStringEncodingUTF8);
+					CFURLRef url = CFURLCreateWithFileSystemPath (NULL, path, kCFURLPOSIXPathStyle, false);
+					CFRelease (path);
+					CGImageSourceRef imageSource = CGImageSourceCreateWithURL (url, NULL);
+					//CGDataProviderRef dataProvider = CGDataProviderCreateWithURL (url);
+					CFRelease (url);
+					if (imageSource != NULL) {
+					//if (dataProvider != NULL) {
+						CGImageRef image = CGImageSourceCreateImageAtIndex (imageSource, 0, NULL);
+						//CGImageRef image = CGImageCreateWithJPEGDataProvider (dataProvider, NULL, true, kCGRenderingIntentDefault);
+						CFRelease (imageSource);
+						//CGDataProviderRelease (dataProvider);
+						if (image != NULL) {
+							if (x1 == x2 && y1 == y2) {
+								width = CGImageGetWidth (image), x1DC -= width / 2, x2DC = x1DC + width;
+								height = CGImageGetHeight (image), y2DC -= height / 2, y1DC = y2DC + height;
+							} else if (x1 == x2) {
+								width = height * (double) CGImageGetWidth (image) / (double) CGImageGetHeight (image);
+								x1DC -= width / 2, x2DC = x1DC + width;
+							} else if (y1 == y2) {
+								height = width * (double) CGImageGetHeight (image) / (double) CGImageGetWidth (image);
+								y2DC -= height / 2, y1DC = y2DC + height;
+							}
+							GraphicsQuartz_initDraw (me);
+							CGContextSaveGState (my macGraphicsContext);
+							CGContextTranslateCTM (my macGraphicsContext, 0, y1DC);
+							CGContextScaleCTM (my macGraphicsContext, 1.0, -1.0);
+							CGContextDrawImage (my macGraphicsContext, CGRectMake (x1DC, 0, width, height), image);
+							CGContextRestoreGState (my macGraphicsContext);
+							GraphicsQuartz_exitDraw (me);
+							CGImageRelease (image);
+						}
+					}
+				}
+			}
+		#endif
+	}
+	if (my recording) {
+		char *txt_utf8 = Melder_peekWcsToUtf8 (relativeFileName);
+		int length = strlen (txt_utf8) / sizeof (double) + 1;
+		op (IMAGE_FROM_FILE, 5 + length); put (x1); put (x2); put (y1); put (y2); sput (txt_utf8, length)
+	}
+}
 
 /* End of file Graphics_image.c */

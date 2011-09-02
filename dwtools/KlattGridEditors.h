@@ -20,7 +20,7 @@
  */
 
 /*
-  djmw 20090123, 20090420
+  djmw 20090123, 20090420, 20090630
 */
 
 #ifndef _KlattGrid_h_
@@ -45,6 +45,8 @@ Thing_declare1 (KlattGrid_realTierEditor);
 	KlattGrid klattgrid;
 #define KlattGrid_realTierEditor__methods(Klas) RealTierEditor__methods(Klas)
 Thing_declare2 (KlattGrid_realTierEditor, RealTierEditor);
+
+int KlattGrid_realTierEditor_init (KlattGrid_realTierEditor me, Widget parent, const wchar_t *title, KlattGrid klattgrid, RealTier data);
 
 #define KlattGrid_openPhaseTierEditor__parents(Klas) KlattGrid_realTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_realTierEditor)
 Thing_declare1 (KlattGrid_openPhaseTierEditor);

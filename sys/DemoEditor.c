@@ -21,6 +21,8 @@
  * pb 2009/05/04 created
  * pb 2009/05/06 Demo_waitForInput ()
  * pb 2009/05/08 Demo_input ()
+ * pb 2009/06/30 removed interpreter member (could cause Praat to crash when the editor was closed after an "execute")
+ * pb 2009/08/21 Demo_windowTitle ()
  */
 
 #include "DemoEditor.h"
@@ -35,8 +37,7 @@
 	bool clicked, keyPressed, shiftKeyPressed, commandKeyPressed, optionKeyPressed, extraControlKeyPressed; \
 	long x, y; \
 	wchar_t key; \
-	bool waitingForInput, userWantsToClose; \
-	Interpreter interpreter;
+	bool waitingForInput, userWantsToClose, fullScreen;
 #define DemoEditor__methods(Klas) Editor__methods(Klas)
 Thing_declare2 (DemoEditor, Editor);
 
@@ -127,7 +128,7 @@ static void gui_drawingarea_cb_resize (I, GuiDrawingAreaResizeEvent event) {
 }
 
 static void createChildren (DemoEditor me) {
-	my drawingArea = GuiDrawingArea_createShown (my dialog, 0, 0, Machine_getMenuBarHeight (), 0,
+	my drawingArea = GuiDrawingArea_createShown (my dialog, 0, 0, 0, 0,
 		gui_drawingarea_cb_expose, gui_drawingarea_cb_click, gui_drawingarea_cb_key, gui_drawingarea_cb_resize, me, 0);
 }
 
@@ -137,12 +138,14 @@ class_methods (DemoEditor, Editor) {
 	class_method (goAway)
 	class_method (createChildren)
 	class_method (createMenus)
+	us -> hasMenuBar = false;
+	us -> canFullScreen = true;
 	us -> scriptable = false;
 	class_methods_end
 }
 
 int DemoEditor_init (DemoEditor me, Widget parent) {
-	Editor_init (DemoEditor_as_parent (me), parent, 0, 0, 1024, 768 + Machine_getMenuBarHeight (), NULL, NULL); cherror
+	Editor_init (DemoEditor_as_parent (me), parent, 0, 0, 1024, 768, L"", NULL); cherror
 	my graphics = Graphics_create_xmdrawingarea (my drawingArea);
 	Graphics_setColour (my graphics, Graphics_WHITE);
 	Graphics_setWindow (my graphics, 0, 1, 0, 1);
@@ -190,7 +193,6 @@ void Demo_open (Interpreter interpreter) {
 			theCurrentPraatPicture -> y1NDC = 0;
 			theCurrentPraatPicture -> y2NDC = 100;
 		}
-		theDemoEditor -> interpreter = interpreter;
 		theCurrentPraatPicture = theDemoEditor -> praatPicture;
 	#endif
 }
@@ -199,17 +201,23 @@ void Demo_close (void) {
 	theCurrentPraatPicture = & theForegroundPraatPicture;
 }
 
-void Demo_show (void) {
+void Demo_windowTitle (const wchar_t *title) {
+	Demo_open (NULL);
+	Thing_setName (theDemoEditor, title);
+	Demo_close ();
+}
+
+void Demo_show (Interpreter interpreter) {
 	if (theDemoEditor == NULL) return;
-	Demo_open (theDemoEditor -> interpreter);
+	Demo_open (interpreter);
 	GuiWindow_show (theDemoEditor -> dialog);
 	GuiWindow_drain (theDemoEditor -> shell);
 	Demo_close ();
 }
 
-bool Demo_waitForInput (void) {
+bool Demo_waitForInput (Interpreter interpreter) {
 	if (theDemoEditor == NULL) return false;
-	GuiWindow_show (theDemoEditor -> dialog);
+	//GuiWindow_show (theDemoEditor -> dialog);
 	theDemoEditor -> clicked = false;
 	theDemoEditor -> keyPressed = false;
 	theDemoEditor -> waitingForInput = true;
@@ -228,7 +236,8 @@ bool Demo_waitForInput (void) {
 	#endif
 	theDemoEditor -> waitingForInput = false;
 	if (theDemoEditor -> userWantsToClose) {
-		Interpreter_stop (theDemoEditor -> interpreter);
+		Interpreter_stop (interpreter);
+		Melder_error1 (L"You interrupted the script.");
 		forget (theDemoEditor);
 		return false;
 	}

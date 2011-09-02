@@ -1,6 +1,6 @@
 /* Picture.h
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2009 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
  */
 
 /*
- * pb 2008/05/09
+ * pb 2009/08/06
  */
 
 /* A self-recording picture inside a Motif DrawingArea widget.
@@ -116,12 +116,14 @@ int Picture_readFromPraatPictureFile (Picture me, MelderFile file);
 	int Picture_readFromOldWindowsPraatPictureFile (Picture me, MelderFile file);
 #endif
 int Picture_writeToEpsFile (Picture me, MelderFile file, int includeFonts, int useSilipaPS);
+int Picture_writeToPdfFile (Picture me, MelderFile file);
 
 void Picture_print (Picture me);
 void Picture_printToPostScriptPrinter (Picture me, int spots, int paperSize, int rotation, double magnification);
 #ifdef macintosh
 	int Picture_writeToMacPictFile (Picture me, MelderFile file);
 	void Picture_copyToClipboard (Picture me);
+	void Picture_copyToQuickDrawClipboard (Picture me);
 	void Picture_copyToClipboard_screenImage (Picture me);
 #endif
 #ifdef _WIN32

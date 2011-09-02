@@ -23,9 +23,50 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (L"What's new?", L"ppgb", 20090512)
+MAN_BEGIN (L"What's new?", L"ppgb", 20091026)
 INTRO (L"Latest changes in Praat.")
 /*LIST_ITEM (L"\\bu Manual page about @@drawing a vowel triangle@.")*/
+NORMAL (L"##5.1.20# (26 October 2009)")
+LIST_ITEM (L"\\bu Editor windows: repaired the Synchronized Zoom And Scroll preference.")
+NORMAL (L"##5.1.19# (21 October 2009)")
+LIST_ITEM (L"\\bu Table: Randomize rows")
+LIST_ITEM (L"\\bu Tables: Append (vertically)")
+LIST_ITEM (L"\\bu Scripting: corrected a bug that could cause Praat to crash if the name of a field in a form contained a colon.")
+LIST_ITEM (L"\\bu Windows: corrected arc drawing.")
+NORMAL (L"##5.1.18# (9 October 2009)")
+LIST_ITEM (L"\\bu The @@Demo window@ is less often automatically moved to the front "
+	"(in order to allow it to pop up other editor windows).")
+LIST_ITEM (L"\\bu @@DTW & TextGrid: To TextGrid (warp times)@: corrected a bug that could "
+	"lead to an incorrect end time of the last interval in new IntervalTiers.")
+NORMAL (L"##5.1.17# (22 September 2009)")
+LIST_ITEM (L"\\bu Made more stereo movies readable.")
+LIST_ITEM (L"\\bu Editor windows now have a ##Zoom Back# button.")
+NORMAL (L"##5.1.16# (17 September 2009)")
+LIST_ITEM (L"\\bu Macintosh: corrected a bug that caused incorrect phonetic symbols if Charis SIL was available but SIL Doulos IPA93 was not.")
+NORMAL (L"##5.1.15# (30 August 2009)")
+LIST_ITEM (L"\\bu Corrected a bug in @@Sound: Change gender...@ introduced in 5.1.14.")
+NORMAL (L"##5.1.14# (27 August 2009)")
+LIST_ITEM (L"\\bu Windows: corrected a bug introduced in 5.1.13 that caused Praat to crash during tab navigation.")
+LIST_ITEM (L"\\bu Made @@Sound: Change gender...@ compatible with elephant calls (i.e. very low F0).")
+NORMAL (L"##5.1.13# (21 August 2009)")
+LIST_ITEM (L"\\bu Script window: #Find and #Replace.")
+LIST_ITEM (L"\\bu Picture window (and therefore Demo window!): @@Insert picture from file...@ (MacOS 10.4 and up).")
+LIST_ITEM (L"\\bu @@Demo window@: full screen (on the Mac).")
+LIST_ITEM (L"\\bu Scripting: faster object selection (scripts no longer slow down when there are many objects in the list).")
+LIST_ITEM (L"\\bu Scripting: $$variableExists$.")
+LIST_ITEM (L"\\bu Macintosh: PDF clipboard (MacOS 10.4 and up).")
+NORMAL (L"##5.1.12# (4 August 2009)")
+LIST_ITEM (L"\\bu Macintosh: the Picture window can save to PDF file (you need MacOS 10.4 or up).")
+LIST_ITEM (L"\\bu Macintosh: corrected a bug that caused Praat to crash at start-up on MacOS 10.3.")
+NORMAL (L"##5.1.11# (19 July 2009)")
+NORMAL (L"##5.1.10# (8 July 2009)")
+LIST_ITEM (L"\\bu Corrected a bug that could cause Praat to crash if the Demo window was closed after an \"execute\".")
+LIST_ITEM (L"\\bu OTGrammar & PairDistribution: added ##Get minimum number correct...#.")
+NORMAL (L"##5.1.09# (28 June 2009)")
+LIST_ITEM (L"\\bu Made East-European Roman characters available in EPS files.")
+NORMAL (L"##5.1.08# (21 June 2009)")
+LIST_ITEM (L"\\bu Removed a bug introduced in 5.1.07 that could cause strange pictures in manual.")
+LIST_ITEM (L"\\bu Macintosh: execute @sendpraat messages immediately instead of waiting for the user to click the jumping Praat icon.")
 NORMAL (L"##5.1.07# (12 May 2009)")
 LIST_ITEM (L"\\bu Demo window: navigation by arrow keys also on Windows.")
 LIST_ITEM (L"\\bu Demo window: no longer crashes on Linux.")
@@ -2135,14 +2176,14 @@ NORMAL (L"To print an intensity contour, or to put it in an EPS file or on the c
 	"From the Picture window, you can print it, save it to an EPS file, or copy it to the clipboard.")
 MAN_END
 
-MAN_BEGIN (L"Intro 7. Annotation", L"ppgb", 20030113)
+MAN_BEGIN (L"Intro 7. Annotation", L"ppgb", 20090630)
 INTRO (L"You can annotate existing @Sound objects and sound files (@LongSound objects).")
 NORMAL (L"The labelling data will reside in a @TextGrid object. This object is separate "
 	"from the sound, which means that you will often see two objects in the list: a Sound or LongSound, "
 	"and a TextGrid.")
 ENTRY (L"Creating a TextGrid")
 NORMAL (L"You create a new empty TextGrid from the Sound or LongSound with @@Sound: To TextGrid...@ "
-	"or @@LongSound: To TextGrid...@ from the #Annotate menu. In this way, the time domain "
+	"or @@LongSound: To TextGrid...@ from the #Annotate menu (which shows up in the Objects window if you select a Sound or LongSound). In this way, the time domain "
 	"of the @TextGrid will automatically equal that of the sound (if you choose @@Create TextGrid...@ from "
 	"the @@New menu@ instead, you will have to supply the time domain by yourself).")
 NORMAL (L"When you create a TextGrid, you specify the names of the %tiers. For instance, if you want to segment "
@@ -2679,7 +2720,7 @@ NORMAL (L"The resulting sound will have a fairly straight intensity contour. You
 	"acoustic result with an @Intensity or @IntensityTier object.")
 MAN_END
 
-MAN_BEGIN (L"Source-filter synthesis 3. The ba-da continuum", L"ppgb", 20080425)
+MAN_BEGIN (L"Source-filter synthesis 3. The ba-da continuum", L"ppgb", 20091012)
 INTRO (L"As an example, we are going to create a male [ba]-[da] continuum in six steps. The acoustic difference "
 	"between [ba] and [da] is the initial %F__2_, which is 500 Hz for [ba], and 2500 Hz for [da].")
 NORMAL (L"We use the same @PitchTier throughout, to model a falling intonation contour:")
@@ -2704,7 +2745,7 @@ CODE (L"Rename... source")
 NORMAL (L"The ten sounds are generated in a loop:")
 CODE (L"#for i #from 1 #to 10")
 CODE (L"   f2_locus = 500 + (2500/9) * (i - 1) ; variable names start with lower case!")
-CODE (L"   Create FormantGrid... filter 0.0 0.5 9 0 1000 0 100")
+CODE (L"   Create FormantGrid... filter 0.0 0.5 9 800 1000 60 80")
 CODE (L"   Remove formant points between... 1 0.0 0.5")
 CODE (L"   Add formant point... 1 0.05 100")
 CODE (L"   Add bandwidth point... 1 0.05 50")
