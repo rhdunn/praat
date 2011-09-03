@@ -1956,11 +1956,15 @@ FORM (Sound_to_Espeak, L"From Sound to Spectrogram", L"Sound: To Espeak...")
 	REAL (L"Adjust (min freq)", L"2500")
 	OK
 DO
-	EVERY_TO (Sound_to_Espeak (OBJECT, GET_REAL (L"Minimum pitch"), GET_REAL (L"Maximum pitch"),
-		GET_REAL (L"Maximum frequency"),
-		GET_REAL (L"Frequency step"),
-		GET_REAL (L"Maximum formant"),
-		GET_REAL (L"Adjust")))
+	LOOP {
+		iam (Sound);
+		autoSpectrogram thee = Sound_to_Espeak (me, GET_REAL (L"Minimum pitch"), GET_REAL (L"Maximum pitch"),
+			GET_REAL (L"Maximum frequency"),
+			GET_REAL (L"Frequency step"),
+			GET_REAL (L"Maximum formant"),
+			GET_REAL (L"Adjust"));
+		praat_new (thee.transfer(), my name);
+	}
 END
 
 FORM (Sound_to_Spectrum, L"Sound: To Spectrum", L"Sound: To Spectrum...")
