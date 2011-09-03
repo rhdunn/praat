@@ -2,7 +2,7 @@
 #define _StringsEditor_h_
 /* StringsEditor.h
  *
- * Copyright (C) 1993-2008 David Weenink & Paul Boersma
+ * Copyright (C) 1993-2011 David Weenink & Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  */
 
 /*
- * 2008/02/06
+ * 2011/03/02
 */
 
 #ifndef _Editor_h_
@@ -30,15 +30,23 @@
 	#include "Strings.h"
 #endif
 
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
 #define StringsEditor__parents(Klas) Editor__parents(Klas) Thing_inherit (Klas, Editor)
 Thing_declare1 (StringsEditor);
 
 #define StringsEditor__members(Klas) Editor__members(Klas) \
-	Widget list, text;
+	GuiObject list, text;
 #define StringsEditor__methods(Klas) Editor__methods(Klas)
 Thing_declare2 (StringsEditor, Editor);
 
-StringsEditor StringsEditor_create (Widget parent, const wchar_t *title, Any data);
+StringsEditor StringsEditor_create (GuiObject parent, const wchar_t *title, Any data);
+
+#ifdef __cplusplus
+	}
+#endif
 
 /* End of file StringsEditor.h */
 #endif

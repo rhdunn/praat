@@ -193,15 +193,36 @@ MAN_BEGIN (L"objects", L"ppgb", 20030528)
 INTRO (L"The things that contain the data in the Praat program.")
 NORMAL (L"The objects are visible in the @@List of Objects@ in the @@Object window@.")
 NORMAL (L"Most objects are contained in memory: they are %not files! "
-	"Therefore, you may want to save them with one of the commands from the @@Write menu@ "
+	"Therefore, you may want to save them with one of the commands from the @@Save menu@ "
 	"before you @Quit. "
 	"Exceptions are the LongSound objects in the Praat program and the file-based dictionaries "
 	"in the ALS program.")
 NORMAL (L"You can create an object by choosing a command from the @@New menu@ "
-	"or from the @@Read menu@.")
+	"or from the @@Open menu@.")
 NORMAL (L"When you select one or more objects, you can perform on them the actions that are shown "
 	"in the @@dynamic menu@, on the ##fixed buttons# below the list of objects, "
-	"or in the @@Write menu@. You can choose hidden actions with the help of the @ButtonEditor.")
+	"or in the @@Save menu@. You can choose hidden actions with the help of the @ButtonEditor.")
+MAN_END
+
+MAN_BEGIN (L"overlap-add", L"ppgb", 20070816)
+INTRO (L"A method for manipulating the pitch and duration of an acoustic speech signal. "
+	"This method was realized by @@Moulines & Charpentier (1990)@, "
+	"who called it Time-Domain Pitch-Synchronous Overlap-and-Add (TD-PSOLA). "
+	"Nowadays, PSOLA\\tm and TD-PSOLA\\tm are trademarks owned by France Telecom^\\re.")
+ENTRY (L"Overlap-add synthesis")
+NORMAL (L"When a @Sound is created from a @Manipulation object, the following steps are performed:")
+LIST_ITEM (L"1. From the @PitchTier, new points are generated along the entire time domain, "
+	"with the method of @@PitchTier: To PointProcess@.")
+LIST_ITEM (L"2. The period information in the original pulses (available in the Manipulation object) "
+	"is used to remove from the new pulses all points that lie within voiceless intervals "
+	"(i.e., places where the distance between adjacent points in the original pulses is greater than 20 ms).")
+LIST_ITEM (L"3. The voiceless parts are copied from the source Sound to the target Sound, "
+	"re-using some parts if the local duration is greater than 1.")
+LIST_ITEM (L"4. For each target point, we look up the nearest source point. A piece of the source Sound, "
+	"centred around the source point, is copied to the target Sound at a location determined by "
+	"the target point, using a bell-shaped window whose left-hand half-length is the minimum "
+	"of the left-hand periods adjacent to the source and target points "
+	"(and analogously for the right-hand half-length).")
 MAN_END
 
 MAN_BEGIN (L"pitch floor", L"ppgb", 20060914)
@@ -234,27 +255,6 @@ FORMULA (L"PSD__dB_(%f) = 10 log__10_ { PSD(%f) / %%P__ref_%^2 }")
 NORMAL (L"Since the argument of the logarithm is in units of Hz^^-1^, this spectral measure can loosely be said "
 	"to be in units of `dB/Hz'. In Praat, this logarithmic power spectral density is the quantity stored in an @Ltas; "
 	"it is also the quantity shown in pictures of a @Spectrum and a @Spectrogram.")
-MAN_END
-
-MAN_BEGIN (L"overlap-add", L"ppgb", 20070816)
-INTRO (L"A method for manipulating the pitch and duration of an acoustic speech signal. "
-	"This method was realized by @@Moulines & Charpentier (1990)@, "
-	"who called it Time-Domain Pitch-Synchronous Overlap-and-Add (TD-PSOLA). "
-	"Nowadays, PSOLA\\tm and TD-PSOLA\\tm are trademarks owned by France Telecom^\\re.")
-ENTRY (L"Overlap-add synthesis")
-NORMAL (L"When a @Sound is created from a @Manipulation object, the following steps are performed:")
-LIST_ITEM (L"1. From the @PitchTier, new points are generated along the entire time domain, "
-	"with the method of @@PitchTier: To PointProcess@.")
-LIST_ITEM (L"2. The period information in the original pulses (available in the Manipulation object) "
-	"is used to remove from the new pulses all points that lie within voiceless intervals "
-	"(i.e., places where the distance between adjacent points in the original pulses is greater than 20 ms).")
-LIST_ITEM (L"3. The voiceless parts are copied from the source Sound to the target Sound, "
-	"re-using some parts if the local duration is greater than 1.")
-LIST_ITEM (L"4. For each target point, we look up the nearest source point. A piece of the source Sound, "
-	"centred around the source point, is copied to the target Sound at a location determined by "
-	"the target point, using a bell-shaped window whose left-hand half-length is the minimum "
-	"of the left-hand periods adjacent to the source and target points "
-	"(and analogously for the right-hand half-length).")
 MAN_END
 
 MAN_BEGIN (L"quantile algorithm", L"ppgb", 19980101)
@@ -410,26 +410,26 @@ MAN_BEGIN (L"start time", L"ppgb", 20060714)
 INTRO (L"- the beginning of the @@time domain@ (see there).")
 MAN_END
 
-MAN_BEGIN (L"stereo", L"ppgb", 20070129)
+MAN_BEGIN (L"stereo", L"ppgb", 20110131)
 INTRO (L"A stereo sound is a sound consisting of a left and a right channel. "
 	"Praat can read and write both mono and stereo sounds.")
 ENTRY (L"Reading a stereo sound from disk")
 NORMAL (L"If you read a @Sound into Praat from disk with @@Read from file...@, "
 	"and that sound file is a stereo file, the resulting Sound object will be a stereo Sound.")
 NORMAL (L"If you want to look at the left or right channel separately, "
-	"you can use @@Extract left channel@ or @@Extract right channel@.")
-ENTRY (L"Writing a stereo sound to disk")
-NORMAL (L"If you choose @@Write to WAV file...@, and the sound is a stereo sound, "
+	"you can use @@Extract one channel...@.")
+ENTRY (L"Saving a stereo sound to disk")
+NORMAL (L"If you choose @@Save as WAV file...@, and the sound is a stereo sound, "
 	"then the sound file will be a stereo file. "
 	"If you have two mono sounds and you want to combine them into one stereo sound, "
 	"you can use @@Combine to stereo@.")
 MAN_END
 
-MAN_BEGIN (L"time", L"ppgb", 20030314)
+MAN_BEGIN (L"time", L"ppgb", 20110128)
 INTRO (L"In normal life, time is how late the watch says it is.")
 NORMAL (L"In Praat, this definition is largely irrelevant. "
 	"Sound files rarely tell us the absolute time of recording. "
-	"So when you read a sound file into Praat and click #Edit, you will see "
+	"So when you read a sound file into Praat and click ##View & Edit#, you will see "
 	"that the Sound starts at a time of 0 seconds, and if its duration is 3.5 seconds, "
 	"you will see that the Sound finishes at a time of 3.5 seconds.")
 NORMAL (L"Besides sounds, many other types of objects in Praat have a time scale as well: "
@@ -437,7 +437,7 @@ NORMAL (L"Besides sounds, many other types of objects in Praat have a time scale
 	"are required to have a time domain that starts at 0 seconds. In the Sound editor window, for example, "
 	"you can select the part that runs from 1.4. to 1.7 seconds, and \"extract\" it to the Objects window "
 	"while \"preserving the times\". The resulting Sound object will have a start time of 1.4 seconds "
-	"and an end time of 1.7 seconds, as you can see when you click #Edit. "
+	"and an end time of 1.7 seconds, as you can see when you click ##View & Edit#. "
 	"Spectrograms and pitch contours that you create from this sound will also have a time domain "
 	"from 1.4 to 1.7 seconds. This time domain is preserved if you save these objects to a text file "
 	"or to a binary file and read them into Praat again later. Only if you save the Sound object "
@@ -452,7 +452,7 @@ NORMAL (L"On a clock, time runs around in circles. In Praat's editor windows, ti
 	"To see another part, you %scroll backward or forward.")
 MAN_END
 
-MAN_BEGIN (L"time domain", L"ppgb", 20060726)
+MAN_BEGIN (L"time domain", L"ppgb", 20110128)
 INTRO (L"This manual page assumes that you have read the @Intro.")
 NORMAL (L"Many objects in Praat are %%functions of time%. Examples are: "
 	"@Sound, @Pitch, @Spectrogram, @Formant, @Intensity, @TextGrid, "
@@ -463,7 +463,7 @@ NORMAL (L"In Praat, these functions have a contiguous ##time domain#, i.e. "
 	"and the end time. There are up to five ways to see the time domain "
 	"of an object.")
 ENTRY (L"The time domain in editor windows")
-NORMAL (L"If you select an object that is a function of time and click #Edit, an editor window "
+NORMAL (L"If you select an object that is a function of time and click ##View & Edit#, an editor window "
 	"will appear on the screen. The rectangle at the bottom will show the start time, "
 	"the end time, and the total duration.")
 ENTRY (L"The time domain in the picture window")

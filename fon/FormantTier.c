@@ -1,6 +1,6 @@
 /* FormantTier.c
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +23,11 @@
  * pb 2007/01/27 made compatible with stereo sounds
  * pb 2007/03/17 domain quantity
  * pb 2007/10/01 can write as encoding
+ * pb 2011/03/01 moved Formant filtering to FormantGrid (reimplemented)
  */
 
 #include "FormantTier.h"
+#include "AnyTier.h"
 
 #include "oo_DESTROY.h"
 #include "FormantTier_def.h"
@@ -242,14 +244,13 @@ int FormantTier_getMaxNumFormants (FormantTier me) {
 	
 TableOfReal FormantTier_downto_TableOfReal (FormantTier me, int includeFormants, int includeBandwidths) {
 	TableOfReal thee = NULL;
-	int maximumNumberOfFormants = FormantTier_getMaxNumFormants (me), iformant, icol;
-	long ipoint;
-
+//start:
+	int maximumNumberOfFormants = FormantTier_getMaxNumFormants (me);
 	thee = TableOfReal_create (my points -> size, 1 +
 		( includeFormants ? maximumNumberOfFormants : 0 ) +
 		( includeBandwidths ? maximumNumberOfFormants : 0 )); cherror
 	TableOfReal_setColumnLabel (thee, 1, L"Time");
-	for (icol = 1, iformant = 1; iformant <= maximumNumberOfFormants; iformant ++) {
+	for (long icol = 1, iformant = 1; iformant <= maximumNumberOfFormants; iformant ++) {
 		wchar_t label [4];
 		if (includeFormants) {
 			swprintf (label, 4, L"F%d", iformant);
@@ -260,10 +261,10 @@ TableOfReal FormantTier_downto_TableOfReal (FormantTier me, int includeFormants,
 			TableOfReal_setColumnLabel (thee, ++ icol, label); cherror
 		}
 	}
-	for (ipoint = 1; ipoint <= my points -> size; ipoint ++) {
+	for (long ipoint = 1; ipoint <= my points -> size; ipoint ++) {
 		FormantPoint point = my points -> item [ipoint];
 		thy data [ipoint] [1] = point -> time;
-		for (icol = 1, iformant = 1; iformant <= maximumNumberOfFormants; iformant ++) {
+		for (long icol = 1, iformant = 1; iformant <= maximumNumberOfFormants; iformant ++) {
 			if (includeFormants) thy data [ipoint] [++ icol] = point -> formant [iformant-1];
 			if (includeBandwidths) thy data [ipoint] [++ icol] = point -> bandwidth [iformant-1];
 		}
@@ -274,21 +275,19 @@ end:
 }
 
 void Sound_FormantTier_filter_inline (Sound me, FormantTier formantTier) {
-	long isamp, iformant;
 	double dt = my dx;
-	if (formantTier -> points -> size) for (iformant = 1; iformant <= 10; iformant ++) {
-		for (isamp = 1; isamp <= my nx; isamp ++) {
+	if (formantTier -> points -> size) for (long iformant = 1; iformant <= 10; iformant ++) {
+		for (long isamp = 1; isamp <= my nx; isamp ++) {
 			double t = my x1 + (isamp - 1) * my dx;
 			/*
 			 * Compute LP coefficients.
 			 */
-			double formant, bandwidth, cosomdt, r;
+			double formant, bandwidth;
 			formant = FormantTier_getValueAtTime (formantTier, iformant, t);
-			if (NUMdefined (formant)) {
-				bandwidth = FormantTier_getBandwidthAtTime (formantTier, iformant, t);
-				Melder_assert (bandwidth != NUMundefined);
-				cosomdt = cos (2 * NUMpi * formant * dt);
-				r = exp (- NUMpi * bandwidth * dt);
+			bandwidth = FormantTier_getBandwidthAtTime (formantTier, iformant, t);
+			if (NUMdefined (formant) && NUMdefined (bandwidth)) {
+				double cosomdt = cos (2 * NUMpi * formant * dt);
+				double r = exp (- NUMpi * bandwidth * dt);
 				/* Formants at 0 Hz or the Nyquist are single poles, others are double poles. */
 				if (fabs (cosomdt) > 0.999999) {   /* Allow for round-off errors. */
 					/* single pole: D(z) = 1 - r z^-1 */
@@ -321,24 +320,6 @@ Sound Sound_FormantTier_filter_noscale (Sound me, FormantTier formantTier) {
 	Sound thee = Data_copy (me);
 	if (! thee) return NULL;
 	Sound_FormantTier_filter_inline (thee, formantTier);
-	return thee;
-}
-
-Sound Sound_Formant_filter (Sound me, Formant formant) {
-	Sound thee = NULL;
-	FormantTier tier = Formant_downto_FormantTier (formant); cherror
-	thee = Sound_FormantTier_filter (me, tier); cherror
-end:
-	forget (tier);
-	return thee;
-}
-
-Sound Sound_Formant_filter_noscale (Sound me, Formant formant) {
-	Sound thee = NULL;
-	FormantTier tier = Formant_downto_FormantTier (formant); cherror
-	thee = Sound_FormantTier_filter_noscale (me, tier); cherror
-end:
-	forget (tier);
 	return thee;
 }
 

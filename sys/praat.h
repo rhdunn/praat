@@ -1,6 +1,6 @@
 /* praat.h
  *
- * Copyright (C) 1992-2010 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,12 +18,16 @@
  */
 
 /*
- * pb 2010/07/30
+ * pb 2011/03/02
  */
 
 #include "Editor.h"
 #include "Manual.h"
 #include "Preferences.h"
+
+#ifdef __cplusplus
+	extern "C" {
+#endif
 
 /* The explanations in this header file assume
 	that you put your extra commands in praat_Sybil.c
@@ -108,10 +112,11 @@ void praat_addAction4 (void *class1, int n1, void *class2, int n2, void *class3,
 #define praat_INSENSITIVE  GuiMenu_INSENSITIVE
 #define praat_CHECKBUTTON  GuiMenu_CHECKBUTTON
 #define praat_TOGGLE_ON  GuiMenu_TOGGLE_ON
+#define praat_ATTRACTIVE  GuiMenu_ATTRACTIVE
 #define praat_RADIO_FIRST  GuiMenu_RADIO_FIRST
 #define praat_RADIO_NEXT  GuiMenu_RADIO_NEXT
-#define praat_HIDDEN  0x00002000
-#define praat_UNHIDABLE  0x00004000
+#define praat_HIDDEN  0x00004000
+#define praat_UNHIDABLE  0x00008000
 #define praat_DEPTH_1  0x00010000
 #define praat_DEPTH_2  0x00020000
 #define praat_DEPTH_3  0x00030000
@@ -124,7 +129,7 @@ int praat_removeAction (void *class1, void *class2, void *class3, const wchar_t 
 	/* 'class2' and 'class3' may be NULL. */
 	/* 'title' may be NULL; reference-copied. */
 
-Widget praat_addMenuCommand (const wchar_t *window, const wchar_t *menu, const wchar_t *title,
+GuiObject praat_addMenuCommand (const wchar_t *window, const wchar_t *menu, const wchar_t *title,
 	const wchar_t *after, unsigned long flags, int (*callback) (UiForm, const wchar_t *, Interpreter, const wchar_t *, bool, void *));
 /* All strings are reference-copied; 'title', 'after', and 'callback' may be NULL. */
 
@@ -150,7 +155,7 @@ typedef struct {   /* Readonly */
 	#elif motif
 		XtAppContext context;   /* If you want to install an Xt WorkProc (rare). */
 	#endif
-	Widget topShell;   /* The application shell: parent of editors and standard dialogs. */
+	GuiObject topShell;   /* The application shell: parent of editors and standard dialogs. */
 	ManPages manPages;
 } structPraatApplication, *PraatApplication;
 typedef struct {   /* Readonly */
@@ -191,6 +196,11 @@ bool praat_new6 (I, const wchar_t *s1, const wchar_t *s2, const wchar_t *s3, con
 bool praat_new7 (I, const wchar_t *s1, const wchar_t *s2, const wchar_t *s3, const wchar_t *s4, const wchar_t *s5, const wchar_t *s6, const wchar_t *s7);
 bool praat_new8 (I, const wchar_t *s1, const wchar_t *s2, const wchar_t *s3, const wchar_t *s4, const wchar_t *s5, const wchar_t *s6, const wchar_t *s7, const wchar_t *s8);
 bool praat_new9 (I, const wchar_t *s1, const wchar_t *s2, const wchar_t *s3, const wchar_t *s4, const wchar_t *s5, const wchar_t *s6, const wchar_t *s7, const wchar_t *s8, const wchar_t *s9);
+bool praat_newWithFile1 (I, const wchar_t *s1, MelderFile file);
+bool praat_newWithFile2 (I, const wchar_t *s1, const wchar_t *s2, MelderFile file);
+bool praat_newWithFile3 (I, const wchar_t *s1, const wchar_t *s2, const wchar_t *s3, MelderFile file);
+bool praat_newWithFile4 (I, const wchar_t *s1, const wchar_t *s2, const wchar_t *s3, const wchar_t *s4, MelderFile file);
+bool praat_newWithFile5 (I, const wchar_t *s1, const wchar_t *s2, const wchar_t *s3, const wchar_t *s4, const wchar_t *s5, MelderFile file);
 void praat_name2 (wchar_t *name, void *klas1, void *klas2);
 
 /* Macros for description of forms (dialog boxes).
@@ -207,6 +217,8 @@ void praat_name2 (wchar_t *name, void *klas1, void *klas2);
 	POSITIVE (name, initialString)
 	WORD (name, initialString)
 	SENTENCE (name, initialString)
+	COLOUR (name, initialString)
+	CHANNEL (name, initialString)
 		the name is also the string displayed in the label.
 	BOOLEAN (name, initialValue)
 		the name is also the title of the check box;
@@ -279,6 +291,7 @@ void praat_name2 (wchar_t *name, void *klas1, void *klas2);
 #define FILE_IN(label)		UiForm_addFileIn (dia, label);
 #define FILE_OUT(label,def)	UiForm_addFileOut (dia, label, def);
 #define COLOUR(label,def)	UiForm_addColour (dia, label, def);
+#define CHANNEL(label,def)	UiForm_addChannel (dia, label, def);
 #define OK UiForm_finish (dia); } if (sendingForm == NULL && sendingString == NULL) {
 #define SET_REAL(name,value)	UiForm_setReal (dia, name, value);
 #define SET_INTEGER(name,value)	UiForm_setInteger (dia, name, value);
@@ -287,7 +300,7 @@ void praat_name2 (wchar_t *name, void *klas1, void *klas2);
 #define DO  UiForm_do (dia, modified); } else if (sendingForm == NULL) { \
 	if (! UiForm_parseString (dia, sendingString, interpreter)) return 0; } else { int IOBJECT = 0; (void) IOBJECT; {
 #define DO_ALTERNATIVE(alternative)  UiForm_do (dia, modified); } else if (sendingForm == NULL) { \
-	if (! UiForm_parseString (dia, sendingString, interpreter)) { wchar_t *parkedError = Melder_wcsdup (Melder_getError ()); Melder_clearError (); \
+	if (! UiForm_parseString (dia, sendingString, interpreter)) { wchar_t *parkedError = Melder_wcsdup_f (Melder_getError ()); Melder_clearError (); \
 	int result = DO_##alternative (NULL, sendingString, interpreter, invokingButtonTitle, modified, buttonClosure); \
 	if (result == 0 && parkedError) { Melder_clearError (); Melder_error1 (parkedError); } Melder_free (parkedError); return result; \
 	} } else { int IOBJECT = 0; (void) IOBJECT; {
@@ -356,10 +369,10 @@ void praat_name2 (wchar_t *name, void *klas1, void *klas2);
 #define FULL_NAME  (theCurrentPraatObjects -> list [IOBJECT]. name)
 #define ID  (theCurrentPraatObjects -> list [IOBJECT]. id)
 #define ID_AND_FULL_NAME  Melder_wcscat3 (Melder_integer (ID), L". ", FULL_NAME)
-#define NAMEW  praat_name (IOBJECT)
+#define NAME  praat_name (IOBJECT)
 #define EVERY(proc)  WHERE (SELECTED) proc;
 #define EVERY_CHECK(proc)  EVERY (if (! proc) return 0)
-#define EVERY_TO(proc)  EVERY_CHECK (praat_new1 (proc, NAMEW))
+#define EVERY_TO(proc)  EVERY_CHECK (praat_new1 (proc, NAME))
 #define ONLY(klas)  praat_onlyObject (klas)
 #define ONLY_GENERIC(klas)  praat_onlyObject_generic (klas)
 #define ONLY_OBJECT  (praat_onlyScreenObject () -> object)
@@ -433,5 +446,9 @@ void praat_updateSelection (void);
 	/* If you require the correct selection immediately after calling praat_new. */
 
 void praat_addCommandsToEditor (Editor me);
+
+#ifdef __cplusplus
+	}
+#endif
 
 /* End of file praat.h */

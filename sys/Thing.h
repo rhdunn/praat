@@ -2,7 +2,7 @@
 #define _Thing_h_
 /* Thing.h
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,6 +44,10 @@
 	/* The input/output mechanism: */
 		#include "abcio.h"
 		#include "lispio.h"
+
+#ifdef __cplusplus
+	extern "C" {
+#endif
 
 /* Public. */
 
@@ -345,6 +349,10 @@ long Thing_getTotalNumberOfThings (void);
 
 extern long Thing_version;
 /* Set by Thing_classFromClassName. */
+
+#ifdef __cplusplus
+	}
+#endif
 
 /* End of file Thing.h */
 #endif

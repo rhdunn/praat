@@ -37,7 +37,7 @@
 #include "machine.h"
 
 #define RunnerMFC__members(Klas) Editor__members(Klas) \
-	Widget drawingArea; \
+	GuiObject drawingArea; \
 	Ordered experiments; \
 	long iexperiment; \
 	Graphics graphics; \
@@ -102,7 +102,7 @@ static void gui_drawingarea_cb_expose (I, GuiDrawingAreaExposeEvent event) {
 		}
 	} else if (experiment -> trial <= experiment -> numberOfTrials) {
 		const wchar_t *visibleText = experiment -> stimulus [experiment -> stimuli [experiment -> trial]]. visibleText;
-		wchar_t *visibleText_dup = Melder_wcsdup (visibleText ? visibleText : L""), *visibleText_p = visibleText_dup;
+		wchar_t *visibleText_dup = Melder_wcsdup_f (visibleText ? visibleText : L""), *visibleText_p = visibleText_dup;
 		Graphics_setFont (my graphics, kGraphics_font_TIMES);
 		Graphics_setFontSize (my graphics, 10);
 		Graphics_setColour (my graphics, Graphics_BLACK);
@@ -124,25 +124,30 @@ static void gui_drawingarea_cb_expose (I, GuiDrawingAreaExposeEvent event) {
 		Graphics_setTextAlignment (my graphics, Graphics_CENTRE, Graphics_HALF);
 		for (iresponse = 1; iresponse <= experiment -> numberOfDifferentResponses; iresponse ++) {
 			ResponseMFC response = & experiment -> response [iresponse];
-			Graphics_setColour (my graphics,
-				response -> name [0] == '\0' ? Graphics_SILVER :
-				experiment -> responses [experiment -> trial] == iresponse ? Graphics_RED :
-				experiment -> ok_right > experiment -> ok_left || experiment -> responses [experiment -> trial] == 0 ?
-				Graphics_YELLOW : Graphics_SILVER);
-			Graphics_setLineWidth (my graphics, 3.0);
-			Graphics_fillRectangle (my graphics, response -> left, response -> right, response -> bottom, response -> top);
-			Graphics_setColour (my graphics, Graphics_MAROON);
-			Graphics_rectangle (my graphics, response -> left, response -> right, response -> bottom, response -> top);
-			Graphics_setFontSize (my graphics, response -> fontSize ? response -> fontSize : 24);
+			wchar_t *textToDraw = response -> label;   // can be overridden
 			if (visibleText_p [0] != '\0') {
 				wchar_t *visibleText_q = wcschr (visibleText_p, '|');
 				if (visibleText_q) *visibleText_q = '\0';
-				Graphics_text (my graphics, 0.5 * (response -> left + response -> right),
-					0.5 * (response -> bottom + response -> top), visibleText_p);
+				textToDraw = visibleText_p;   // override
 				if (visibleText_q) visibleText_p = visibleText_q + 1; else visibleText_p += wcslen (visibleText_p);
+			}
+			if (wcsnequ (textToDraw, L"\\FI", 3)) {
+				structMelderFile file;
+				MelderDir_relativePathToFile (& experiment -> rootDirectory, textToDraw + 3, & file);
+				Graphics_imageFromFile (my graphics, Melder_fileToPath (& file), response -> left, response -> right, response -> bottom, response -> top);
 			} else {
+				Graphics_setColour (my graphics,
+					response -> name [0] == '\0' ? Graphics_SILVER :
+					experiment -> responses [experiment -> trial] == iresponse ? Graphics_RED :
+					experiment -> ok_right > experiment -> ok_left || experiment -> responses [experiment -> trial] == 0 ?
+					Graphics_YELLOW : Graphics_SILVER);
+				Graphics_setLineWidth (my graphics, 3.0);
+				Graphics_fillRectangle (my graphics, response -> left, response -> right, response -> bottom, response -> top);
+				Graphics_setColour (my graphics, Graphics_MAROON);
+				Graphics_rectangle (my graphics, response -> left, response -> right, response -> bottom, response -> top);
+				Graphics_setFontSize (my graphics, response -> fontSize ? response -> fontSize : 24);
 				Graphics_text (my graphics, 0.5 * (response -> left + response -> right),
-					0.5 * (response -> bottom + response -> top), response -> label);
+					0.5 * (response -> bottom + response -> top), textToDraw);
 			}
 			Graphics_setFontSize (my graphics, 24);
 		}
@@ -251,8 +256,10 @@ static void do_replay (RunnerMFC me) {
 static void gui_drawingarea_cb_click (I, GuiDrawingAreaClickEvent event) {
 	iam (RunnerMFC);
 	if (my graphics == NULL) return;   // Could be the case in the very beginning.
+if (gtk && event -> type != BUTTON_PRESS) return;
 	ExperimentMFC experiment = my data;
 	if (my data == NULL) return;
+	double reactionTime = Melder_clock () - experiment -> startingTime - experiment -> stimulusInitialSilenceDuration;
 	double x, y;
 	Graphics_DCtoWC (my graphics, event -> x, event -> y, & x, & y);
 	if (experiment -> trial == 0) {   /* The first click of the experiment. */
@@ -297,6 +304,7 @@ static void gui_drawingarea_cb_click (I, GuiDrawingAreaClickEvent event) {
 				ResponseMFC response = & experiment -> response [iresponse];
 				if (x > response -> left && x < response -> right && y > response -> bottom && y < response -> top && response -> name [0] != '\0') {
 					experiment -> responses [experiment -> trial] = iresponse;
+					experiment -> reactionTimes [experiment -> trial] = reactionTime;
 					if (experiment -> responsesAreSounds) {
 						ExperimentMFC_playResponse (experiment, iresponse);
 					}
@@ -400,7 +408,7 @@ class_methods (RunnerMFC, Editor)
 	us -> scriptable = false;
 class_methods_end
 
-RunnerMFC RunnerMFC_create (Widget parent, const wchar_t *title, Ordered experiments) {
+RunnerMFC RunnerMFC_create (GuiObject parent, const wchar_t *title, Ordered experiments) {
 	RunnerMFC me = new (RunnerMFC); cherror
 	Editor_init (RunnerMFC_as_parent (me), parent, 0, 0, 2000, 2000, title, NULL); cherror
 	my experiments = experiments;

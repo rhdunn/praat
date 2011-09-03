@@ -50,6 +50,7 @@
 #include "EditorM.h"
 #include "SoundEditor.h"
 #include "Sound_and_Spectrogram.h"
+#include "TextGrid_Sound.h"
 
 #include "enums_getText.h"
 #include "TextGridEditor_enums.h"
@@ -64,7 +65,7 @@
 	enum kGraphics_horizontalAlignment alignment; \
 	wchar_t *findString, greenString [Preferences_STRING_BUFFER_SIZE]; \
 	int showNumberOf, greenMethod; \
-	Widget extractSelectedTextGridPreserveTimesButton, extractSelectedTextGridTimeFromZeroButton, writeSelectedTextGridButton;
+	GuiObject extractSelectedTextGridPreserveTimesButton, extractSelectedTextGridTimeFromZeroButton, writeSelectedTextGridButton;
 #define TextGridEditor__methods(Klas) TimeSoundAnalysisEditor__methods(Klas)
 Thing_declare2 (TextGridEditor, TimeSoundAnalysisEditor);
 
@@ -269,7 +270,7 @@ static void createMenuItems_file_extract (TextGridEditor me, EditorMenu menu) {
 
 static int menu_cb_WriteSelectionToTextFile (EDITOR_ARGS) {
 	EDITOR_IAM (TextGridEditor);
-	EDITOR_FORM_WRITE (L"Write selection to TextGrid text file", 0)
+	EDITOR_FORM_WRITE (L"Save selection as TextGrid text file", 0)
 		swprintf (defaultName, 300, L"%ls.TextGrid", ((Thing) my data) -> name);
 	EDITOR_DO_WRITE
 		TextGrid publish = TextGrid_extractPart (my data, my startSelection, my endSelection, false);
@@ -281,7 +282,7 @@ static int menu_cb_WriteSelectionToTextFile (EDITOR_ARGS) {
 
 static int menu_cb_WriteToTextFile (EDITOR_ARGS) {
 	EDITOR_IAM (TextGridEditor);
-	EDITOR_FORM_WRITE (L"Write to TextGrid text file", 0)
+	EDITOR_FORM_WRITE (L"Save as TextGrid text file", 0)
 		swprintf (defaultName, 300, L"%ls.TextGrid", ((Thing) my data) -> name);
 	EDITOR_DO_WRITE
 		if (! Data_writeToTextFile (my data, file)) return 0;
@@ -290,8 +291,8 @@ static int menu_cb_WriteToTextFile (EDITOR_ARGS) {
 
 static void createMenuItems_file_write (TextGridEditor me, EditorMenu menu) {
 	inherited (TextGridEditor) createMenuItems_file_write (TextGridEditor_as_parent (me), menu);
-	EditorMenu_addCommand (menu, L"Write TextGrid to text file...", 'S', menu_cb_WriteToTextFile);
-	my writeSelectedTextGridButton = EditorMenu_addCommand (menu, L"Write selected TextGrid to text file...", 0, menu_cb_WriteSelectionToTextFile);
+	EditorMenu_addCommand (menu, L"Save TextGrid as text file...", 'S', menu_cb_WriteToTextFile);
+	my writeSelectedTextGridButton = EditorMenu_addCommand (menu, L"Save selected TextGrid to text file...", 0, menu_cb_WriteSelectionToTextFile);
 }
 
 static int menu_cb_DrawVisibleTextGrid (EDITOR_ARGS) {
@@ -998,7 +999,7 @@ static int menu_cb_Find (EDITOR_ARGS) {
 	EDITOR_OK
 	EDITOR_DO
 		Melder_free (my findString);
-		my findString = Melder_wcsdup (GET_STRING (L"string"));
+		my findString = Melder_wcsdup_f (GET_STRING (L"string"));
 		do_find (me);
 	EDITOR_END
 }
@@ -1134,15 +1135,19 @@ static int menu_cb_RenameTier (EDITOR_ARGS) {
 
 static int menu_cb_PublishTier (EDITOR_ARGS) {
 	EDITOR_IAM (TextGridEditor);
+	TextGrid publish = NULL;
+//start:
 	TextGrid grid = my data;
-	if (! checkTierSelection (me, L"publish a tier")) return 0;
-
+	checkTierSelection (me, L"publish a tier"); cherror
 	if (my publishCallback) {
-		Data anyTier = grid -> tiers -> item [my selectedTier], copy = Data_copy (anyTier);
-		if (! copy) return 0;
-		Thing_setName (copy, anyTier -> name); 
-		my publishCallback (me, my publishClosure, copy);
+		Data tier = grid -> tiers -> item [my selectedTier];
+		publish = TextGrid_createWithoutTiers (1e30, -1e30); cherror
+		TextGrid_add (publish, tier); cherror
+		Thing_setName (publish, tier -> name); cherror
+		my publishCallback (me, my publishClosure, publish);
 	}
+end:
+	iferror return 0;
 	return 1;
 }
 
@@ -1356,8 +1361,6 @@ static void createMenus (TextGridEditor me) {
 	EditorMenu_addCommand (menu, L"Remove", GuiMenu_OPTION | GuiMenu_BACKSPACE, menu_cb_RemovePointOrBoundary);
 
 	menu = Editor_addMenu (me, L"Tier", 0);
-	EditorMenu_addCommand (menu, L"Copy tier to list of objects", 0, menu_cb_PublishTier);
-	EditorMenu_addCommand (menu, L"-- add tier --", 0, NULL);
 	EditorMenu_addCommand (menu, L"Add interval tier...", 0, menu_cb_AddIntervalTier);
 	EditorMenu_addCommand (menu, L"Add point tier...", 0, menu_cb_AddPointTier);
 	EditorMenu_addCommand (menu, L"Duplicate tier...", 0, menu_cb_DuplicateTier);
@@ -1365,6 +1368,9 @@ static void createMenus (TextGridEditor me) {
 	EditorMenu_addCommand (menu, L"-- remove tier --", 0, NULL);
 	EditorMenu_addCommand (menu, L"Remove all text from tier", 0, menu_cb_RemoveAllTextFromTier);
 	EditorMenu_addCommand (menu, L"Remove entire tier", 0, menu_cb_RemoveTier);
+	EditorMenu_addCommand (menu, L"-- extract tier --", 0, NULL);
+	EditorMenu_addCommand (menu, L"Extract to list of objects:", GuiMenu_INSENSITIVE, menu_cb_PublishTier /* dummy */);
+	EditorMenu_addCommand (menu, L"Extract entire selected tier", 0, menu_cb_PublishTier);
 
 	if (my spellingChecker) {
 		menu = Editor_addMenu (me, L"Spell", 0);
@@ -1413,7 +1419,7 @@ static void gui_text_cb_change (I, GuiTextEvent event) {
 				TextPoint point = textTier -> points -> item [selectedPoint];
 				Melder_free (point -> mark);
 				if (wcsspn (text, L" \n\t") != wcslen (text))   /* Any visible characters? */
-				point -> mark = Melder_wcsdup (text);
+				point -> mark = Melder_wcsdup_f (text);
 				FunctionEditor_redraw (TextGridEditor_as_FunctionEditor (me));
 				Editor_broadcastChange (TextGridEditor_as_Editor (me));
 			}
@@ -1455,7 +1461,7 @@ static void do_drawIntervalTier (TextGridEditor me, IntervalTier tier, int itier
 	#else
 		bool platformUsesAntiAliasing = false;
 	#endif
-	short x1DC, x2DC, yDC;
+	long x1DC, x2DC, yDC;
 	int selectedInterval = itier == my selectedTier ? getSelectedInterval (me) : 0, iinterval, ninterval = tier -> intervals -> size;
 	Graphics_WCtoDC (my graphics, my startWindow, 0.0, & x1DC, & yDC);
 	Graphics_WCtoDC (my graphics, my endWindow, 0.0, & x2DC, & yDC);
@@ -1828,15 +1834,19 @@ static void do_dragBoundary (TextGridEditor me, double xbegin, int iClickedTier,
 		}
 	}
 
-	Graphics_xorOn (my graphics, Graphics_MAGENTA);
+	Graphics_xorOn (my graphics, Graphics_MAROON);
 	Graphics_setTextAlignment (my graphics, Graphics_CENTRE, Graphics_BOTTOM);
-	do_drawWhileDragging (me, numberOfTiers, selectedTier, xWC, soundY);
+	do_drawWhileDragging (me, numberOfTiers, selectedTier, xWC, soundY);   // draw at old position
 	while (Graphics_mouseStillDown (my graphics)) {
-		do_drawWhileDragging (me, numberOfTiers, selectedTier, xWC, soundY);
-		Graphics_getMouseLocation (my graphics, & xWC, & yWC);
-		do_drawWhileDragging (me, numberOfTiers, selectedTier, xWC, soundY);
+		double xWC_new;
+		Graphics_getMouseLocation (my graphics, & xWC_new, & yWC);
+		if (xWC_new != xWC) {
+			do_drawWhileDragging (me, numberOfTiers, selectedTier, xWC, soundY);   // undraw at old position
+			xWC = xWC_new;
+			do_drawWhileDragging (me, numberOfTiers, selectedTier, xWC, soundY);   // draw at new position
+		}
 	}
-	do_drawWhileDragging (me, numberOfTiers, selectedTier, xWC, soundY);
+	do_drawWhileDragging (me, numberOfTiers, selectedTier, xWC, soundY);   // undraw at new position
 	Graphics_xorOff (my graphics);
 
 	/*
@@ -2304,7 +2314,7 @@ class_methods (TextGridEditor, TimeSoundAnalysisEditor) {
 
 /********** EXPORTED **********/
 
-TextGridEditor TextGridEditor_create (Widget parent, const wchar_t *title, TextGrid grid, Any sound, Any spellingChecker) {
+TextGridEditor TextGridEditor_create (GuiObject parent, const wchar_t *title, TextGrid grid, Any sound, Any spellingChecker) {
 	TextGridEditor me = new (TextGridEditor); cherror
 	my spellingChecker = spellingChecker;   // Set in time.
 

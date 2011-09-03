@@ -326,7 +326,7 @@ DO
 			GET_STRING (L"factors"), GET_STRING (L"columnsToSum"),
 			GET_STRING (L"columnsToAverage"), GET_STRING (L"columnsToMedianize"),
 			GET_STRING (L"columnsToAverageLogarithmically"), GET_STRING (L"columnsToMedianizeLogarithmically")),
-			NAMEW, L"_pooled")) return 0;
+			NAME, L"_pooled")) return 0;
 		praat_dataChanged (OBJECT);   // BUG: collapseRows should not change the original table overtly.
 	}
 END
@@ -414,7 +414,7 @@ DO
 		long icol = Table_getColumnIndexFromColumnLabel (me, GET_STRING (L"Extract all rows where column...")); cherror
 		if (! praat_new5 (Table_extractRowsWhereColumn_number (OBJECT,
 			icol, GET_ENUM (kMelder_number, L"...is..."), value),
-			NAMEW, L"_", Table_messageColumn (OBJECT, icol), L"_", NUMdefined (value) ? Melder_integer ((long) floor (value+0.5)) : L"undefined")) return 0;
+			NAME, L"_", Table_messageColumn (OBJECT, icol), L"_", NUMdefined (value) ? Melder_integer ((long) floor (value+0.5)) : L"undefined")) return 0;
 		praat_dataChanged (OBJECT);
 	}
 end:
@@ -432,7 +432,7 @@ DO
 		long icol = Table_getColumnIndexFromColumnLabel (me, GET_STRING (L"Extract all rows where column...")); cherror
 		if (! praat_new3 (Table_extractRowsWhereColumn_string (OBJECT,
 			icol, GET_ENUM (kMelder_string, L"..."), value),
-			NAMEW, L"_", value)) return 0;
+			NAME, L"_", value)) return 0;
 		praat_dataChanged (OBJECT);
 	}
 end:
@@ -610,15 +610,15 @@ DO
 END
 
 FORM_READ (Table_readFromTableFile, L"Read Table from table file", 0, true)
-	if (! praat_new1 (Table_readFromTableFile (file), MelderFile_name (file))) return 0;
+	if (! praat_newWithFile1 (Table_readFromTableFile (file), MelderFile_name (file), file)) return 0;
 END
 
 FORM_READ (Table_readFromCommaSeparatedFile, L"Read Table from comma-separated file", 0, true)
-	if (! praat_new1 (Table_readFromCharacterSeparatedTextFile (file, ','), MelderFile_name (file))) return 0;
+	if (! praat_newWithFile1 (Table_readFromCharacterSeparatedTextFile (file, ','), MelderFile_name (file), file)) return 0;
 END
 
 FORM_READ (Table_readFromTabSeparatedFile, L"Read Table from tab-separated file", 0, true)
-	if (! praat_new1 (Table_readFromCharacterSeparatedTextFile (file, '\t'), MelderFile_name (file))) return 0;
+	if (! praat_newWithFile1 (Table_readFromCharacterSeparatedTextFile (file, '\t'), MelderFile_name (file), file)) return 0;
 END
 
 FORM (Table_removeColumn, L"Table: Remove column", 0)
@@ -859,7 +859,7 @@ DO
 		long icol = Table_getColumnIndexFromColumnLabel (me, columnLabel); cherror
 		if (! praat_new2 (Table_rowsToColumns (OBJECT,
 			GET_STRING (L"factors"), icol, GET_STRING (L"columnsToExpand")),
-			NAMEW, L"_nested")) return 0;
+			NAME, L"_nested")) return 0;
 		praat_dataChanged (OBJECT);
 	}
 end:
@@ -1027,11 +1027,11 @@ DO
 	WHERE (SELECTED) {
 		Table me = OBJECT;
 		long icol = Table_findColumnIndexFromColumnLabel (me, GET_STRING (L"Column for row labels"));
-		if (! praat_new1 (Table_to_TableOfReal (OBJECT, icol), NAMEW)) return 0;
+		if (! praat_new1 (Table_to_TableOfReal (OBJECT, icol), NAME)) return 0;
 	}
 END
 
-FORM_WRITE (Table_writeToTableFile, L"Write Table to table file", 0, L"Table")
+FORM_WRITE (Table_writeToTableFile, L"Save Table as table file", 0, L"Table")
 	if (! Table_writeToTableFile (ONLY_OBJECT, file)) return 0;
 END
 
@@ -1130,7 +1130,7 @@ FORM (TableOfReal_extractColumnRanges, L"Extract column ranges", 0)
 	OK
 DO
 	WHERE (SELECTED) {
-		if (! praat_new2 (TableOfReal_extractColumnRanges (OBJECT, GET_STRING (L"ranges")), NAMEW, L"_cols")) return 0;
+		if (! praat_new2 (TableOfReal_extractColumnRanges (OBJECT, GET_STRING (L"ranges")), NAME, L"_cols")) return 0;
 	}
 END
 
@@ -1140,7 +1140,7 @@ FORM (TableOfReal_extractColumnsWhere, L"Extract columns where", 0)
 	OK
 DO
 	WHERE (SELECTED) {
-		if (! praat_new2 (TableOfReal_extractColumnsWhere (OBJECT, GET_STRING (L"condition"), interpreter), NAMEW, L"_cols")) return 0;
+		if (! praat_new2 (TableOfReal_extractColumnsWhere (OBJECT, GET_STRING (L"condition"), interpreter), NAME, L"_cols")) return 0;
 	}
 END
 
@@ -1153,7 +1153,7 @@ DO
 	WHERE (SELECTED) {
 		if (! praat_new3 (TableOfReal_extractColumnsWhereLabel (OBJECT,
 			GET_ENUM (kMelder_string, L"Extract all columns whose label..."), text),
-			NAMEW, L"_", text)) return 0;
+			NAME, L"_", text)) return 0;
 	}
 END
 
@@ -1168,7 +1168,7 @@ DO
 	WHERE (SELECTED) {
 		if (! praat_new5 (TableOfReal_extractColumnsWhereRow (OBJECT,
 			row, GET_ENUM (kMelder_number, L"...is..."), value),
-			NAMEW, L"_", Melder_integer (row), L"_", Melder_integer ((long) floor (value+0.5)))) return 0;
+			NAME, L"_", Melder_integer (row), L"_", Melder_integer ((long) floor (value+0.5)))) return 0;
 	}
 END
 
@@ -1183,7 +1183,7 @@ FORM (TableOfReal_extractRowRanges, L"Extract row ranges", 0)
 	OK
 DO
 	WHERE (SELECTED) {
-		if (! praat_new2 (TableOfReal_extractRowRanges (OBJECT, GET_STRING (L"ranges")), NAMEW, L"_rows")) return 0;
+		if (! praat_new2 (TableOfReal_extractRowRanges (OBJECT, GET_STRING (L"ranges")), NAME, L"_rows")) return 0;
 	}
 END
 
@@ -1193,7 +1193,7 @@ FORM (TableOfReal_extractRowsWhere, L"Extract rows where", 0)
 	OK
 DO
 	WHERE (SELECTED) {
-		if (! praat_new2 (TableOfReal_extractRowsWhere (OBJECT, GET_STRING (L"condition"), interpreter), NAMEW, L"_rows")) return 0;
+		if (! praat_new2 (TableOfReal_extractRowsWhere (OBJECT, GET_STRING (L"condition"), interpreter), NAME, L"_rows")) return 0;
 	}
 END
 
@@ -1208,7 +1208,7 @@ DO
 	WHERE (SELECTED) {
 		if (! praat_new5 (TableOfReal_extractRowsWhereColumn (OBJECT,
 			column, GET_ENUM (kMelder_number, L"...is..."), value),
-			NAMEW, L"_", Melder_integer (column), L"_", Melder_integer ((long) floor (value+0.5)))) return 0;
+			NAME, L"_", Melder_integer (column), L"_", Melder_integer ((long) floor (value+0.5)))) return 0;
 	}
 END
 
@@ -1221,7 +1221,7 @@ DO
 	WHERE (SELECTED) {
 		if (! praat_new3 (TableOfReal_extractRowsWhereLabel (OBJECT,
 			GET_ENUM (kMelder_string, L"Extract all rows whose label..."), text),
-			NAMEW, L"_", text)) return 0;
+			NAME, L"_", text)) return 0;
 	}
 END
 
@@ -1340,7 +1340,7 @@ DO
 END
 
 FORM_READ (TableOfReal_readFromHeaderlessSpreadsheetFile, L"Read TableOfReal from headerless spreadsheet file", 0, true)
-	if (! praat_new1 (TableOfReal_readFromHeaderlessSpreadsheetFile (file), MelderFile_name (file))) return 0;
+	if (! praat_newWithFile1 (TableOfReal_readFromHeaderlessSpreadsheetFile (file), MelderFile_name (file), file)) return 0;
 END
 
 FORM (TableOfReal_removeColumn, L"Remove column", 0)
@@ -1459,7 +1459,7 @@ DO
 	EVERY_TO (TableOfReal_to_Table (OBJECT, GET_STRING (L"Label of first column")))
 END
 
-FORM_WRITE (TableOfReal_writeToHeaderlessSpreadsheetFile, L"Write TableOfReal to spreadsheet", 0, L"txt")
+FORM_WRITE (TableOfReal_writeToHeaderlessSpreadsheetFile, L"Save TableOfReal as spreadsheet", 0, L"txt")
 	if (! TableOfReal_writeToHeaderlessSpreadsheetFile (ONLY_OBJECT, file)) return 0;
 END
 
@@ -1506,8 +1506,9 @@ static Any tabSeparatedFileRecognizer (int nread, const char *header, MelderFile
 
 void praat_TableOfReal_init (void *klas);   /* Buttons for TableOfReal and for its subclasses. */
 void praat_TableOfReal_init (void *klas) {
-	praat_addAction1 (klas, 1, L"Write to headerless spreadsheet file...", 0, 0, DO_TableOfReal_writeToHeaderlessSpreadsheetFile);
-	praat_addAction1 (klas, 0, L"Draw -                 ", 0, 0, 0);
+	praat_addAction1 (klas, 1, L"Save as headerless spreadsheet file...", 0, 0, DO_TableOfReal_writeToHeaderlessSpreadsheetFile);
+	praat_addAction1 (klas, 1, L"Write to headerless spreadsheet file...", 0, praat_HIDDEN, DO_TableOfReal_writeToHeaderlessSpreadsheetFile);
+	praat_addAction1 (klas, 0, L"Draw -", 0, 0, 0);
 		praat_addAction1 (klas, 0, L"Draw as numbers...", 0, 1, DO_TableOfReal_drawAsNumbers);
 		praat_addAction1 (klas, 0, L"Draw as numbers if...", 0, 1, DO_TableOfReal_drawAsNumbers_if);
 		praat_addAction1 (klas, 0, L"Draw as squares...", 0, 1, DO_TableOfReal_drawAsSquares);	
@@ -1516,7 +1517,7 @@ void praat_TableOfReal_init (void *klas) {
 		praat_addAction1 (klas, 0, L"Draw horizontal lines...", 0, 1, DO_TableOfReal_drawHorizontalLines);
 		praat_addAction1 (klas, 0, L"Draw left and right lines...", 0, 1, DO_TableOfReal_drawLeftAndRightLines);
 		praat_addAction1 (klas, 0, L"Draw top and bottom lines...", 0, 1, DO_TableOfReal_drawTopAndBottomLines);
-	praat_addAction1 (klas, 0, L"Query -                ", 0, 0, 0);
+	praat_addAction1 (klas, 0, L"Query -", 0, 0, 0);
 		praat_addAction1 (klas, 1, L"Get number of rows", 0, 1, DO_TableOfReal_getNumberOfRows);
 		praat_addAction1 (klas, 1, L"Get number of columns", 0, 1, DO_TableOfReal_getNumberOfColumns);
 		praat_addAction1 (klas, 1, L"Get row label...", 0, 1, DO_TableOfReal_getRowLabel);
@@ -1532,7 +1533,7 @@ void praat_TableOfReal_init (void *klas) {
 			praat_addAction1 (klas, 1, L"Get column stdev (index)...", 0, 1, DO_TableOfReal_getColumnStdev_index);
 			praat_addAction1 (klas, 1, L"Get column stdev (label)...", 0, 1, DO_TableOfReal_getColumnStdev_label);
 		}
-	praat_addAction1 (klas, 0, L"Modify -               ", 0, 0, 0);
+	praat_addAction1 (klas, 0, L"Modify -", 0, 0, 0);
 		praat_addAction1 (klas, 0, L"Formula...", 0, 1, DO_TableOfReal_formula);
 		praat_addAction1 (klas, 0, L"Set value...", 0, 1, DO_TableOfReal_setValue);
 		praat_addAction1 (klas, 0, L"Sort by label...", 0, 1, DO_TableOfReal_sortByLabel);
@@ -1547,7 +1548,7 @@ void praat_TableOfReal_init (void *klas) {
 		praat_addAction1 (klas, 0, L"Set row label (label)...", 0, 1, DO_TableOfReal_setRowLabel_label);
 		praat_addAction1 (klas, 0, L"Set column label (index)...", 0, 1, DO_TableOfReal_setColumnLabel_index);
 		praat_addAction1 (klas, 0, L"Set column label (label)...", 0, 1, DO_TableOfReal_setColumnLabel_label);
-	praat_addAction1 (klas, 0, L"Synthesize -     ", 0, 0, 0);
+	praat_addAction1 (klas, 0, L"Synthesize -", 0, 0, 0);
 		praat_addAction1 (klas, 0, L"Append", 0, 1, DO_TablesOfReal_append);
 	praat_addAction1 (klas, 0, L"Extract part -", 0, 0, 0);
 		praat_addAction1 (klas, 0, L"Extract row ranges...", 0, 1, DO_TableOfReal_extractRowRanges);
@@ -1561,7 +1562,7 @@ void praat_TableOfReal_init (void *klas) {
 	praat_addAction1 (klas, 0, L"Extract -", 0, 0, 0);
 		praat_addAction1 (klas, 0, L"Extract row labels as Strings", 0, 1, DO_TableOfReal_extractRowLabelsAsStrings);
 		praat_addAction1 (klas, 0, L"Extract column labels as Strings", 0, 1, DO_TableOfReal_extractColumnLabelsAsStrings);
-	praat_addAction1 (klas, 0, L"Convert -     ", 0, 0, 0);
+	praat_addAction1 (klas, 0, L"Convert -", 0, 0, 0);
 		praat_addAction1 (klas, 0, L"To Table...", 0, 1, DO_TableOfReal_to_Table);
 		praat_addAction1 (klas, 0, L"To Matrix", 0, 1, DO_TableOfReal_to_Matrix);
 }
@@ -1580,10 +1581,11 @@ void praat_uvafon_Stat_init (void) {
 		praat_addMenuCommand (L"Objects", L"New", L"Create Table...", 0, praat_DEPTH_1 + praat_HIDDEN, DO_Table_createWithoutColumnNames);
 		praat_addMenuCommand (L"Objects", L"New", L"Create TableOfReal...", 0, 1, DO_TableOfReal_create);
 
-	praat_addMenuCommand (L"Objects", L"Read", L"Read TableOfReal from headerless spreadsheet file...", 0, 0, DO_TableOfReal_readFromHeaderlessSpreadsheetFile);
-	praat_addMenuCommand (L"Objects", L"Read", L"Read Table from table file...", 0, 0, DO_Table_readFromTableFile);
-	praat_addMenuCommand (L"Objects", L"Read", L"Read Table from comma-separated file...", 0, 0, DO_Table_readFromCommaSeparatedFile);
-	praat_addMenuCommand (L"Objects", L"Read", L"Read Table from tab-separated file...", 0, 0, DO_Table_readFromTabSeparatedFile);
+	praat_addMenuCommand (L"Objects", L"Open", L"Read TableOfReal from headerless spreadsheet file...", 0, 0, DO_TableOfReal_readFromHeaderlessSpreadsheetFile);
+	praat_addMenuCommand (L"Objects", L"Open", L"Read Table from tab-separated file...", 0, 0, DO_Table_readFromTabSeparatedFile);
+	praat_addMenuCommand (L"Objects", L"Open", L"Read Table from comma-separated file...", 0, 0, DO_Table_readFromCommaSeparatedFile);
+	praat_addMenuCommand (L"Objects", L"Open", L"Read Table from whitespace-separated file...", 0, 0, DO_Table_readFromTableFile);
+	praat_addMenuCommand (L"Objects", L"Open", L"Read Table from table file...", 0, praat_HIDDEN, DO_Table_readFromTableFile);
 
 	praat_addAction1 (classDistributions, 0, L"Distributions help", 0, 0, DO_Distributions_help);
 	praat_TableOfReal_init (classDistributions);
@@ -1601,7 +1603,7 @@ void praat_uvafon_Stat_init (void) {
 	praat_addAction1 (classPairDistribution, 0, L"PairDistribution help", 0, 0, DO_PairDistribution_help);
 	praat_addAction1 (classPairDistribution, 0, L"To Table", 0, 0, DO_PairDistribution_to_Table);
 	praat_addAction1 (classPairDistribution, 1, L"To Stringses...", 0, 0, DO_PairDistribution_to_Stringses);
-	praat_addAction1 (classPairDistribution, 0, L"Query -          ", 0, 0, 0);
+	praat_addAction1 (classPairDistribution, 0, L"Query -", 0, 0, 0);
 		praat_addAction1 (classPairDistribution, 1, L"Get number of pairs", 0, 1, DO_PairDistribution_getNumberOfPairs);
 		praat_addAction1 (classPairDistribution, 1, L"Get string1...", 0, 1, DO_PairDistribution_getString1);
 		praat_addAction1 (classPairDistribution, 1, L"Get string2...", 0, 1, DO_PairDistribution_getString2);
@@ -1609,17 +1611,20 @@ void praat_uvafon_Stat_init (void) {
 		praat_addAction1 (classPairDistribution, 1, L"-- get fraction correct --", 0, 1, 0);
 		praat_addAction1 (classPairDistribution, 1, L"Get fraction correct (maximum likelihood)", 0, 1, DO_PairDistribution_getFractionCorrect_maximumLikelihood);
 		praat_addAction1 (classPairDistribution, 1, L"Get fraction correct (probability matching)", 0, 1, DO_PairDistribution_getFractionCorrect_probabilityMatching);
-	praat_addAction1 (classPairDistribution, 0, L"Modify -          ", 0, 0, 0);
+	praat_addAction1 (classPairDistribution, 0, L"Modify -", 0, 0, 0);
 	praat_addAction1 (classPairDistribution, 1, L"Remove zero weights", 0, 0, DO_PairDistribution_removeZeroWeights);
 
 	praat_addAction1 (classTable, 0, L"Table help", 0, 0, DO_Table_help);
-	praat_addAction1 (classTable, 1, L"Write to table file...", 0, 0, DO_Table_writeToTableFile);
-	praat_addAction1 (classTable, 1, L"Edit", 0, 0, DO_Table_edit);
-	praat_addAction1 (classTable, 0, L"Draw -                ", 0, 0, 0);
+	praat_addAction1 (classTable, 1, L"Save as tab-separated file...", 0, 0, DO_Table_writeToTableFile);
+	praat_addAction1 (classTable, 1, L"Save as table file...", 0, praat_HIDDEN, DO_Table_writeToTableFile);
+	praat_addAction1 (classTable, 1, L"Write to table file...", 0, praat_HIDDEN, DO_Table_writeToTableFile);
+	praat_addAction1 (classTable, 1, L"View & Edit", 0, praat_ATTRACTIVE, DO_Table_edit);
+	praat_addAction1 (classTable, 1, L"Edit", 0, praat_HIDDEN, DO_Table_edit);
+	praat_addAction1 (classTable, 0, L"Draw -", 0, 0, 0);
 		praat_addAction1 (classTable, 0, L"Scatter plot...", 0, 1, DO_Table_scatterPlot);
 		praat_addAction1 (classTable, 0, L"Scatter plot (mark)...", 0, 1, DO_Table_scatterPlot_mark);
 		praat_addAction1 (classTable, 0, L"Draw ellipse (standard deviation)...", 0, 1, DO_Table_drawEllipse);
-	praat_addAction1 (classTable, 0, L"Query -                ", 0, 0, 0);
+	praat_addAction1 (classTable, 0, L"Query -", 0, 0, 0);
 		praat_addAction1 (classTable, 1, L"List...", 0, 1, DO_Table_list);
 		praat_addAction1 (classTable, 1, L"-- get structure --", 0, 1, 0);
 		praat_addAction1 (classTable, 1, L"Get number of rows", 0, 1, DO_Table_getNumberOfRows);
@@ -1647,7 +1652,7 @@ void praat_uvafon_Stat_init (void) {
 		praat_addAction1 (classTable, 1, L"Report group difference (Wilcoxon rank sum)...", 0, 1, DO_Table_reportGroupDifference_wilcoxonRankSum);
 		praat_addAction1 (classTable, 1, L"Report correlation (Pearson r)...", 0, 1, DO_Table_reportCorrelation_pearsonR);
 		praat_addAction1 (classTable, 1, L"Report correlation (Kendall tau)...", 0, 1, DO_Table_reportCorrelation_kendallTau);
-	praat_addAction1 (classTable, 0, L"Modify -        ", 0, 0, 0);
+	praat_addAction1 (classTable, 0, L"Modify -", 0, 0, 0);
 		praat_addAction1 (classTable, 0, L"Set string value...", 0, 1, DO_Table_setStringValue);
 		praat_addAction1 (classTable, 0, L"Set numeric value...", 0, 1, DO_Table_setNumericValue);
 		praat_addAction1 (classTable, 0, L"Formula...", 0, 1, DO_Table_formula);
@@ -1668,14 +1673,14 @@ void praat_uvafon_Stat_init (void) {
 		praat_addAction1 (classTable, 0, L"-- set --", 0, 1, 0);
 		praat_addAction1 (classTable, 0, L"Set column label (index)...", 0, 1, DO_Table_setColumnLabel_index);
 		praat_addAction1 (classTable, 0, L"Set column label (label)...", 0, 1, DO_Table_setColumnLabel_label);
-	praat_addAction1 (classTable, 0, L"Analyse -      ", 0, 0, 0);
+	praat_addAction1 (classTable, 0, L"Analyse -", 0, 0, 0);
 		praat_addAction1 (classTable, 0, L"To linear regression", 0, 1, DO_Table_to_LinearRegression);
 		praat_addAction1 (classTable, 0, L"To logistic regression...", 0, 1, DO_Table_to_LogisticRegression);
-	praat_addAction1 (classTable, 0, L"Synthesize -     ", 0, 0, 0);
+	praat_addAction1 (classTable, 0, L"Synthesize -", 0, 0, 0);
 		praat_addAction1 (classTable, 0, L"Append", 0, 1, DO_Tables_append);
-	praat_addAction1 (classTable, 0, L"Generate -      ", 0, 0, 0);
+	praat_addAction1 (classTable, 0, L"Generate -", 0, 0, 0);
 		praat_addAction1 (classTable, 1, L"Draw row from distribution...", 0, 1, DO_Table_drawRowFromDistribution);
-	praat_addAction1 (classTable, 0, L"Extract -     ", 0, 0, 0);
+	praat_addAction1 (classTable, 0, L"Extract -", 0, 0, 0);
 		praat_addAction1 (classTable, 0, L"Extract rows where column (number)...", 0, 1, DO_Table_extractRowsWhereColumn_number);
 		praat_addAction1 (classTable, 0, L"Extract rows where column...", 0, praat_DEPTH_1 + praat_HIDDEN, DO_Table_extractRowsWhereColumn_number);
 		praat_addAction1 (classTable, 0, L"Select rows where column...", 0, praat_DEPTH_1 + praat_HIDDEN, DO_Table_extractRowsWhereColumn_number);

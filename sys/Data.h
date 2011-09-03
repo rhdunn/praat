@@ -2,7 +2,7 @@
 #define _Data_h_
 /* Data.h
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,13 +20,17 @@
  */
 
 /*
- * pb 2008/11/04
+ * pb 2011/03/02
  */
 
 /* Data inherits from Thing. */
 /* It adds the functionality of reproduction, comparison, reading, and writing. */
 #ifndef _Thing_h_
 	#include "Thing.h"
+#endif
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 Any Data_copy (I);
@@ -368,16 +372,14 @@ class_create (Data, Thing);
 #define lenumwa  17
 #define booleanwa  18
 #define questionwa  19
-#define stringwa  20
-#define stringwwa  21
-#define lstringwa  22
-#define lstringwwa  23
+#define stringwwa  20
+#define lstringwwa  21
 #define maxsingletypewa lstringwwa
-#define structwa  24
-#define widgetwa  25
-#define objectwa  26
-#define collectionwa  27
-#define inheritwa  28
+#define structwa  22
+#define widgetwa  23
+#define objectwa  24
+#define collectionwa  25
+#define inheritwa  26
 
 /* Recursive routines for working with struct members. */
 
@@ -468,6 +470,10 @@ Behaviour:
 */
 
 extern structMelderDir Data_directoryBeingRead;
+
+#ifdef __cplusplus
+	}
+#endif
 
 /* End of file Data.h */
 #endif

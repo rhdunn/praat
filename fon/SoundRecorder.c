@@ -82,14 +82,14 @@
 struct SoundRecorder_Device {
 	wchar_t name [1+40];
 	bool canDo;
-	Widget button;
+	GuiObject button;
 };
 #define SoundRecorder_IDEVICE_MAX  8
 
 struct SoundRecorder_Fsamp {
 	double fsamp;
 	bool canDo;
-	Widget button;
+	GuiObject button;
 };
 #define SoundRecorder_IFSAMP_8000  1
 #define SoundRecorder_IFSAMP_9800  2
@@ -116,9 +116,9 @@ struct SoundRecorder_Fsamp {
 	struct SoundRecorder_Device device [1+SoundRecorder_IDEVICE_MAX]; \
 	struct SoundRecorder_Fsamp fsamp [1+SoundRecorder_IFSAMP_MAX]; \
 	short *buffer; \
-	Widget monoButton, stereoButton, meter; \
-	Widget progressScale, recordButton, stopButton, playButton; \
-	Widget soundName, cancelButton, applyButton, okButton; \
+	GuiObject monoButton, stereoButton, meter; \
+	GuiObject progressScale, recordButton, stopButton, playButton; \
+	GuiObject soundName, cancelButton, applyButton, okButton; \
 	Graphics graphics; \
 	bool inputUsesPortAudio; \
 	const PaDeviceInfo *deviceInfos [1+SoundRecorder_IDEVICE_MAX]; \
@@ -866,7 +866,7 @@ static void gui_button_cb_apply (I, GuiButtonEvent event) {
 	stopRecording (me);
 	publish (me);
 }
-static void gui_cb_apply (Widget widget, XtPointer void_me, XtPointer call) {
+static void gui_cb_apply (GuiObject widget, XtPointer void_me, XtPointer call) {
 	(void) widget;
 	(void) call;
 	iam (SoundRecorder);
@@ -1239,12 +1239,12 @@ static void gui_drawingarea_cb_resize (I, GuiDrawingAreaResizeEvent event) {
 }
 
 static void createChildren (SoundRecorder me) {
-	Widget form, channels, inputSources, meterBox, recstopplayBox, nameBox, fsampBox, dlgCtrlBox;
+	GuiObject form, channels, inputSources, meterBox, recstopplayBox, nameBox, fsampBox, dlgCtrlBox;
 	
 	#if gtk
 		form = my dialog;
-		Widget hbox1 = gtk_hbox_new(FALSE, 3);		// contains {Channels, Input source}, Meter, Sampling freq
-		Widget hbox2 = gtk_hbox_new(TRUE, 3); 		// contains {slider, {Record, Stop}}, {Name, label}
+		GuiObject hbox1 = gtk_hbox_new(FALSE, 3);		// contains {Channels, Input source}, Meter, Sampling freq
+		GuiObject hbox2 = gtk_hbox_new(TRUE, 3); 		// contains {slider, {Record, Stop}}, {Name, label}
 		gtk_box_pack_start(GTK_BOX(form), hbox1, TRUE, TRUE, 3);
 		gtk_box_pack_start(GTK_BOX(form), hbox2, FALSE, FALSE, 3);
 	#elif motif
@@ -1261,9 +1261,9 @@ static void createChildren (SoundRecorder me) {
 	#endif
 	
 	#if gtk
-		Widget h1vbox = gtk_vbox_new(FALSE, 3);
+		GuiObject h1vbox = gtk_vbox_new(FALSE, 3);
 		gtk_box_pack_start(GTK_BOX(hbox1), h1vbox, FALSE, FALSE, 3);
-		Widget channels_frame = gtk_frame_new("Channels");
+		GuiObject channels_frame = gtk_frame_new("Channels");
 		gtk_box_pack_start(GTK_BOX(h1vbox), channels_frame, FALSE, FALSE, 3);
 		channels = gtk_vbox_new(TRUE, 3);
 		gtk_container_add(GTK_CONTAINER(channels_frame), channels);
@@ -1287,7 +1287,7 @@ static void createChildren (SoundRecorder me) {
 	#if gtk
 		GuiRadioButton_setGroup(my stereoButton, GuiRadioButton_getGroup(my monoButton));
 		
-		Widget input_sources_frame = gtk_frame_new("Input source");
+		GuiObject input_sources_frame = gtk_frame_new("Input source");
 		gtk_box_pack_start(GTK_BOX(h1vbox), input_sources_frame, FALSE, FALSE, 3);
 		inputSources = gtk_vbox_new(TRUE, 3);
 		gtk_container_add(GTK_CONTAINER(input_sources_frame), inputSources);
@@ -1329,8 +1329,8 @@ static void createChildren (SoundRecorder me) {
 	#if gtk
 		gtk_widget_set_double_buffered(my meter, FALSE);
 		
-		Widget h1vbox2 = gtk_vbox_new(FALSE, 3);
-		Widget fsampBox_frame = gtk_frame_new("Sampling frequency");
+		GuiObject h1vbox2 = gtk_vbox_new(FALSE, 3);
+		GuiObject fsampBox_frame = gtk_frame_new("Sampling frequency");
 		fsampBox = gtk_vbox_new(TRUE, 3);
 		GSList *fsamp_radio_list = NULL;
 		
@@ -1364,7 +1364,7 @@ static void createChildren (SoundRecorder me) {
 	GuiObject_show (fsampBox);
 	
 	#if gtk
-		Widget h2vbox = gtk_vbox_new(FALSE, 3);
+		GuiObject h2vbox = gtk_vbox_new(FALSE, 3);
 		gtk_box_pack_start(GTK_BOX(hbox2), h2vbox, TRUE, TRUE, 3);
 		
 		my progressScale = gtk_hscrollbar_new(NULL);
@@ -1449,31 +1449,40 @@ static void createChildren (SoundRecorder me) {
 	#endif
 }
 
-static int writeAudioFile (SoundRecorder me, MelderFile file, int audioFileType) {
-	if (my fakeMono) {
-		long nsamp = my nsamp / 2;
-		MelderFile_create (file, Melder_macAudioFileType (audioFileType), L"PpgB", Melder_winAudioFileExtension (audioFileType));
-		if (file -> filePointer) {
-			MelderFile_writeAudioFileHeader16 (file, audioFileType, theControlPanel. sampleRate, nsamp, 1);
-			if (Melder_defaultAudioFileEncoding16 (audioFileType) == Melder_LINEAR_16_BIG_ENDIAN) {
-				for (long i = 0; i < nsamp; i ++)
-					binputi2 ((my buffer [i + i - 2] + my buffer [i + i - 1]) / 2, file -> filePointer);
-			} else {
-				for (long i = 0; i < nsamp; i ++)
-					binputi2LE ((my buffer [i + i - 2] + my buffer [i + i - 1]) / 2, file -> filePointer);
-			}
+static void writeFakeMonoFile_e (SoundRecorder me, MelderFile file, int audioFileType) {
+	//file -> filePointer = NULL;
+//start:
+	long nsamp = my nsamp / 2;
+	MelderFile_create (file, Melder_macAudioFileType (audioFileType), L"PpgB", Melder_winAudioFileExtension (audioFileType));
+	if (file -> filePointer) {
+		MelderFile_writeAudioFileHeader16_e (file, audioFileType, theControlPanel. sampleRate, nsamp, 1); cherror
+		if (Melder_defaultAudioFileEncoding16 (audioFileType) == Melder_LINEAR_16_BIG_ENDIAN) {
+			for (long i = 0; i < nsamp; i ++)
+				binputi2 ((my buffer [i + i - 2] + my buffer [i + i - 1]) / 2, file -> filePointer);
+		} else {
+			for (long i = 0; i < nsamp; i ++)
+				binputi2LE ((my buffer [i + i - 2] + my buffer [i + i - 1]) / 2, file -> filePointer);
 		}
-		MelderFile_close (file);
+	}
+end:
+	MelderFile_close (file);
+}
+
+static int writeAudioFile (SoundRecorder me, MelderFile file, int audioFileType) {
+//start:
+	if (my fakeMono) {
+		writeFakeMonoFile_e (me, file, audioFileType); cherror
 	} else {
 		MelderFile_writeAudioFile16 (file, audioFileType, my buffer, theControlPanel. sampleRate, my nsamp, my numberOfChannels);
 	}
+end:
 	iferror return Melder_error1 (L"Audio file not written.");
 	return 1;
 }
 
 static int menu_cb_writeWav (EDITOR_ARGS) {
 	EDITOR_IAM (SoundRecorder);
-	EDITOR_FORM_WRITE (L"Write to WAV file", 0)
+	EDITOR_FORM_WRITE (L"Save as WAV file", 0)
 		wchar_t *name = GuiText_getString (my soundName);
 		swprintf (defaultName, 300, L"%ls.wav", name);
 		Melder_free (name);
@@ -1484,7 +1493,7 @@ static int menu_cb_writeWav (EDITOR_ARGS) {
 
 static int menu_cb_writeAifc (EDITOR_ARGS) {
 	EDITOR_IAM (SoundRecorder);
-	EDITOR_FORM_WRITE (L"Write to AIFC file", 0)
+	EDITOR_FORM_WRITE (L"Save as AIFC file", 0)
 		wchar_t *name = GuiText_getString (my soundName);
 		swprintf (defaultName, 300, L"%ls.aifc", name);
 		Melder_free (name);
@@ -1495,7 +1504,7 @@ static int menu_cb_writeAifc (EDITOR_ARGS) {
 
 static int menu_cb_writeNextSun (EDITOR_ARGS) {
 	EDITOR_IAM (SoundRecorder);
-	EDITOR_FORM_WRITE (L"Write to NeXT/Sun file", 0)
+	EDITOR_FORM_WRITE (L"Save as NeXT/Sun file", 0)
 		wchar_t *name = GuiText_getString (my soundName);
 		swprintf (defaultName, 300, L"%ls.au", name);
 		Melder_free (name);
@@ -1506,7 +1515,7 @@ static int menu_cb_writeNextSun (EDITOR_ARGS) {
 
 static int menu_cb_writeNist (EDITOR_ARGS) {
 	EDITOR_IAM (SoundRecorder);
-	EDITOR_FORM_WRITE (L"Write to NIST file", 0)
+	EDITOR_FORM_WRITE (L"Save as NIST file", 0)
 		wchar_t *name = GuiText_getString (my soundName);
 		swprintf (defaultName, 300, L"%ls.nist", name);
 		Melder_free (name);
@@ -1519,10 +1528,10 @@ static int menu_cb_SoundRecorder_help (EDITOR_ARGS) { EDITOR_IAM (SoundRecorder)
 
 static void createMenus (SoundRecorder me) {
 	inherited (SoundRecorder) createMenus (SoundRecorder_as_parent (me));
-	Editor_addCommand (me, L"File", L"Write to WAV file...", 0, menu_cb_writeWav);
-	Editor_addCommand (me, L"File", L"Write to AIFC file...", 0, menu_cb_writeAifc);
-	Editor_addCommand (me, L"File", L"Write to NeXT/Sun file...", 0, menu_cb_writeNextSun);
-	Editor_addCommand (me, L"File", L"Write to NIST file...", 0, menu_cb_writeNist);
+	Editor_addCommand (me, L"File", L"Save as WAV file...", 0, menu_cb_writeWav);
+	Editor_addCommand (me, L"File", L"Save as AIFC file...", 0, menu_cb_writeAifc);
+	Editor_addCommand (me, L"File", L"Save as NeXT/Sun file...", 0, menu_cb_writeNextSun);
+	Editor_addCommand (me, L"File", L"Save as NIST file...", 0, menu_cb_writeNist);
 	Editor_addCommand (me, L"File", L"-- write --", 0, 0);
 }
 
@@ -1541,7 +1550,7 @@ class_methods (SoundRecorder, Editor) {
 	class_methods_end
 }
 
-SoundRecorder SoundRecorder_create (Widget parent, int numberOfChannels, void *applicationContext) {
+SoundRecorder SoundRecorder_create (GuiObject parent, int numberOfChannels, void *applicationContext) {
 	SoundRecorder me = new (SoundRecorder);
 	my inputUsesPortAudio = MelderAudio_getInputUsesPortAudio ();
 

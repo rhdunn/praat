@@ -41,8 +41,8 @@
 #define praat_MAXNUM_LOOSE_COMMANDS  5000
 static long theNumberOfActions = 0;
 static struct structPraat_Command *theActions;
-static Widget praat_writeMenuTitle, praat_writeMenu, praat_writeMenuSeparator;
-static Widget praat_dynamicMenu, praat_dynamicMenuWindow;
+static GuiObject praat_writeMenuTitle, praat_writeMenu, praat_writeMenuSeparator;
+static GuiObject praat_dynamicMenu, praat_dynamicMenuWindow;
 
 static void fixSelectionSpecification (void **class1, int *n1, void **class2, int *n2, void **class3, int *n3) {
 /*
@@ -115,14 +115,15 @@ void praat_addAction4 (void *class1, int n1, void *class2, int n2, void *class3,
 	const wchar_t *title, const wchar_t *after, unsigned long flags, int (*callback) (UiForm, const wchar_t *, Interpreter, const wchar_t *, bool, void *))
 {
 	int i, position;
-	int depth = flags, unhidable = FALSE, hidden = FALSE, key = 0;
+	int depth = flags, unhidable = FALSE, hidden = FALSE, key = 0, attractive = 0;
 	unsigned long motifFlags = 0;
 	if (flags > 7) {
 		depth = ((flags & praat_DEPTH_7) >> 16);
 		unhidable = (flags & praat_UNHIDABLE) != 0;
 		hidden = (flags & praat_HIDDEN) != 0 && ! unhidable;
 		key = flags & 0x000000FF;
-		motifFlags = key ? flags & 0x00201FFF : flags & 0x00001F00;
+		motifFlags = key ? flags & (0x002000FF | GuiMenu_BUTTON_STATE_MASK) : flags & GuiMenu_BUTTON_STATE_MASK;
+		attractive = (motifFlags & praat_ATTRACTIVE) != 0;
 	}
 	fixSelectionSpecification (& class1, & n1, & class2, & n2, & class3, & n3);
 
@@ -178,13 +179,14 @@ void praat_addAction4 (void *class1, int n1, void *class2, int n2, void *class3,
 	theActions [position]. n3 = n3;
 	theActions [position]. class4 = class4;
 	theActions [position]. n4 = n4;
-	theActions [position]. title = Melder_wcsdup (title);
+	theActions [position]. title = Melder_wcsdup_f (title);
 	theActions [position]. depth = depth;
 	theActions [position]. callback = callback;   /* NULL for a separator. */
 	theActions [position]. button = NULL;
 	theActions [position]. script = NULL;
 	theActions [position]. hidden = hidden;
 	theActions [position]. unhidable = unhidable;
+	theActions [position]. attractive = attractive;
 }
 
 static void deleteDynamicMenu (void) {
@@ -206,7 +208,7 @@ static void deleteDynamicMenu (void) {
 				praat_writeMenu = gtk_menu_new ();
 				gtk_menu_item_set_submenu (GTK_MENU_ITEM (praat_writeMenuTitle), praat_writeMenu);
 			#elif motif
-				praat_writeMenu = XmCreatePulldownMenu (praatP.menuBar, "Write", NULL, 0);
+				praat_writeMenu = XmCreatePulldownMenu (praatP.menuBar, "Save", NULL, 0);
 				XtVaSetValues (praat_writeMenuTitle, XmNsubMenuId, praat_writeMenu, NULL);
 			#endif
 		}
@@ -279,7 +281,7 @@ int praat_addActionScript (const wchar_t *className1, int n1, const wchar_t *cla
 	theActions [position]. n2 = n2;
 	theActions [position]. class3 = class3;
 	theActions [position]. n3 = n3;
-	theActions [position]. title = wcslen (title) ? Melder_wcsdup (title) : NULL;   /* Allow old-fashioned untitled separators. */
+	theActions [position]. title = wcslen (title) ? Melder_wcsdup_f (title) : NULL;   /* Allow old-fashioned untitled separators. */
 	theActions [position]. depth = depth;
 	theActions [position]. callback = wcslen (script) ? DO_RunTheScriptFromAnyAddedMenuCommand : NULL;   /* NULL for a separator. */
 	theActions [position]. button = NULL;
@@ -288,9 +290,9 @@ int praat_addActionScript (const wchar_t *className1, int n1, const wchar_t *cla
 	} else {
 		structMelderFile file = { 0 };
 		Melder_relativePathToFile (script, & file);
-		theActions [position]. script = Melder_wcsdup (Melder_fileToPath (& file));
+		theActions [position]. script = Melder_wcsdup_f (Melder_fileToPath (& file));
 	}
-	theActions [position]. after = wcslen (after) ? Melder_wcsdup (after) : NULL;
+	theActions [position]. after = wcslen (after) ? Melder_wcsdup_f (after) : NULL;
 	theActions [position]. phase = praatP.phase;
 	if (praatP.phase >= praat_READING_BUTTONS) {
 		static long uniqueID = 0;
@@ -522,7 +524,7 @@ static void gui_button_cb_menu (I, GuiButtonEvent event) {
 void praat_actions_show (void) {
 	long i;
 	#if motif
-		Widget buttons [1000], writeButtons [50];
+		GuiObject buttons [1000], writeButtons [50];
 	#endif
 
 	/* The selection has changed;
@@ -549,7 +551,7 @@ void praat_actions_show (void) {
 						#elif motif
 							buttons [nbuttons ++] = my button;
 						#endif
-					else if (my title && (wcsnequ (my title, L"Write ", 6) || wcsnequ (my title, L"Append to ", 10)))
+					else if (my title && (wcsnequ (my title, L"Save ", 5) || wcsnequ (my title, L"Write ", 6) || wcsnequ (my title, L"Append to ", 10)))
 						#if gtk
 							GuiObject_hide (my button);
 						#elif motif
@@ -603,7 +605,7 @@ void praat_actions_show (void) {
 
 	/* Create a new column of buttons in the dynamic menu. */
 	if (! theCurrentPraatApplication -> batch && ! Melder_backgrounding) {
-		Widget currentSubmenu1 = NULL, currentSubmenu2 = NULL;
+		GuiObject currentSubmenu1 = NULL, currentSubmenu2 = NULL;
 		int writeMenuGoingToSeparate = FALSE;
 		#if motif
 			int nbuttons = 0, nwriteButtons = 0;
@@ -612,7 +614,7 @@ void praat_actions_show (void) {
 			#if gtk
 				praat_dynamicMenu = gtk_vbutton_box_new ();
 				gtk_button_box_set_layout (GTK_BUTTON_BOX (praat_dynamicMenu), GTK_BUTTONBOX_START);
-				Widget viewport = gtk_bin_get_child (GTK_BIN (praat_dynamicMenuWindow));
+				GuiObject viewport = gtk_bin_get_child (GTK_BIN (praat_dynamicMenuWindow));
 				gtk_container_add (GTK_CONTAINER (viewport), praat_dynamicMenu);
 			#elif motif
 				praat_dynamicMenu = XmCreateRowColumn (praat_dynamicMenuWindow, "menu", NULL, 0);
@@ -629,13 +631,13 @@ void praat_actions_show (void) {
 				 * but only if this exists (umbrella against stray submenu specifications).
 				 */
 				if (! my button) {
-					Widget parent = my depth > 1 && currentSubmenu2 ? currentSubmenu2 : my depth > 0 && currentSubmenu1 ? currentSubmenu1 : praat_dynamicMenu;
-					if (wcsnequ (my title, L"Write ", 6) || wcsnequ (my title, L"Append to ", 10)) {
+					GuiObject parent = my depth > 1 && currentSubmenu2 ? currentSubmenu2 : my depth > 0 && currentSubmenu1 ? currentSubmenu1 : praat_dynamicMenu;
+					if (wcsnequ (my title, L"Save ", 5) || wcsnequ (my title, L"Write ", 6) || wcsnequ (my title, L"Append to ", 10)) {
 						parent = praat_writeMenu;
 						if (! praat_writeMenuSeparator) {
 							if (writeMenuGoingToSeparate)
 								praat_writeMenuSeparator = GuiMenu_addSeparator (parent);
-							else if (wcsequ (my title, L"Write to binary file..."))
+							else if (wcsequ (my title, L"Save as binary file..."))
 								writeMenuGoingToSeparate = TRUE;
 						}
 					}
@@ -654,7 +656,7 @@ void praat_actions_show (void) {
 							#endif
 							my title, gui_button_cb_menu,
 							my callback == DO_RunTheScriptFromAnyAddedMenuCommand ? (void *) my script : (void *) my callback,
-								( my executable ? 0 : GuiButton_INSENSITIVE ));
+								( my executable ? 0 : GuiButton_INSENSITIVE ) | ( my attractive ? GuiButton_ATTRACTIVE : 0 ));
 						#if gtk
 							/* Dit soort onzin zou eigenlijk in GuiButton moeten */
 							gtk_button_set_alignment (GTK_BUTTON (my button), 0.0f, 0.5f);
@@ -665,12 +667,12 @@ void praat_actions_show (void) {
 							cb_menu,
 							my callback == DO_RunTheScriptFromAnyAddedMenuCommand ? (void *) my script : (void *) my callback);
 					}
-				} else if (wcsnequ (my title, L"Write ", 6) || wcsnequ (my title, L"Append to ", 10)) {
+				} else if (wcsnequ (my title, L"Save ", 5) || wcsnequ (my title, L"Write ", 6) || wcsnequ (my title, L"Append to ", 10)) {
 					if (writeMenuGoingToSeparate) {
 						if (! praat_writeMenuSeparator)
 							praat_writeMenuSeparator = GuiMenu_addSeparator (praat_writeMenu);
 						GuiObject_show (praat_writeMenuSeparator);
-					} else if (wcsequ (my title, L"Write to binary file...")) {
+					} else if (wcsequ (my title, L"Save as binary file...")) {
 						writeMenuGoingToSeparate = TRUE;
 					}
 					#if motif
@@ -726,7 +728,7 @@ void praat_actions_show (void) {
 							/* Dit soort onzin zou eigenlijk in GuiButton moeten */
 							gtk_button_set_alignment (GTK_BUTTON (my button), 0.0f, 0.5f);
 						#elif motif
-							Widget cascadeButton;
+							GuiObject cascadeButton;
 							my button = XmCreateMenuBar (praat_dynamicMenu, "dynamicSubmenuBar", 0, 0);
 							currentSubmenu1 = GuiMenuBar_addMenu2 (my button, my title, 0, & cascadeButton);
 						#endif
@@ -745,7 +747,7 @@ void praat_actions_show (void) {
 				} else {
 					if (GuiObject_parent (my button) == praat_dynamicMenu)
 						#if gtk
-							GuiObject_show(my button);
+							GuiObject_show (my button);
 						#elif motif
 							buttons [nbuttons++] = my button;
 						#endif
@@ -760,27 +762,23 @@ void praat_actions_show (void) {
 	}
 }
 
-void praat_actions_createWriteMenu (Widget bar) {
+void praat_actions_createWriteMenu (GuiObject bar) {
 	if (theCurrentPraatApplication -> batch) return;
-	// RFC: korter dus beter?
-	// Vraag: ik zie dat er twee keer een Menu Write wordt gedaan. Waar is dat goed voor?
-	// De eerste is de menu-knop, de tweede het menu zelf (de naam daarvan is irrelevant).
-	// TODO: writeMenu -> writeMenuTitle gedaan
 	#if gtk
-		praat_writeMenu = GuiMenuBar_addMenu2 (bar, L"Write", GuiMenu_INSENSITIVE, &praat_writeMenuTitle);
+		praat_writeMenu = GuiMenuBar_addMenu2 (bar, L"Save", GuiMenu_INSENSITIVE, & praat_writeMenuTitle);
 	#elif motif
-		praat_writeMenuTitle = XtVaCreateManagedWidget ("Write", xmCascadeButtonWidgetClass, bar, NULL);
-		praat_writeMenu = XmCreatePulldownMenu (bar, "Write", NULL, 0);
+		praat_writeMenuTitle = XtVaCreateManagedWidget ("Save", xmCascadeButtonWidgetClass, bar, NULL);
+		praat_writeMenu = XmCreatePulldownMenu (bar, "Save", NULL, 0);   // the name is irrelevant
 		XtVaSetValues (praat_writeMenuTitle, XmNsubMenuId, praat_writeMenu, NULL);
 	#endif
 	GuiObject_setSensitive (praat_writeMenuTitle, False);
 }
 
 void praat_actions_init (void) {
-	theActions = Melder_calloc (struct structPraat_Command, praat_MAXNUM_LOOSE_COMMANDS + 1);
+	theActions = Melder_calloc_f (struct structPraat_Command, praat_MAXNUM_LOOSE_COMMANDS + 1);
 }
 
-void praat_actions_createDynamicMenu (Widget form, int width) {
+void praat_actions_createDynamicMenu (GuiObject form, int width) {
 	if (theCurrentPraatApplication -> batch) return;
 	// Kan dit bovenstaande niet met een #if constructie?
 	// Wat doet dit?

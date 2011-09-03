@@ -2,7 +2,7 @@
 #define _Collection_h_
 /* Collection.h
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  */
 
 /*
- * pb 2008/03/19
+ * pb 2011/03/02
  */
 
 /* Collections contain a number of items whose class is a subclass of Data.
@@ -51,6 +51,10 @@
 
 #ifndef _Simple_h_
 	#include "Simple.h"
+#endif
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 #define Collection_members Data_members \
@@ -307,6 +311,10 @@ class_create (Cyclic, Collection);
 int Cyclic_init (I, void *itemClass, long initialCapacity);
 
 void Cyclic_unicize (I);
+
+#ifdef __cplusplus
+	}
+#endif
 
 /* End of file Collection.h */
 #endif

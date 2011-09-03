@@ -38,7 +38,7 @@
 #include "site.h"
 
 struct structPicture {
-	Widget drawingArea;
+	GuiObject drawingArea;
 	Any graphics, selectionGraphics;
 	Boolean sensitive;
 	double selx1, selx2, sely1, sely2;   /* Selection in NDC co-ordinates. */
@@ -178,7 +178,7 @@ static void gui_drawingarea_cb_expose (I, GuiDrawingAreaExposeEvent event) {
 	WindowPtr window = (WindowPtr) ((EventRecord *) call) -> message;
 	static RgnHandle visRgn;
 	Rect rect;
-	short x1DC, x2DC, y1DC, y2DC;
+	long x1DC, x2DC, y1DC, y2DC;
 	Graphics_inqWsViewport (my selectionGraphics, & x1DC, & x2DC, & y1DC, & y2DC);
 	SetRect (& rect, x1DC, y1DC, x2DC, y2DC);
 	/* No clearing needed; macintosh clips to update region. */
@@ -319,8 +319,8 @@ static void gui_drawingarea_cb_click (I, GuiDrawingAreaClickEvent event) {
 #endif
 }
 
-Picture Picture_create (Widget drawingArea, Boolean sensitive) {
-	Picture me = Melder_calloc (struct structPicture, 1);
+Picture Picture_create (GuiObject drawingArea, Boolean sensitive) {
+	Picture me = Melder_calloc_e (struct structPicture, 1);
 	if (! me) return NULL;
 	#if gtk
 		my selectionInProgress = 0;
@@ -720,7 +720,7 @@ int Picture_writeToEpsFile (Picture me, MelderFile file, int includeFonts, int u
 			return Melder_error3 (L"Unexpected error ", Melder_integer (err), L" trying to create a screen preview .");
 		int path = FSOpenResFile (& macFileReference, fsWrPerm);
 
-		/* Write the data to the file as a 'PICT' resource. */
+		/* Save the data to the file as a 'PICT' resource. */
 		/* The Id of this resource is 256 (PS. Lang. Ref. Man., 2nd ed., p. 728. */
 
 		if (path != -1) {
@@ -765,7 +765,7 @@ void Picture_setSelection
 {
 	if (my drawingArea) {
 		#if gtk
-			short x1, x2, y1, y2;
+			long x1, x2, y1, y2;
 			Graphics_WCtoDC (my selectionGraphics, my selx1, my sely1, & x1, & y1);
 			Graphics_WCtoDC (my selectionGraphics, my selx2, my sely2, & x2, & y2);
 			gtk_widget_queue_draw_area (my drawingArea, x1, y2, abs (x2 - x1), abs (y2 - y1));
@@ -779,7 +779,7 @@ void Picture_setSelection
 	my sely2 = y2NDC;
 	if (my drawingArea) {
 		#if gtk
-			short x1, x2, y1, y2;
+			long x1, x2, y1, y2;
 			Graphics_WCtoDC (my selectionGraphics, my selx1, my sely1, & x1, & y1);
 			Graphics_WCtoDC (my selectionGraphics, my selx2, my sely2, & x2, & y2);
 			gtk_widget_queue_draw_area (my drawingArea, x1, y2, abs (x2 - x1), abs (y2 - y1));
@@ -801,7 +801,7 @@ void Picture_foreground (Picture me) { my backgrounding = FALSE; }
 #if gtk
 void Picture_selfExpose (Picture me) {
 	if (my drawingArea) {
-		short x1, x2, y1, y2;
+		long x1, x2, y1, y2;
 		Graphics_WCtoDC (my selectionGraphics, my selx1, my sely1, & x1, & y1);
 		Graphics_WCtoDC (my selectionGraphics, my selx2, my sely2, & x2, & y2);
 		gtk_widget_queue_draw_area (my drawingArea, x1, y2, abs (x2 - x1), abs (y2 - y1));

@@ -47,6 +47,7 @@
  * pb 2009/12/22 invokingButtonTitle
  * pb 2010/05/24 sendpraat for GTK
  * pb 2010/07/29 removed GuiWindow_show
+ * pb 2010/12/08 can read Collections created from multiple objects read from one file (e.g. a labelled sound file)
  */
 
 #include "melder.h"
@@ -78,7 +79,7 @@
 #define EDITOR  theCurrentPraatObjects -> list [IOBJECT]. editors
 
 #define WINDOW_WIDTH 520
-#define WINDOW_HEIGHT 630
+#define WINDOW_HEIGHT 700
 
 structPraatApplication theForegroundPraatApplication;
 PraatApplication theCurrentPraatApplication = & theForegroundPraatApplication;
@@ -122,7 +123,7 @@ static structMelderFile buttons4File = { 0 }, buttons5File = { 0 };
 	static structMelderFile messageFile = { 0 };   /* Like C:\Windows\myProg\Message.txt */
 #endif
 
-static Widget praatList_objects;
+static GuiObject praatList_objects;
 
 /***** selection *****/
 
@@ -152,12 +153,12 @@ wchar_t * praat_getNameOfSelected (void *voidklas, int inplace) {
 	if (place == 0) place = 1;
 	if (place > 0) {
 		WHERE (SELECTED && (klas == NULL || CLASS == klas)) {
-			if (place == 1) return klas == NULL ? FULL_NAME : NAMEW;
+			if (place == 1) return klas == NULL ? FULL_NAME : NAME;
 			place --;
 		}
 	} else {
 		WHERE_DOWN (SELECTED && (klas == NULL || CLASS == klas)) {
-			if (place == -1) return klas == NULL ? FULL_NAME : NAMEW;
+			if (place == -1) return klas == NULL ? FULL_NAME : NAME;
 			place ++;
 		}
 	}
@@ -313,7 +314,7 @@ void praat_cleanUpName (wchar_t *name) {
 
 /***** objects + commands *****/
 
-bool praat_new1 (I, const wchar_t *myName) {
+bool praat_newWithFile1 (I, const wchar_t *myName, MelderFile file) {
 	iam (Data);
 	int IOBJECT, ieditor;   /* Must be local: praat_new can be called from within a loop!!! */
 	if (me == NULL) return Melder_error1 (L"No object was put into the list.");
@@ -325,8 +326,9 @@ bool praat_new1 (I, const wchar_t *myName) {
 		bool result = true;
 		for (long idata = 1; idata <= list -> size; idata ++) {
 			Data object = list -> item [idata];
-			Melder_assert (object -> name != NULL);
-			result &= praat_new1 (object, object -> name) ? true : false;   // Recurse.
+			const wchar_t *name = object -> name ? object -> name : myName;
+			Melder_assert (name != NULL);
+			result &= praat_new1 (object, name) ? true : false;   // Recurse.
 		}
 		list -> size = 0;   // Disown.
 		forget (list);
@@ -355,8 +357,7 @@ bool praat_new1 (I, const wchar_t *myName) {
 		
 	IOBJECT = ++ theCurrentPraatObjects -> n;
 	Melder_assert (FULL_NAME == NULL);
-	FULL_NAME = Melder_wcsdup (name.string);
-	Melder_assert (FULL_NAME != NULL);
+	FULL_NAME = Melder_wcsdup_f (name.string);   // all right to crash if out of memory
 	++ theCurrentPraatObjects -> uniqueId;
 
 	if (! theCurrentPraatApplication -> batch) {   /* Put a new object on the screen, at the bottom of the list. */
@@ -375,7 +376,11 @@ bool praat_new1 (I, const wchar_t *myName) {
 	CLASS = my methods;
 	for (ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++)
 		EDITOR [ieditor] = NULL;
-	MelderFile_setToNull (& theCurrentPraatObjects -> list [IOBJECT]. file);
+	if (file != NULL) {
+		MelderFile_copy (file, & theCurrentPraatObjects -> list [IOBJECT]. file);
+	} else {
+		MelderFile_setToNull (& theCurrentPraatObjects -> list [IOBJECT]. file);
+	}
 	ID = theCurrentPraatObjects -> uniqueId;
 	theCurrentPraatObjects -> list [IOBJECT]. _beingCreated = TRUE;
 	Thing_setName (OBJECT, givenName.string);
@@ -386,6 +391,34 @@ bool praat_new1 (I, const wchar_t *myName) {
 }
 
 static MelderString thePraatNewName = { 0 };
+bool praat_newWithFile2 (I, const wchar_t *s1, const wchar_t *s2, MelderFile file) {
+	iam (Data);
+	MelderString_empty (& thePraatNewName);
+	MelderString_append2 (& thePraatNewName, s1, s2);
+	return praat_newWithFile1 (me, thePraatNewName.string, file);
+}
+bool praat_newWithFile3 (I, const wchar_t *s1, const wchar_t *s2, const wchar_t *s3, MelderFile file) {
+	iam (Data);
+	MelderString_empty (& thePraatNewName);
+	MelderString_append3 (& thePraatNewName, s1, s2, s3);
+	return praat_newWithFile1 (me, thePraatNewName.string, file);
+}
+bool praat_newWithFile4 (I, const wchar_t *s1, const wchar_t *s2, const wchar_t *s3, const wchar_t *s4, MelderFile file) {
+	iam (Data);
+	MelderString_empty (& thePraatNewName);
+	MelderString_append4 (& thePraatNewName, s1, s2, s3, s4);
+	return praat_newWithFile1 (me, thePraatNewName.string, file);
+}
+bool praat_newWithFile5 (I, const wchar_t *s1, const wchar_t *s2, const wchar_t *s3, const wchar_t *s4, const wchar_t *s5, MelderFile file) {
+	iam (Data);
+	MelderString_empty (& thePraatNewName);
+	MelderString_append5 (& thePraatNewName, s1, s2, s3, s4, s5);
+	return praat_newWithFile1 (me, thePraatNewName.string, file);
+}
+bool praat_new1 (I, const wchar_t *s1) {
+	iam (Data);
+	return praat_newWithFile1 (me, s1, NULL);
+}
 bool praat_new2 (I, const wchar_t *s1, const wchar_t *s2) {
 	iam (Data);
 	MelderString_empty (& thePraatNewName);
@@ -754,7 +787,7 @@ void praat_dataChanged (Any object) {
 	wchar_t *saveError = NULL;
 	bool duringError = Melder_hasError ();
 	if (duringError) {
-		saveError = Melder_wcsdup (Melder_getError ());
+		saveError = Melder_wcsdup_f (Melder_getError ());
 		Melder_clearError ();
 	}
 	int IOBJECT, ieditor;
@@ -903,7 +936,7 @@ void praat_dontUsePictureWindow (void) { praatP.dontUsePictureWindow = TRUE; }
 #elif defined (macintosh)
 	static int cb_userMessageA (char *messageA) {
 		praat_background ();
-		wchar_t *message = Melder_8bitToWcs (messageA, 0);
+		wchar_t *message = Melder_8bitToWcs_e (messageA, 0); cherror
 		if (! praat_executeScriptFromText (message)) error2 (Melder_peekUtf8ToWcs (praatP.title), L": message not completely handled.")
 	end:
 		Melder_free (message);
@@ -948,10 +981,11 @@ void praat_setStandAloneScriptText (wchar_t *text) {
 void praat_init (const char *title, unsigned int argc, char **argv) {
 	static char truncatedTitle [300];   /* Static because praatP.title will point into it. */
 	#if defined (UNIX)
-		FILE *f;
 		gtk_init_check (& argc, & argv);
 		//gtk_set_locale ();
-		setlocale (LC_ALL, "en_US.utf8");
+		setlocale (LC_ALL, "C");
+		//setlocale (LC_ALL, "en_US.utf8");
+		//setlocale (LC_ALL, "en_US");
 	#elif defined (macintosh)
 		setlocale (LC_ALL, "en_US");   // required to make swprintf work correctly; the default "C" locale does not do that!
 	#endif
@@ -964,6 +998,7 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 	*/
 	NUMmachar ();
 	NUMinit ();
+	Melder_alloc_init ();
 	/*
 		Remember the current directory. Only useful for scripts run from batch.
 	*/
@@ -1026,6 +1061,7 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 
 		/* Take from 'title' ("myProg 3.2" becomes "myProg") or from command line ("/ifa/praat" becomes "praat"). */
 		strcpy (truncatedTitle, argc && argv [0] [0] ? argv [0] : title && title [0] ? title : "praat");
+		//Melder_fatal ("<%s>", argv [0]);
 	#else
 		#if defined (_WIN32)
 			MelderString_copy (& theCurrentPraatApplication -> batchName,
@@ -1064,8 +1100,7 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 	 * Get the program's private directory:
 	 *    "/u/miep/myProg-dir" (Unix)
 	 *    "/Users/miep/Library/Preferences/MyProg Prefs" (Macintosh)
-	 *    "C:\Windows\MyProg" (Windows 95)
-	 *    "C:\Documents and Settings\Miep\MyProg" (Windows XP)
+	 *    "C:\Documents and Settings\Miep\MyProg" (Windows)
 	 * and construct a preferences-file name and a script-buttons-file name like
 	 *    /u/miep/.myProg-dir/prefs   (Unix)
 	 *    /u/miep/.myProg-dir/script_buttons
@@ -1073,8 +1108,8 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 	 *    /Users/miep/Library/Preferences/MyProg Prefs/Prefs
 	 *    /Users/miep/Library/Preferences/MyProg Prefs/Buttons
 	 * or
-	 *    C:\Windows\MyProg\Preferences.ini
-	 *    C:\Windows\MyProg\Buttons.ini
+	 *    C:\Documents and Settings\Miep\MyProg\Preferences.ini
+	 *    C:\Documents and Settings\Miep\MyProg\Buttons.ini
 	 * On Unix, also create names for process-id and message files.
 	 */
 	{
@@ -1125,6 +1160,7 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 			 * Messages from "sendpraat" are caught very early this way,
 			 * though they will be responded to much later.
 			 */
+			FILE *f;
 			if ((f = Melder_fopen (& pidFile, "w")) != NULL) {
 				fprintf (f, "%ld", (long) getpid ());
 				fclose (f);
@@ -1152,7 +1188,7 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 	praat_actions_init ();
 	praat_menuCommands_init ();
 
-	Widget raam = NULL;
+	GuiObject raam = NULL;
 	if (Melder_batch) {
 		#if defined (UNIX) || defined (macintosh) || defined (_WIN32) && defined (CONSOLE_APPLICATION)
 			MelderString_empty (& theCurrentPraatApplication -> batchName);
@@ -1202,9 +1238,9 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 		praat_addMenus (NULL);
 		praat_addFixedButtons (NULL);
 	} else {
-		Widget Raam = NULL;
+		GuiObject Raam = NULL;
 		#if gtk
-			Widget raHoriz, raLeft; /* I want to have more possibilities for GTK widgets */
+			GuiObject raHoriz, raLeft; /* I want to have more possibilities for GTK widgets */
 		#else
 			#define raHoriz Raam 
 			#define raLeft Raam 
@@ -1250,6 +1286,8 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 		#endif
 		GuiObject_show (Raam);
 		#ifdef UNIX
+		{
+			FILE *f;
 			if ((f = Melder_fopen (& pidFile, "a")) != NULL) {
 				#if gtk
 					fprintf (f, " %ld", (long) GDK_WINDOW_XID (GDK_DRAWABLE (theCurrentPraatApplication -> topShell -> window)));
@@ -1260,6 +1298,7 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 			} else {
 				Melder_clearError ();
 			}
+		}
 		#endif
 		#ifdef UNIX
 			Preferences_read (MelderFile_readable (& prefs5File) ? & prefs5File : & prefs4File);
@@ -1307,7 +1346,7 @@ void praat_run (void) {
 
 	praat_addMenus2 ();
 	#ifdef macintosh
-		praat_addMenuCommand (L"Objects", L"Praat", L"Quit", 0, praat_HIDDEN, DO_Quit);
+		praat_addMenuCommand (L"Objects", L"Praat", L"Quit", 0, praat_HIDDEN, DO_Quit);   // the Quit command is needed for scripts, not for the GUI
 	#else
 		praat_addMenuCommand (L"Objects", L"Praat", L"-- quit --", 0, 0, 0);
 		praat_addMenuCommand (L"Objects", L"Praat", L"Quit", 0, praat_UNHIDABLE + 'Q', DO_Quit);
@@ -1365,6 +1404,8 @@ void praat_run (void) {
 	}
 	forget (directoryNames);
 	Melder_clearError ();   /* In case Strings_createAsDirectoryList () returned an error. */
+
+	Melder_assert (wcsequ (Melder_double (1.5), L"1.5"));   // check locale settings; because of the required file portability Praat cannot stand "1,5"
 
 	if (Melder_batch) {
 		if (thePraatStandAloneScriptText != NULL) {
