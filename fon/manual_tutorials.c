@@ -1,6 +1,6 @@
 /* manual_tutorials.c
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +23,19 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (L"What's new?", L"ppgb", 20100120)
+MAN_BEGIN (L"What's new?", L"ppgb", 20100311)
 INTRO (L"Latest changes in Praat.")
 /*LIST_ITEM (L"\\bu Manual page about @@drawing a vowel triangle@.")*/
+NORMAL (L"##5.1.29# (11 March 2010)")
+LIST_ITEM (L"\\bu Full support for unicode values above 0xFFFF on Macintosh.")
+NORMAL (L"##5.1.28# (10 March 2010)")
+LIST_ITEM (L"\\bu TextGrid window: removed a recently introduced bug that could cause Praat to crash when inserting a boundary.")
+NORMAL (L"##5.1.27# (7 March 2010)")
+LIST_ITEM (L"\\bu Table: Wilcoxon rank sum test.")
+LIST_ITEM (L"\\bu Logistic regression: corrected a bug by which a boundary would sometimes not be drawn.")
+NORMAL (L"##5.1.26# (25 February 2010)")
+LIST_ITEM (L"\\bu Experimental GTK version with the help of Franz Brau\\sse.")
+LIST_ITEM (L"\\bu Corrected a bug that could cause Praat to crash if sound playing failed twice.")
 NORMAL (L"##5.1.25# (20 January 2010)")
 LIST_ITEM (L"\\bu Script window: the new command ##Reopen from disk# allows you to edit the script with an external editor.")
 LIST_ITEM (L"\\bu Script window: removed a bug that could cause Praat to crash of you did ##Find again# before having done any #Find.")
@@ -1122,7 +1132,7 @@ MAN_END
 >lines (and is WAY too wide).
 */
  
-MAN_BEGIN (L"Acknowledgments", L"ppgb", 20080812)
+MAN_BEGIN (L"Acknowledgments", L"ppgb", 20100225)
 NORMAL (L"The following people contributed source code to Praat:")
 LIST_ITEM (L"Paul Boersma: user interface, graphics, @printing, @@Intro|sound@, "
 	"@@Intro 3. Spectral analysis|spectral analysis@, @@Intro 4. Pitch analysis|pitch analysis@, "
@@ -1135,7 +1145,7 @@ LIST_ITEM (L"David Weenink: "
 	"@@feedforward neural networks@, @@principal component analysis@, @@multidimensional scaling@, @@discriminant analysis@, @LPC, "
 	"@VowelEditor, "
 	"and adaptation of GSL, LAPACK, fftpack, and regular expressions.")
-LIST_ITEM (L"Stefan de Konink: port to GTK.")
+LIST_ITEM (L"Stefan de Konink and Franz Brau\\sse: port to GTK.")
 LIST_ITEM (L"Erez Volk: adaptation of FLAC and MAD.")
 LIST_ITEM (L"Ola S\\o\"der: @@kNN classifiers@, @@k-means clustering@.")
 LIST_ITEM (L"Rafael Laboissi\\e`re: adaptation of XIPA.")

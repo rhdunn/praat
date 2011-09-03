@@ -385,12 +385,13 @@ static int Formula_lexan (void) {
 			oudkar;
 			nieuwtok (NUMBER_)
 			tokgetal (Melder_atof (token.string));
-		} else if ((kar >= 'a' && kar <= 'z') || (kar == '.' && theExpression [ikar + 1] >= 'a' && theExpression [ikar + 1] <= 'z'
+		} else if ((kar >= 'a' && kar <= 'z') || kar >= 192 || (kar == '.' &&
+				((theExpression [ikar + 1] >= 'a' && theExpression [ikar + 1] <= 'z') || theExpression [ikar + 1] >= 192)
 				&& (itok == 0 || (lexan [itok]. symbol != MATRIKS_ && lexan [itok]. symbol != MATRIKSSTR_)))) {
 			int tok;
 			bool isString = false, isArray = false;
 			stokaan;
-			do stokkar while ((kar >= 'A' && kar <= 'Z') || (kar >= 'a' && kar <= 'z') || (kar >= '0' && kar <= '9') || kar == '_' || kar == '.');
+			do stokkar while ((kar >= 'A' && kar <= 'Z') || (kar >= 'a' && kar <= 'z') || kar >= 192 || (kar >= '0' && kar <= '9') || kar == '_' || kar == '.');
 			if (kar == '$') {
 				stokkar
 				isString = true;
@@ -441,7 +442,7 @@ static int Formula_lexan (void) {
 					while (theExpression [jkar] == ' ' || theExpression [jkar] == '\t') jkar ++;
 					if (theExpression [jkar] == '(') {
 						nieuwtok (tok)   /* This must be a function name. */
-					} else if (theInterpreter) {
+					} else {
 						/*
 						 * This could be a variable with the same name as a function.
 						 */
@@ -466,8 +467,6 @@ static int Formula_lexan (void) {
 							}
 							lexan [itok]. content.variable = var;
 						}
-					} else {
-						return formulefout (L"Function with missing arguments", ikar);
 					}
 				/*
 				 * Not a function name.
@@ -487,7 +486,7 @@ static int Formula_lexan (void) {
 						/*
 						 * Look for ambiguity.
 						 */
-						if (theInterpreter && Interpreter_hasVariable (theInterpreter, token.string))
+						if (Interpreter_hasVariable (theInterpreter, token.string))
 							return Melder_error3 (
 								L_LEFT_GUILLEMET, token.string,
 								L_RIGHT_GUILLEMET L" is ambiguous: a variable or an attribute of the current object. "
@@ -500,7 +499,7 @@ static int Formula_lexan (void) {
 							nieuwtok (PERIOD_)
 							nieuwtok (tok)
 						}
-					} else if (theInterpreter) {
+					} else {
 						/*
 						 * This must be a variable, since there is no "current object" here.
 						 */
@@ -525,49 +524,42 @@ static int Formula_lexan (void) {
 							}
 							lexan [itok]. content.variable = var;
 						}
-					} else {
-						return Melder_error3 (
-							L"Unknown token " L_LEFT_GUILLEMET, token.string,
-							L_RIGHT_GUILLEMET L" in formula (no variables or current objects here).");
 					}
 				} else {
 					nieuwtok (tok)   /* This must be a language name. */
 				}
-			} else if (theInterpreter) {
-				InterpreterVariable var = Interpreter_hasVariable (theInterpreter, token.string);
-				if (var == NULL) {
-					int jkar;
-					jkar = ikar + 1;
-					while (theExpression [jkar] == ' ' || theExpression [jkar] == '\t') jkar ++;
-					if (theExpression [jkar] == '(') {
-						return Melder_error3 (
-							L"Unknown function " L_LEFT_GUILLEMET, token.string,
-							L_RIGHT_GUILLEMET L" in formula.");
-					} else {
+			} else {
+				/*
+				 * token.string is not a language name
+				 */
+				int jkar = ikar + 1;
+				while (theExpression [jkar] == ' ' || theExpression [jkar] == '\t') jkar ++;
+				if (theExpression [jkar] == '(') {
+					return Melder_error3 (
+						L"Unknown function " L_LEFT_GUILLEMET, token.string, L_RIGHT_GUILLEMET L" in formula.");
+				} else {
+					InterpreterVariable var = Interpreter_hasVariable (theInterpreter, token.string);
+					if (var == NULL) {
 						nieuwtok (VARIABLE_NAME_)
 						lexan [itok]. content.string = Melder_wcsdup (token.string);
 						numberOfStringConstants ++;
-					}
-				} else {
-					if (isArray) {
-						if (isString) {
-							nieuwtok (STRING_ARRAY_VARIABLE_)
-						} else {
-							nieuwtok (NUMERIC_ARRAY_VARIABLE_)
-						}
 					} else {
-						if (isString) {
-							nieuwtok (STRING_VARIABLE_)
+						if (isArray) {
+							if (isString) {
+								nieuwtok (STRING_ARRAY_VARIABLE_)
+							} else {
+								nieuwtok (NUMERIC_ARRAY_VARIABLE_)
+							}
 						} else {
-							nieuwtok (NUMERIC_VARIABLE_)
+							if (isString) {
+								nieuwtok (STRING_VARIABLE_)
+							} else {
+								nieuwtok (NUMERIC_VARIABLE_)
+							}
 						}
+						lexan [itok]. content.variable = var;
 					}
-					lexan [itok]. content.variable = var;
 				}
-			} else {
-				return Melder_error3 (
-					L"Unknown function or attribute " L_LEFT_GUILLEMET, token.string,
-						L_RIGHT_GUILLEMET L" in formula.");
 			}
 		} else if (kar >= 'A' && kar <= 'Z') {
 			int endsInDollarSign = FALSE;
