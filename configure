@@ -2,7 +2,7 @@
 
 case "$1" in
 	freebsd*) DEFFILE=freebsd.dynamic ;;
-	linux*)   DEFFILE=linux.dynamic ;;
+	linux*)   DEFFILE=linux.gtk ;;
 	*)        DEFFILE=$1 ;;
 esac
 
