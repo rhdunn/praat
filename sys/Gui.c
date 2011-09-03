@@ -1,6 +1,6 @@
 /* Gui.c
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
  * pb 2007/12/30 Gui
  * sdk 2008/02/08 GTK
  * sdk 2008/03/24 GDK
+ * pb 2010/05/14 resolution always 72 pixels/inch
  */
 
 #include "Gui.h"
@@ -57,9 +58,10 @@ int Gui_getResolution (Widget widget) {
 	if (resolution == 0) {
 		#if defined (macintosh)
 			(void) widget;
-			CGSize size = CGDisplayScreenSize (kCGDirectMainDisplay);
-			resolution = floor (25.4 * (double) CGDisplayPixelsWide (kCGDirectMainDisplay) / size.width + 0.5);
-			//resolution = 100;
+			CGDirectDisplayID display = CGMainDisplayID ();
+			CGSize size = CGDisplayScreenSize (display);
+			resolution = floor (25.4 * (double) CGDisplayPixelsWide (display) / size.width + 0.5);
+			//resolution = 72;
 		#elif defined (_WIN32)
 			(void) widget;
 			resolution = 100;
@@ -73,10 +75,11 @@ int Gui_getResolution (Widget widget) {
 				resolution = floor (25.4 * width_pixels / width_mm + 0.5);
 				//Melder_casual ("Gui_getResolution: display width %g %g %d", width_pixels, width_mm, resolution);
 			#else
-				Melder_fatal ("Gui_getResolution: unknown framework.");
+				Melder_fatal ("Gui_getResolution: unknown platform.");
 			#endif
 		#endif
 	}
+	return 100;   // in conformance with most other applications; and so that fonts always look the same size in the Demo window
 	return resolution;
 }
 

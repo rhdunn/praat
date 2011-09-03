@@ -1,6 +1,6 @@
 /* Graphics_record.c
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
  * sdk 2008/03/24 cairo
  * pb 2009/07/09 RGB colours
  * pb 2009/08/10 image from file
+ * pb 2010/07/11 Graphics_clearRecording ()
  */
 
 #include "GraphicsP.h"
@@ -64,27 +65,36 @@ error:
 
 /***** RECORD AND PLAY *****/
 
-int Graphics_startRecording (I) {
+bool Graphics_startRecording (I) {
 	iam (Graphics);
-	int wasRecording = my recording;
-	my recording = 1;
+	bool wasRecording = my recording;
+	my recording = true;
 	return wasRecording;
 }
 
-int Graphics_stopRecording (I) {
+bool Graphics_stopRecording (I) {
 	iam (Graphics);
-	int wasRecording = my recording;
-	my recording = 0;
+	bool wasRecording = my recording;
+	my recording = false;
 	return wasRecording;
+}
+
+void Graphics_clearRecording (I) {
+	iam (Graphics);
+	if (my record) {
+		Melder_free (my record);
+		my irecord = 0;
+		my nrecord = 0;
+	}
 }
 
 // TODO: Paul, ik zou er een enorme fan van zijn als bij deze functie
 // ook een bounding box van events kan worden meegeven.
 void Graphics_play (Graphics me, Graphics thee) {
 	double *p = my record, *endp = p + my irecord;
-	int wasRecording = my recording;
+	bool wasRecording = my recording;
 	if (! p) return;
-	my recording = 0;   /* Temporarily, in case me == thee. */
+	my recording = false;   /* Temporarily, in case me == thee. */
 	while (p < endp) {
 		#define get  (* ++ p)
 		#define mget(n)  (p += n, p - n)

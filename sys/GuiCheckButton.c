@@ -22,11 +22,12 @@
  * sdk 2007/12/27 gtk
  * sdk 2008/03/24 gtk
  * fb 2010/02/23 gtk
+ * pb 2010/05/15 prevented procreation of valueChanged events in GuiCheckButton_setValue
+ * pb 2010/06/14 HandleControlClick
  */
 
 #include "GuiP.h"
-#define my  me ->
-#define my  me ->
+#undef iam
 #define iam(x)  x me = (x) void_me
 #if win || mac
 	#define iam_checkbutton \
@@ -41,6 +42,9 @@ typedef struct structGuiCheckButton {
 	Widget widget;
 	void (*valueChangedCallback) (void *boss, GuiCheckButtonEvent event);
 	void *valueChangedBoss;
+	#if gtk
+		gulong valueChangedHandlerId;
+	#endif
 } *GuiCheckButton;
 
 #if gtk
@@ -74,7 +78,7 @@ typedef struct structGuiCheckButton {
 		void _GuiMacCheckButton_handleClick (Widget widget, EventRecord *macEvent) {
 			iam_checkbutton;
 			_GuiMac_clipOnParent (widget);
-			bool clicked = TrackControl (widget -> nat.control.handle, macEvent -> where, NULL);
+			bool clicked = HandleControlClick (widget -> nat.control.handle, macEvent -> where, macEvent -> modifiers, NULL);
 			GuiMac_clipOff ();
 			if (clicked) {
 				if (my valueChangedCallback != NULL) {
@@ -111,16 +115,15 @@ Widget GuiCheckButton_create (Widget parent, int left, int right, int top, int b
 		my widget = gtk_check_button_new_with_label (Melder_peekWcsToUtf8 (buttonText));
 		_GuiObject_setUserData (my widget, me);
 		_GuiObject_position (my widget, left, right, top, bottom);
-		if (parent)
+		if (parent && GTK_IS_BOX (parent)) {
 			gtk_container_add (GTK_CONTAINER (parent), my widget);
-		g_signal_connect (G_OBJECT (my widget), "destroy",
-			G_CALLBACK (_GuiGtkCheckButton_destroyCallback), me);
-		g_signal_connect (GTK_TOGGLE_BUTTON (my widget), "toggled",   // gtk_check_button inherits from gtk_toggle_button
-			G_CALLBACK (_GuiGtkCheckButton_valueChangedCallback), me);
+		}
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (my widget), (flags & GuiCheckButton_SET) != 0);
 		if (flags & GuiCheckButton_INSENSITIVE) {
 			GuiObject_setSensitive (my widget, false);
 		}
+		g_signal_connect (G_OBJECT (my widget), "destroy", G_CALLBACK (_GuiGtkCheckButton_destroyCallback), me);
+		my valueChangedHandlerId = g_signal_connect (GTK_TOGGLE_BUTTON (my widget), "toggled", G_CALLBACK (_GuiGtkCheckButton_valueChangedCallback), me);
 	#elif win
 		my widget = _Gui_initializeWidget (xmToggleButtonWidgetClass, parent, buttonText);
 		_GuiObject_setUserData (my widget, me);
@@ -147,7 +150,7 @@ Widget GuiCheckButton_create (Widget parent, int left, int right, int top, int b
 		Melder_assert (my widget -> nat.control.handle != NULL);
 		SetControlReference (my widget -> nat.control.handle, (long) my widget);
 		my widget -> isControl = true;
-		_GuiNativeControl_setFont (my widget, 12);
+		_GuiNativeControl_setFont (my widget, 13);
 		_GuiNativeControl_setTitle (my widget);
 		_GuiObject_position (my widget, left, right, top, bottom);
 		if (flags & GuiCheckButton_INSENSITIVE) {
@@ -190,8 +193,14 @@ bool GuiCheckButton_getValue (Widget widget) {
 }
 
 void GuiCheckButton_setValue (Widget widget, bool value) {
+	/*
+	 * The value should be set without calling the valueChanged callback.
+	 */
 	#if gtk
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), value);   // gtk_check_button inherits from gtk_toggle_button
+		iam_checkbutton;
+		g_signal_handler_disconnect (GTK_TOGGLE_BUTTON (my widget), my valueChangedHandlerId);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), value);
+		my valueChangedHandlerId = g_signal_connect (GTK_TOGGLE_BUTTON (my widget), "toggled", G_CALLBACK (_GuiGtkCheckButton_valueChangedCallback), me);
 	#elif win
 		Button_SetCheck (widget -> window, value ? BST_CHECKED : BST_UNCHECKED);
 	#elif mac

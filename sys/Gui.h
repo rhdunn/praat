@@ -20,7 +20,7 @@
  */
 
 /*
- * 2010/02/26
+ * 2010/07/26
  */
 
 #ifdef USE_GTK
@@ -31,8 +31,8 @@
 	#define motif 1
 #endif
 
-#ifndef _melder_h_
-	#include "melder.h"
+#ifndef _Collection_h_
+	#include "Collection.h"
 #endif
 
 #define GUI_ARGS  Widget w, XtPointer void_me, XtPointer call
@@ -387,6 +387,10 @@ Widget GuiRow_createShown (Widget parent, unsigned long flags);
 Widget GuiDialog_create (Widget parent, int x, int y, int width, int height,
 	const wchar_t *title, void (*goAwayCallback) (void *goAwayBoss), void *goAwayBoss, unsigned long flags);
 void GuiDialog_show (Widget widget);
+Widget GuiDialog_getButtonArea (Widget widget);
+
+SortedSetOfString GuiFileSelect_getInfileNames (Widget parent, const wchar_t *title, bool allowMultipleFiles);
+wchar_t * GuiFileSelect_getOutfileName (Widget parent, const wchar_t *title, const wchar_t *defaultName);
 
 /* GuiDrawingArea creation flags: */
 #define GuiDrawingArea_BORDER  1
@@ -466,8 +470,8 @@ Widget GuiMenuBar_addMenu3 (Widget parent, const wchar_t *title, long flags, Wid
 Widget GuiMenu_addItem (Widget menu, const wchar_t *title, long flags,
 	void (*commandCallback) (Widget, XtPointer, XtPointer), const void *closure);
 /* Flags is a combination of the above defines. */
-
 Widget GuiMenu_addSeparator (Widget menu);
+void GuiMenuItem_check (Widget menuItem, bool check);
 
 /* GuiRadioButton creation flags: */
 #define GuiRadioButton_SET  1

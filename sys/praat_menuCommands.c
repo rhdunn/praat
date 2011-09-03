@@ -133,7 +133,7 @@ static void gui_cb_menu (GUI_ARGS) {
 		// TODO: Dit implementeert het gedrag van Motif, en impliceert dat een toggled Call alleen een
 		// 'naar positief' is en niet de terug toggle 'naar negatief'.
 		if (G_OBJECT_TYPE(w) == GTK_TYPE_RADIO_MENU_ITEM && !gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w))) { 
-			g_debug("Gotcha!");
+			//g_debug("Gotcha!");
 			return;
 		}
 	#elif motif
@@ -410,7 +410,7 @@ void praat_addFixedButtonCommand (Widget parent, const wchar_t *title, int (*cal
 	if (theCurrentPraatApplication -> batch) {
 		my button = NULL;
 	} else {
-		Widget button = my button = GuiButton_create (parent, x, x + 76, Gui_AUTOMATIC, -y,
+		Widget button = my button = GuiButton_create (parent, x, x + 82, Gui_AUTOMATIC, -y,
 			title, gui_button_cb_menu, callback, 0);
 		GuiObject_setSensitive (button, false);
 		GuiObject_show (button);

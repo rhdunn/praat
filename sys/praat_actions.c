@@ -36,7 +36,7 @@
 #include "longchar.h"
 #include "machine.h"
 
-#define BUTTON_WIDTH  200
+#define BUTTON_WIDTH  240
 
 #define praat_MAXNUM_LOOSE_COMMANDS  5000
 static long theNumberOfActions = 0;
@@ -192,28 +192,19 @@ static void deleteDynamicMenu (void) {
 //static int deletions;
 //Melder_information1(Melder_integer(++deletions));
 	if (praat_dynamicMenu) {
-		int i;
-		#if gtk
-			gtk_widget_destroy (praat_dynamicMenu);
-		#elif motif
-			XtDestroyWidget (praat_dynamicMenu);
-		#endif
+		GuiObject_destroy (praat_dynamicMenu);
 		praat_dynamicMenu = NULL;
-		for (i = 1; i <= theNumberOfActions; i ++)
+		for (int i = 1; i <= theNumberOfActions; i ++)
 			theActions [i]. button = NULL;
 		if (praat_writeMenu) {   // ppgb 20080103: put into praat_dynamicMenu condition
-			#if gtk
-				gtk_widget_destroy (praat_writeMenu);
-			#elif motif
-				XtDestroyWidget (praat_writeMenu);
-			#endif
+			GuiObject_destroy (praat_writeMenu);
 
 			praat_writeMenuSeparator = NULL;
 
 			// RFC: Beter? Nog beter?
 			#if gtk
-				praat_writeMenu = gtk_menu_new();
-				gtk_menu_item_set_submenu(GTK_MENU_ITEM(praat_writeMenuTitle), praat_writeMenu);
+				praat_writeMenu = gtk_menu_new ();
+				gtk_menu_item_set_submenu (GTK_MENU_ITEM (praat_writeMenuTitle), praat_writeMenu);
 			#elif motif
 				praat_writeMenu = XmCreatePulldownMenu (praatP.menuBar, "Write", NULL, 0);
 				XtVaSetValues (praat_writeMenuTitle, XmNsubMenuId, praat_writeMenu, NULL);
@@ -621,7 +612,7 @@ void praat_actions_show (void) {
 			#if gtk
 				praat_dynamicMenu = gtk_vbutton_box_new ();
 				gtk_button_box_set_layout (GTK_BUTTON_BOX (praat_dynamicMenu), GTK_BUTTONBOX_START);
-				Widget *viewport = gtk_bin_get_child (GTK_BIN (praat_dynamicMenuWindow));
+				Widget viewport = gtk_bin_get_child (GTK_BIN (praat_dynamicMenuWindow));
 				gtk_container_add (GTK_CONTAINER (viewport), praat_dynamicMenu);
 			#elif motif
 				praat_dynamicMenu = XmCreateRowColumn (praat_dynamicMenuWindow, "menu", NULL, 0);
@@ -704,7 +695,7 @@ void praat_actions_show (void) {
 				} else {
 					if (GuiObject_parent (my button) == praat_dynamicMenu)
 						#if gtk
-							GuiObject_show(my button);
+							GuiObject_show (my button);
 						#elif motif
 							buttons [nbuttons ++] = my button;
 						#endif
@@ -878,6 +869,7 @@ praat_Command praat_getAction (long i)
 	{ return i < 0 || i > theNumberOfActions ? NULL : & theActions [i]; }
 
 void praat_background (void) {
+	if (Melder_batch) return;
 	if (Melder_backgrounding) return;
 	deleteDynamicMenu ();
 	praat_list_background ();
@@ -886,6 +878,7 @@ void praat_background (void) {
 }
 
 void praat_foreground (void) {
+	if (Melder_batch) return;
 	if (! Melder_backgrounding) return;
 	Melder_backgrounding = FALSE;
 	praat_list_foreground ();

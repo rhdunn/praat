@@ -1,6 +1,6 @@
 /* GuiRadioButton.c
  *
- * Copyright (C) 1993-2007 Paul Boersma
+ * Copyright (C) 1993-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,11 +20,12 @@
 /*
  * pb 2007/12/26 extracted from Motif
  * sdk 2007/12/27 gtk
+ * pb 2010/05/15 prevented procreation of valueChanged events in GuiRadioButton_setValue
+ * pb 2010/06/14 HandleControlClick
  */
 
 #include "GuiP.h"
-#define my  me ->
-#define my  me ->
+#undef iam
 #define iam(x)  x me = (x) void_me
 #if win || mac
 	#define iam_radiobutton \
@@ -39,6 +40,9 @@ typedef struct structGuiRadioButton {
 	Widget widget;
 	void (*valueChangedCallback) (void *boss, GuiRadioButtonEvent event);
 	void *valueChangedBoss;
+	#if gtk
+		gulong valueChangedHandlerId;
+	#endif
 } *GuiRadioButton;
 
 #if gtk
@@ -72,7 +76,7 @@ typedef struct structGuiRadioButton {
 		void _GuiMacRadioButton_handleClick (Widget widget, EventRecord *macEvent) {
 			iam_radiobutton;
 			_GuiMac_clipOnParent (widget);
-			bool clicked = TrackControl (widget -> nat.control.handle, macEvent -> where, NULL);
+			bool clicked = HandleControlClick (widget -> nat.control.handle, macEvent -> where, macEvent -> modifiers, NULL);
 			GuiMac_clipOff ();
 			if (clicked) {
 				if (widget -> parent -> radioBehavior) {
@@ -118,17 +122,17 @@ Widget GuiRadioButton_create (Widget parent, int left, int right, int top, int b
 		my widget = gtk_radio_button_new_with_label (NULL, Melder_peekWcsToUtf8 (buttonText));
 		_GuiObject_setUserData (my widget, me);
 //		_GuiObject_position (my widget, left, right, top, bottom);
-		gtk_container_add (GTK_CONTAINER (parent), my widget);
-		g_signal_connect (G_OBJECT (my widget), "destroy",
-			G_CALLBACK (_GuiGtkRadioButton_destroyCallback), me);
-		g_signal_connect (GTK_TOGGLE_BUTTON (my widget), "toggled",   // gtk_check_button inherits from gtk_toggle_button
-			G_CALLBACK (_GuiGtkRadioButton_valueChangedCallback), me);
+		if (GTK_IS_BOX (parent)) {
+			gtk_container_add (GTK_CONTAINER (parent), my widget);
+		}
 		if (flags & GuiRadioButton_SET) {
-			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(my widget), TRUE);
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (my widget), TRUE);
 		}
 		if (flags & GuiCheckButton_INSENSITIVE) {
 			GuiObject_setSensitive (my widget, FALSE);
 		}
+		g_signal_connect (G_OBJECT (my widget), "destroy", G_CALLBACK (_GuiGtkRadioButton_destroyCallback), me);
+		my valueChangedHandlerId = g_signal_connect (GTK_TOGGLE_BUTTON (my widget), "toggled", G_CALLBACK (_GuiGtkRadioButton_valueChangedCallback), me);
 	#elif win
 		my widget = _Gui_initializeWidget (xmToggleButtonWidgetClass, parent, buttonText);
 		_GuiObject_setUserData (my widget, me);
@@ -157,7 +161,7 @@ Widget GuiRadioButton_create (Widget parent, int left, int right, int top, int b
 		Melder_assert (my widget -> nat.control.handle != NULL);
 		SetControlReference (my widget -> nat.control.handle, (long) my widget);
 		my widget -> isControl = true;
-		_GuiNativeControl_setFont (my widget, 12);
+		_GuiNativeControl_setFont (my widget, 13);
 		_GuiNativeControl_setTitle (my widget);
 		_GuiObject_position (my widget, left, right, top, bottom);
 		if (flags & GuiRadioButton_INSENSITIVE) {
@@ -200,8 +204,14 @@ bool GuiRadioButton_getValue (Widget widget) {
 }
 
 void GuiRadioButton_setValue (Widget widget, bool value) {
+	/*
+	 * The value should be set without calling the valueChanged callback.
+	 */
 	#if gtk
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), value);   // gtk_check_button inherits from gtk_toggle_button
+		iam_radiobutton;
+		g_signal_handler_disconnect (GTK_TOGGLE_BUTTON (my widget), my valueChangedHandlerId);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), value);
+		my valueChangedHandlerId = g_signal_connect (GTK_TOGGLE_BUTTON (my widget), "toggled", G_CALLBACK (_GuiGtkRadioButton_valueChangedCallback), me);
 	#elif win
 		Button_SetCheck (widget -> window, value ? BST_CHECKED : BST_UNCHECKED);
 	#elif mac

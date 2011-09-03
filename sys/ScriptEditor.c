@@ -1,6 +1,6 @@
 /* ScriptEditor.c
  *
- * Copyright (C) 1997-2009 Paul Boersma
+ * Copyright (C) 1997-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
  * pb 2009/01/18 arguments to UiForm callbacks
  * pb 2009/01/20 pause forms
  * pb 2009/05/07 demo window
+ * pb 2010/04/30 command "Expand include files"
  */
 
 #include "ScriptEditor.h"
@@ -262,6 +263,23 @@ static int menu_cb_pasteHistory (EDITOR_ARGS) {
 	Melder_free (text);
 	GuiText_replace (my textWidget, first, last, history);
 	GuiText_setSelection (my textWidget, first, first + length);
+	GuiText_scrollToSelection (my textWidget);
+	return 1;
+}
+
+static int menu_cb_expandIncludeFiles (EDITOR_ARGS) {
+	EDITOR_IAM (ScriptEditor);
+	structMelderFile file = { 0 };
+	wchar_t *text = GuiText_getString (my textWidget);
+	if (my name) {
+		Melder_pathToFile (my name, & file);
+		MelderFile_setDefaultDir (& file);
+	}
+	Melder_includeIncludeFiles (& text); cherror
+	GuiText_setString (my textWidget, text);
+end:
+	Melder_free (text);
+	iferror return 0;
 	return 1;
 }
 
@@ -288,6 +306,8 @@ static void createMenus (ScriptEditor me) {
 	Editor_addCommand (me, L"Edit", L"-- history --", 0, 0);
 	Editor_addCommand (me, L"Edit", L"Clear history", 0, menu_cb_clearHistory);
 	Editor_addCommand (me, L"Edit", L"Paste history", 'H', menu_cb_pasteHistory);
+	Editor_addCommand (me, L"Edit", L"-- expand --", 0, 0);
+	Editor_addCommand (me, L"Edit", L"Expand include files", 0, menu_cb_expandIncludeFiles);
 	Editor_addMenu (me, L"Run", 0);
 	Editor_addCommand (me, L"Run", L"Run", 'R', menu_cb_go);
 	Editor_addCommand (me, L"Run", L"Run selection", 'T', menu_cb_runSelection);
