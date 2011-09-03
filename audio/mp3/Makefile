@@ -1,13 +1,10 @@
-# Makefile for mp3 wrapper library.
-# Erez Volk 20070524
+# Makefile of the library "audio/mp3"
+# Erez Volk, 24 May 2007
+# Paul Boersma, 22 February 2010
 
-include ../makefile.defs
-CFLAGS = -I ../sys
+include ../../makefile.defs
 
-all: libmp3.a
-
-clean:
-	rm *.o
+CFLAGS = -I ../../sys
 
 OBJECTS = mp3.o \
 	mad_bit.o \
@@ -22,11 +19,13 @@ OBJECTS = mp3.o \
 	mad_timer.o \
 	mad_version.o
 
-TEST = test.o
+.PHONY: all clean
 
-$(OBJECTS): *.h ../sys/*.h
+all: libmp3.a
 
-test: $(TEST) libmp3.a
+clean:
+	$(RM) $(OBJECTS)
+	$(RM) libmp3.a
 
 libmp3.a: $(OBJECTS)
 	touch libmp3.a
@@ -34,3 +33,4 @@ libmp3.a: $(OBJECTS)
 	ar cq libmp3.a $(OBJECTS)
 	$(RANLIB) libmp3.a
 
+$(OBJECTS): *.h ../../sys/*.h

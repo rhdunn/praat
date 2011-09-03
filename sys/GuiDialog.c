@@ -1,6 +1,6 @@
 /* GuiDialog.c
  *
- * Copyright (C) 1993-2007 Paul Boersma
+ * Copyright (C) 1993-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 /*
  * pb 2007/12/30
+ * fb 2010/02/23 gtk
  */
 
 #include "GuiP.h"
@@ -39,6 +40,15 @@ typedef struct structGuiDialog {
 } *GuiDialog;
 
 #if gtk
+	static gboolean _GuiGtkDialog_deleteCallback (Widget widget, GdkEvent *event, gpointer void_me) {
+		(void) event;
+		iam (GuiDialog);
+		if (my goAwayCallback == NULL)
+			return FALSE;
+		my goAwayCallback (my goAwayBoss);
+		gtk_widget_hide (widget);
+		return TRUE;
+	}
 #elif motif
 	static void _GuiMotifDialog_destroyCallback (Widget widget, XtPointer void_me, XtPointer call) {
 		(void) widget; (void) call;
@@ -64,11 +74,18 @@ Widget GuiDialog_create (Widget parent, int x, int y, int width, int height,
 	#if gtk
 		// TODO: Even uitvissen wat de rest doet
 		Widget shell = gtk_dialog_new();
-		// g_signal_connect(G_OBJECT(theCurrentPraatApplication -> topShell), "delete-event", goAwayCallback ? XmDO_NOTHING : XmUNMAP, NULL);
-//		if (width == Gui_AUTOMATIC) width = -1;
-//		if (height == Gui_AUTOMATIC) height = -1;
-//		gtk_window_set_default_size(GTK_WINDOW(shell), width, height);
-		gtk_window_set_modal(GTK_WINDOW(shell), (flags & GuiDialog_MODAL));
+		if (parent) {
+			Widget toplevel = gtk_widget_get_ancestor (parent, GTK_TYPE_WINDOW);
+			if (toplevel) {
+				gtk_window_set_transient_for (GTK_WINDOW (shell), GTK_WINDOW (toplevel));
+				gtk_window_set_destroy_with_parent (GTK_WINDOW (shell), TRUE);
+			}
+		}
+		g_signal_connect(G_OBJECT(shell), "delete-event", G_CALLBACK(_GuiGtkDialog_deleteCallback), me);
+		if (width == Gui_AUTOMATIC) width = -1;
+		if (height == Gui_AUTOMATIC) height = -1;
+		gtk_window_set_default_size (GTK_WINDOW (shell), width, height);
+		gtk_window_set_modal (GTK_WINDOW (shell), flags & GuiDialog_MODAL);
 		GuiWindow_setTitle (shell, title);
 		my widget = shell;
 	#elif motif

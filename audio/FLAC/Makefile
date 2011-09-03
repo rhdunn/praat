@@ -1,21 +1,17 @@
-# Makefile for FLAC library
+# Makefile of the library "audio/FLAC"
 # Erez Volk, March 2007
 # pb 20100108: include sys/melder.h
+# Paul Boersma, 22 February 2010
 
-include ../makefile.defs
+include ../../makefile.defs
 
-CFLAGS = -DFLAC__NOASM -I ../sys
+CFLAGS = -DFLAC__NOASM -I ../../sys
 
 # EREZ ?
 # On non-Intel, also define -DFLAC__CPU_UNKNOWN
 # On Intel, define -DFLAC__CPU_IA32
 # On PowerPC, define -DFLAC__CPU_PPC
 # How/when are these relevant?
-
-all: libFLAC.a
-
-clean:
-	rm *.o
 
 OBJECTS = \
 	flac_bitmath.o \
@@ -35,16 +31,14 @@ OBJECTS = \
 	flac_stream_encoder.o \
 	flac_stream_encoder_framing.o \
 	flac_window.o
- 
-TEST = 
 
-$(OBJECTS): *.h ../sys/melder.h
+.PHONY: all clean
 
-test: $(TEST)  libFLAC.a
+all: libFLAC.a
 
-
-
-
+clean:
+	$(RM) $(OBJECTS)
+	$(RM) libFLAC.a
 
 libFLAC.a: $(OBJECTS)
 	touch libFLAC.a
@@ -52,3 +46,4 @@ libFLAC.a: $(OBJECTS)
 	ar cq libFLAC.a $(OBJECTS)
 	$(RANLIB) libFLAC.a
 
+$(OBJECTS): *.h ../../sys/melder.h

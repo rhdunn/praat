@@ -1,6 +1,6 @@
 /* GuiText.c
  *
- * Copyright (C) 1993-2007 Paul Boersma
+ * Copyright (C) 1993-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,10 @@
  * pb 2007/12/25 Gui
  * sdk 2007/12/27 first GTK version
  * pb 2008/10/05 better implicit selection (namely, none)
+ * fb 2010/02/23 GTK
+ * fb 2010/02/26 GTK & GuiText_set(Undo|Redo)Item() & history for GTK
+ * fb 2010/03/02 history: merge same events together
+ * pb 2010/03/11 support Unicode values above 0xFFFF
  */
 
 #include "GuiP.h"
@@ -48,16 +52,36 @@
 		GuiText me = _GuiObject_getUserData (widget)
 #endif
 
+#if !mac
+	#if gtk
+		typedef gchar * history_data;
+	#elif win | motif
+		typedef char * history_data;
+	#endif
+
+	typedef struct _history_entry_s history_entry;
+	struct _history_entry_s {
+		history_entry *prev, *next;
+		long first, last;
+		history_data text;
+		bool type_del : 1;
+	};
+#endif
+
 typedef struct structGuiText {
 	Widget widget;
 	void (*changeCallback) (void *boss, GuiTextEvent event);
 	void *changeBoss;
-	#if win || mac
-		bool editable;
-	#endif
 	#if mac
 		TXNObject macMlteObject;
 		TXNFrameID macMlteFrameId;
+	#else
+		history_entry *prev, *next;
+		Widget undo_item, redo_item;
+		bool history_change : 1;
+	#endif
+	#if win || mac
+		bool editable;
 	#endif
 } *GuiText;
 
@@ -449,18 +473,37 @@ static void NativeText_getText (Widget widget, wchar_t *buffer, long length) {
 			CFRange range = { 0, length };
 			CFStringGetCharacters (cfString, range, macText);
 			CFRelease (cfString);
+			long j = 0;
 			for (long i = 0; i < length; i ++) {
-				buffer [i] = macText [i];
+				unsigned long kar = macText [i];
+				if (kar < 0xD800 || kar > 0xDFFF) {
+					buffer [j ++] = kar;
+				} else {
+					Melder_assert (kar >= 0xD800 && kar <= 0xDBFF);
+					unsigned long kar1 = macText [++ i];
+					Melder_assert (kar1 >= 0xDC00 && kar1 <= 0xDFFF);
+					buffer [j ++] = 0x10000 + ((kar & 0x3FF) << 10) + (kar1 & 0x3FF);
+				}
 			}
-			buffer [length] = '\0';
+			buffer [j] = '\0';
 			Melder_free (macText);
 		} else if (isMLTE (me)) {
 			#if 1
 				Handle han;
 				TXNGetDataEncoded (my macMlteObject, 0, length, & han, kTXNUnicodeTextData);
+				long j = 0;
 				for (long i = 0; i < length; i ++) {
-					buffer [i] = ((UniChar *) *han) [i];
+					unsigned long kar = ((UniChar *) *han) [i];
+					if (kar < 0xD800 || kar > 0xDFFF) {
+						buffer [j ++] = kar;
+					} else {
+						Melder_assert (kar >= 0xD800 && kar <= 0xDBFF);
+						unsigned long kar1 = ((UniChar *) *han) [++ i];
+						Melder_assert (kar1 >= 0xDC00 && kar1 <= 0xDFFF);
+						buffer [j ++] = 0x10000 + ((kar & 0x3FF) << 10) + (kar1 & 0x3FF);
+					}
 				}
+				buffer [j] = '\0';
 				DisposeHandle (han);
 			#else
 				long dataSize = TXNDataSize (my macMlteObject);
@@ -487,7 +530,7 @@ static void NativeText_getText (Widget widget, wchar_t *buffer, long length) {
 			#endif
 		}
 	#endif
-	buffer [length] = '\0';
+	buffer [length] = '\0';   // superfluous?
 }
 
 /*
@@ -542,7 +585,269 @@ void _GuiText_exit (void) {
 
 #endif
 
+#if !mac
+	/*
+	 * Undo/Redo history functions
+	 */
+
+	static void _GuiText_delete(Widget widget, int from_pos, int to_pos) {
+		#if gtk
+			if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_ENTRY) {
+				gtk_editable_delete_text (GTK_EDITABLE (widget), from_pos, to_pos);
+			} else {
+				GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+				GtkTextIter from_it, to_it;
+				gtk_text_buffer_get_iter_at_offset(buffer, &from_it, from_pos);
+				gtk_text_buffer_get_iter_at_offset(buffer, &to_it, to_pos);
+				gtk_text_buffer_delete_interactive(buffer, &from_it, &to_it,
+					gtk_text_view_get_editable(GTK_TEXT_VIEW(widget)));
+				gtk_text_buffer_place_cursor(buffer, &to_it);
+			}
+		#elif win
+		#elif motif
+			XmTextReplace(widget, from_pos, to_pos, "");
+		#endif
+	}
+
+	static void _GuiText_insert(Widget widget, int from_pos, int to_pos, const history_data text) {
+		#if gtk
+			if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_ENTRY) {
+				gint from_pos_gint = from_pos;
+				gtk_editable_insert_text (GTK_EDITABLE (widget), text, to_pos - from_pos, &from_pos_gint);
+			} else {
+				GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+				GtkTextIter it;
+				gtk_text_buffer_get_iter_at_offset(buffer, &it, from_pos);
+				gtk_text_buffer_insert_interactive(buffer, &it, text, to_pos - from_pos,
+					gtk_text_view_get_editable(GTK_TEXT_VIEW(widget)));
+				gtk_text_buffer_get_iter_at_offset(buffer, &it, to_pos);
+				gtk_text_buffer_place_cursor(buffer, &it);
+			}
+		#elif win
+		#elif motif
+			XmTextInsert(widget, from_pos, text);
+		#endif
+	}
+
+	/* Tests the previous elements of the history for mergability with the one to insert given via parameters.
+	 * If successful, it returns a pointer to the last valid entry in the merged history list, otherwise
+	 * returns NULL.
+	 * Specifically the function expands the previous insert/delete event(s)
+	 *  - with the current, if current also is an insert/delete event and the ranges of previous and current event match
+	 *  - with the previous delete and current insert event, in case the ranges of both event-pairs respectively match
+	 */
+	static history_entry * history_addAndMerge(void *void_me, history_data text_new, long first, long last, bool deleted) {
+		iam(GuiText);
+		history_entry *he = NULL;
+		
+		if (!(my prev))
+			return NULL;
+		
+		if (my prev->type_del == deleted) {
+			// extend the last history event by this one
+			if (my prev->first == last) {
+				// most common for backspace key presses
+				he = my prev;
+				text_new = realloc(text_new, sizeof(*text_new) * (he->last - first + 1));
+				memcpy(text_new + last - first, he->text, sizeof(*text_new) * (he->last - he->first + 1));
+				free(he->text);
+				he->text = text_new;
+				he->first = first;
+				
+			} else if (my prev->last == first) {
+				// most common for ordinary text insertion
+				he = my prev;
+				he->text = realloc(he->text, sizeof(*he->text) * (last - he->first + 1));
+				memcpy(he->text + he->last - he->first, text_new, sizeof(*he->text) * (last - first + 1));
+				free(text_new);
+				he->last = last;
+				
+			} else if (deleted && my prev->first == first) {
+				// most common for delete key presses
+				he = my prev;
+				he->text = realloc(he->text, sizeof(*he->text) * (last - first + he->last - he->first + 1));
+				memcpy(he->text + he->last - he->first, text_new, sizeof(*he->text) * (last - first + 1));
+				free(text_new);
+				he->last = last + he->last - he->first;
+			}
+		} else {
+			// prev->type_del != deleted, no simple expansion possible, check for double expansion
+			if (!deleted && my prev->prev && my prev->prev->prev) {
+				history_entry *del_one = my prev;
+				history_entry *ins_mult = del_one->prev;
+				history_entry *del_mult = ins_mult->prev;
+				long from1 = del_mult->first, to1 = del_mult->last;
+				long from2 = ins_mult->first, to2 = ins_mult->last;
+				long from3 = del_one->first, to3 = del_one->last;
+				if (from3 == first && to3 == last && from2 == from1 && to2 == to1 && to1 == first &&
+						!ins_mult->type_del && del_mult->type_del) {
+					// most common for overwriting text
+					/* So the layout is as follows:
+					 *
+					 *        del_mult                  ins_mult               del_one        current (parameters)
+					 * [del, from1, to1, "uvw"] [ins, from1, to1, "abc"] [del, to1, to3, "x"] [ins, to1, to3, "d"]
+					 *     n >= 1 characters          n characters           1 character          1 character
+					 *
+					 * So merge those four events into two events by expanding del_mult by del_one and ins_mult by current */
+					del_mult->text = realloc(del_mult->text, sizeof(*del_mult->text) * (to3 - from1 + 1));
+					ins_mult->text = realloc(ins_mult->text, sizeof(*ins_mult->text) * (to3 - from1 + 1));
+					memcpy(del_mult->text + to1 - from1, del_one->text, sizeof(*del_mult->text) * (to3 - to1 + 1));
+					memcpy(ins_mult->text + to1 - from1, text_new     , sizeof(*del_mult->text) * (to3 - to1 + 1));
+					del_mult->last = to3;
+					ins_mult->last = to3;
+					free(del_one->text);
+					free(del_one);
+					free(text_new);
+					my prev = he = ins_mult;
+				}
+			}
+		}
+		
+		return he;
+	}
+
+	/* Inserts a new history action, thereby removing any remaining 'redo' steps;
+	 *   text_new  a newly allocated string that will be freed by a history function
+	 *             (history_add or history_clear)
+	 */
+	static void history_add(void *void_me, history_data text_new, long first, long last, bool deleted) {
+		iam(GuiText);
+		
+		// delete all newer entries; from here on there is no 'Redo' until the next 'Undo' is performed
+		history_entry *old_hnext = my next, *hnext;
+		while (old_hnext) {
+			hnext = old_hnext->next;
+			free(old_hnext->text);
+			free(old_hnext);
+			old_hnext = hnext;
+		}
+		my next = NULL;
+		
+		history_entry *he = history_addAndMerge(void_me, text_new, first, last, deleted);
+		if (he == NULL) {
+			he = malloc(sizeof(history_entry));
+			he->first = first;
+			he->last = last;
+			he->type_del = deleted;
+			he->text = text_new;
+			
+			he->prev = my prev;
+			he->next = NULL;
+			if (my prev)
+				my prev->next = he;
+		}
+		my prev = he;
+		he->next = NULL;
+		
+		if (my undo_item) GuiObject_setSensitive(my undo_item, TRUE);
+		if (my redo_item) GuiObject_setSensitive(my redo_item, FALSE);
+	}
+
+	static bool history_has_undo(void *void_me) {
+		iam(GuiText);
+		return my prev != NULL;
+	}
+
+	static bool history_has_redo(void *void_me) {
+		iam(GuiText);
+		return my next != NULL;
+	}
+
+	static void history_do(void *void_me, bool undo) {
+		iam(GuiText);
+		history_entry *he = undo ? my prev : my next;
+		if (he == NULL) // TODO: this function should not be called in that case
+			return;
+		
+		my history_change = 1;
+		if (undo ^ he->type_del) {
+			_GuiText_delete(my widget, he->first, he->last);
+		} else {
+			_GuiText_insert(my widget, he->first, he->last, he->text);
+		}
+		my history_change = 0;
+		
+		if (undo) {
+			my next = my prev;
+			my prev = my prev->prev;
+		} else {
+			my prev = my next;
+			my next = my next->next;
+		}
+		
+		if (my undo_item) GuiObject_setSensitive(my undo_item, history_has_undo(me));
+		if (my redo_item) GuiObject_setSensitive(my redo_item, history_has_redo(me));
+	}
+
+	static void history_clear(void *void_me) {
+		iam(GuiText);
+		history_entry *h1, *h2;
+		
+		h1 = my prev;
+		while (h1) {
+			h2 = h1->prev;
+			free(h1->text);
+			free(h1);
+			h1 = h2;
+		}
+		my prev = NULL;
+		
+		h1 = my next;
+		while (h1) {
+			h2 = h1->next;
+			free(h1->text);
+			free(h1);
+			h1 = h2;
+		}
+		my next = NULL;
+		
+		if (my undo_item) GuiObject_setSensitive(my undo_item, FALSE);
+		if (my redo_item) GuiObject_setSensitive(my redo_item, FALSE);
+	}
+#endif
+
+/*
+ * CALLBACKS
+ */
+
 #if gtk
+	static void _GuiGtkEntry_history_delete_cb(GtkEditable *ed, gint from, gint to, gpointer void_me) {
+		iam(GuiText);
+		if (my history_change) return;
+		
+		history_add(me, gtk_editable_get_chars(GTK_EDITABLE(ed), from, to), from, to, 1);
+	}
+	
+	static void _GuiGtkEntry_history_insert_cb(GtkEditable *ed, gchar *utf8_text, gint len, gint *from, gpointer void_me) {
+		(void)ed;
+		iam(GuiText);
+		if (my history_change) return;
+		
+		gchar *text = malloc(sizeof(gchar) * (len + 1));
+		strcpy(text, utf8_text);
+		history_add(me, text, *from, *from + len, 0);
+	}
+	
+	static void _GuiGtkTextBuf_history_delete_cb(GtkTextBuffer *buffer, GtkTextIter *from, GtkTextIter *to, gpointer void_me) {
+		iam(GuiText);
+		if (my history_change) return;
+		
+		int from_pos = gtk_text_iter_get_offset(from);
+		int to_pos = gtk_text_iter_get_offset(to);
+		history_add(me, gtk_text_buffer_get_text(buffer, from, to, FALSE), from_pos, to_pos, 1);
+	}
+	
+	static void _GuiGtkTextBuf_history_insert_cb(GtkTextBuffer *buffer, GtkTextIter *from, gchar *utf8_text, gint len, gpointer void_me) {
+		(void)buffer;
+		iam(GuiText);
+		if (my history_change) return;
+		
+		int from_pos = gtk_text_iter_get_offset(from);
+		gchar *text = malloc(sizeof(gchar) * (len + 1));
+		strcpy(text, utf8_text);
+		history_add(me, text, from_pos, from_pos + len, 0);
+	}
+	
 	static void _GuiGtkEntry_valueChangedCallback (Widget widget, gpointer void_me) {
 		// TODO: ugh!
 		iam (GuiText);
@@ -551,6 +856,17 @@ void _GuiText_exit (void) {
 			struct structGuiTextEvent event = { widget };
 			my changeCallback (my changeBoss, & event);
 		}
+	}
+	
+	static void _GuiGtkEntry_destroyCallback(Widget widget, gpointer void_me) {
+		(void)widget;
+		iam(GuiText);
+		if (my undo_item) g_object_unref(my undo_item);
+		if (my redo_item) g_object_unref(my redo_item);
+		my undo_item = NULL;
+		my redo_item = NULL;
+		history_clear(me);
+		Melder_free(me);
 	}
 #elif win
 #elif mac
@@ -583,15 +899,28 @@ Widget GuiText_create (Widget parent, int left, int right, int top, int bottom, 
 			else
 				ww = GTK_WRAP_NONE;
 			gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (my widget), ww);
+			GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(my widget));
+			g_signal_connect(G_OBJECT(buffer), "delete-range", G_CALLBACK(_GuiGtkTextBuf_history_delete_cb), me);
+			g_signal_connect(G_OBJECT(buffer), "insert-text", G_CALLBACK(_GuiGtkTextBuf_history_insert_cb), me);
 		} else {
 			my widget = gtk_entry_new ();
 			gtk_editable_set_editable (GTK_EDITABLE (my widget), (flags & GuiText_NONEDITABLE) == 0);
+			g_signal_connect(G_OBJECT(my widget), "delete-text", G_CALLBACK(_GuiGtkEntry_history_delete_cb), me);
+			g_signal_connect(G_OBJECT(my widget), "insert-text", G_CALLBACK(_GuiGtkEntry_history_insert_cb), me);
 		}
 		_GuiObject_setUserData (my widget, me);
 		_GuiObject_position (my widget, left, right, top, bottom);
-		gtk_container_add (GTK_CONTAINER (parent), my widget);
-//		g_signal_connect (G_OBJECT (my widget), "destroy",
-//			G_CALLBACK (_GuiGtkEntry_destroyCallback), me);
+		
+		my prev = NULL;
+		my next = NULL;
+		my history_change = 0;
+		my undo_item = NULL;
+		my redo_item = NULL;
+		
+		if (parent)
+			gtk_container_add (GTK_CONTAINER (parent), my widget);
+		g_signal_connect (G_OBJECT (my widget), "destroy",
+			G_CALLBACK (_GuiGtkEntry_destroyCallback), me);
 //		g_signal_connect (GTK_EDITABLE (my widget), "changed",
 //			G_CALLBACK (_GuiGtkEntry_valueChangedCallback), me);
 		// TODO: First input focus verhaal? *check*
@@ -689,7 +1018,9 @@ Widget GuiText_create (Widget parent, int left, int right, int top, int bottom, 
 			_GuiObject_position (my widget, left, right, top, bottom);
 		}
 		XtAddCallback (my widget, XmNvalueChangedCallback, _GuiMotifText_valueChangedCallback, me);
-	#endif
+		// TODO: for history functions, a XmNmodifyVerifyCallback needs to be added, which calls history_add()
+		#endif
+	
 	return my widget;
 }
 
@@ -701,7 +1032,13 @@ Widget GuiText_createShown (Widget parent, int left, int right, int top, int bot
 
 void GuiText_copy (Widget widget) {
 	#if gtk
-		gtk_editable_copy_clipboard (GTK_EDITABLE (widget));
+		if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_ENTRY) {
+			gtk_editable_copy_clipboard (GTK_EDITABLE (widget));
+		} else if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_TEXT_VIEW) {
+			GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+			GtkClipboard *cb = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+			gtk_text_buffer_copy_clipboard(buffer, cb);
+		}
 	#elif win
 		if (! NativeText_getSelectionRange (widget, NULL, NULL)) return;
 		SendMessage (widget -> window, WM_COPY, 0, 0);
@@ -720,7 +1057,13 @@ void GuiText_copy (Widget widget) {
 
 void GuiText_cut (Widget widget) {
 	#if gtk
-		gtk_editable_cut_clipboard (GTK_EDITABLE (widget));
+		if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_ENTRY) {
+			gtk_editable_cut_clipboard (GTK_EDITABLE (widget));
+		} else if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_TEXT_VIEW) {
+			GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+			GtkClipboard *cb = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+			gtk_text_buffer_cut_clipboard(buffer, cb, gtk_text_view_get_editable(GTK_TEXT_VIEW(widget)));
+		}
 	#elif win
 		iam_text;
 		if (! my editable || ! NativeText_getSelectionRange (widget, NULL, NULL)) return;
@@ -776,6 +1119,10 @@ wchar_t * GuiText_getSelection (Widget widget) {
 		/*
 		 * Zoom in on selection.
 		 */
+		#if mac
+			for (long i = 0; i < start; i ++) if (result [i] > 0xFFFF) { start --; end --; }
+			for (long i = start; i < end; i ++) if (result [i] > 0xFFFF) { end --; }
+		#endif
 		length = end - start;
 		memmove (result, result + start, length * sizeof (wchar_t));   /* Not because of realloc, but because of free! */
 		result [length] = '\0';
@@ -819,18 +1166,25 @@ wchar_t * GuiText_getStringAndSelectionPosition (Widget widget, long *first, lon
 			return temp;
 		}
 		return NULL;
-	#elif win || mac
+	#elif win
 		long length = NativeText_getLength (widget);
 		wchar_t *result = Melder_malloc (wchar_t, length + 1);
 		NativeText_getText (widget, result, length);
 		NativeText_getSelectionRange (widget, first, last);
-		#if win
-			long numberOfLeadingLineBreaks = 0, numberOfSelectedLineBreaks = 0;
-			for (long i = 0; i < *first; i ++) if (result [i] == 13) numberOfLeadingLineBreaks ++;
-			for (long i = *first; i < *last; i ++) if (result [i] == 13) numberOfSelectedLineBreaks ++;
-			*first -= numberOfLeadingLineBreaks;
-			*last -= numberOfLeadingLineBreaks + numberOfSelectedLineBreaks;
-		#endif
+		long numberOfLeadingLineBreaks = 0, numberOfSelectedLineBreaks = 0;
+		for (long i = 0; i < *first; i ++) if (result [i] == 13) numberOfLeadingLineBreaks ++;
+		for (long i = *first; i < *last; i ++) if (result [i] == 13) numberOfSelectedLineBreaks ++;
+		*first -= numberOfLeadingLineBreaks;
+		*last -= numberOfLeadingLineBreaks + numberOfSelectedLineBreaks;
+		Melder_killReturns_inlineW (result);
+		return result;
+	#elif mac
+		long length = NativeText_getLength (widget);   // UTF-16 length; should be enough for UTF-32 buffer
+		wchar_t *result = Melder_malloc (wchar_t, length + 1);
+		NativeText_getText (widget, result, length);
+		NativeText_getSelectionRange (widget, first, last);   // 'first' and 'last' are expressed in UTF-16 words
+		for (long i = 0; i < *first; i ++) if (result [i] > 0xFFFF) { (*first) --; (*last) --; }
+		for (long i = *first; i < *last; i ++) if (result [i] > 0xFFFF) { (*last) --; }
 		Melder_killReturns_inlineW (result);
 		return result;
 	#elif motif
@@ -848,7 +1202,13 @@ wchar_t * GuiText_getStringAndSelectionPosition (Widget widget, long *first, lon
 
 void GuiText_paste (Widget widget) {
 	#if gtk
-		gtk_editable_paste_clipboard (GTK_EDITABLE (widget));
+		if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_ENTRY) {
+			gtk_editable_paste_clipboard (GTK_EDITABLE (widget));
+		} else if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_TEXT_VIEW) {
+			GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+			GtkClipboard *cb = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+			gtk_text_buffer_paste_clipboard(buffer, cb, NULL, gtk_text_view_get_editable(GTK_TEXT_VIEW(widget)));
+		}
 	#elif win
 		iam_text;
 		if (! my editable) return;
@@ -870,21 +1230,26 @@ void GuiText_paste (Widget widget) {
 }
 
 void GuiText_redo (Widget widget) {
-	#if gtk
-	#elif win
-	#elif mac
+	#if mac
 		iam_text;
 		if (isMLTE (me)) {
 			TXNRedo (my macMlteObject);
 		}
 		_GuiText_handleValueChanged (widget);
-	#elif motif
+	#else
+		iam_text;
+		history_do(me, 0);
 	#endif
 }
 
 void GuiText_remove (Widget widget) {
 	#if gtk
-		gtk_editable_delete_selection (GTK_EDITABLE (widget));
+		if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_ENTRY) {
+			gtk_editable_delete_selection (GTK_EDITABLE (widget));
+		} else if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_TEXT_VIEW) {
+			GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+			gtk_text_buffer_delete_selection(buffer, TRUE, gtk_text_view_get_editable(GTK_TEXT_VIEW(widget)));
+		}
 	#elif win
 		iam_text;
 		if (! my editable || ! NativeText_getSelectionRange (widget, NULL, NULL)) return;
@@ -908,9 +1273,20 @@ void GuiText_remove (Widget widget) {
 void GuiText_replace (Widget widget, long from_pos, long to_pos, const wchar_t *text) {
 	#if gtk
 		gchar *new = Melder_peekWcsToUtf8 (text);
-		gtk_editable_delete_text (GTK_EDITABLE (widget), from_pos, to_pos);
-		gint from_pos_gint = from_pos;
-		gtk_editable_insert_text (GTK_EDITABLE (widget), new, g_utf8_strlen (new, -1), & from_pos_gint);
+		if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_ENTRY) {
+			gtk_editable_delete_text (GTK_EDITABLE (widget), from_pos, to_pos);
+			gint from_pos_gint = from_pos;
+			gtk_editable_insert_text (GTK_EDITABLE (widget), new, g_utf8_strlen (new, -1), & from_pos_gint);
+		} else if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_TEXT_VIEW) {
+			GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+			GtkTextIter from_it, to_it;
+			gtk_text_buffer_get_iter_at_offset(buffer, &from_it, from_pos);
+			gtk_text_buffer_get_iter_at_offset(buffer, &to_it, to_pos);
+			gtk_text_buffer_delete_interactive(buffer, &from_it, &to_it,
+				gtk_text_view_get_editable(GTK_TEXT_VIEW(widget)));
+			gtk_text_buffer_insert_interactive(buffer, &from_it, new, g_utf8_strlen (new, -1),
+				gtk_text_view_get_editable(GTK_TEXT_VIEW(widget)));
+		}
 		// TODO: Wat is dit lelijk... en fout was het ook nog!
 	#elif win
 		const wchar_t *from;
@@ -947,6 +1323,7 @@ void GuiText_replace (Widget widget, long from_pos, long to_pos, const wchar_t *
 		 */
 		if (my widget -> managed) _GuiMac_clipOnParent (widget);
 		if (isTextControl (widget)) {
+			// BUG: this is not UTF-32-savvy; this is acceptable because it isn't used in Praat
 			long oldLength = NativeText_getLength (widget);
 			wchar_t *totalText = Melder_malloc (wchar_t, oldLength - (to_pos - from_pos) + length + 1);
 			wchar_t *oldText = Melder_malloc (wchar_t, oldLength + 1);
@@ -959,8 +1336,16 @@ void GuiText_replace (Widget widget, long from_pos, long to_pos, const wchar_t *
 			Melder_free (oldText);
 			Melder_free (totalText);
 		} else if (isMLTE (me)) {
+			long oldLength = NativeText_getLength (widget);
+			wchar_t *oldText = Melder_malloc (wchar_t, oldLength + 1);
+			NativeText_getText (widget, oldText, oldLength);
+			long numberOfLeadingHighUnicodeValues = 0, numberOfSelectedHighUnicodeValues = 0;
+			for (long i = 0; i < from_pos; i ++) if (oldText [i] > 0xFFFF) numberOfLeadingHighUnicodeValues ++;
+			for (long i = from_pos; i < to_pos; i ++) if (oldText [i] > 0xFFFF) numberOfSelectedHighUnicodeValues ++;
+			from_pos += numberOfLeadingHighUnicodeValues;
+			to_pos += numberOfLeadingHighUnicodeValues + numberOfSelectedHighUnicodeValues;
 			const UniChar *macText_utf16 = Melder_peekWcsToUtf16 (macText);
-			TXNSetData (my macMlteObject, kTXNUnicodeTextData, macText_utf16, length*2, from_pos, to_pos);
+			TXNSetData (my macMlteObject, kTXNUnicodeTextData, macText_utf16, wcslen_utf16 (macText, 0) * 2, from_pos, to_pos);
 		}
 		Melder_free (macText);
 		if (widget -> managed) {
@@ -1009,6 +1394,12 @@ void GuiText_setChangeCallback (Widget widget, void (*changeCallback) (void *bos
 
 void GuiText_setFontSize (Widget widget, int size) {
 	#if gtk
+		GtkRcStyle *modStyle = gtk_widget_get_modifier_style(widget);
+		PangoFontDescription *fontDesc = (modStyle->font_desc != NULL) ? modStyle->font_desc
+			: pango_font_description_copy(widget->style->font_desc);
+		pango_font_description_set_absolute_size(fontDesc, size * PANGO_SCALE);
+		modStyle->font_desc = fontDesc;
+		gtk_widget_modify_style(widget, modStyle);
 	#elif win
 	#elif mac
 		iam_text;
@@ -1023,10 +1414,34 @@ void GuiText_setFontSize (Widget widget, int size) {
 	#endif
 }
 
+void GuiText_setRedoItem(Widget widget, Widget item) {
+	#if gtk
+		iam_text;
+		if (my redo_item)
+			g_object_unref(my redo_item);
+		my redo_item = item;
+		if (my redo_item) {
+			g_object_ref(my redo_item);
+			GuiObject_setSensitive(my redo_item, history_has_redo(me));
+		}
+	#elif win
+	#elif mac
+	#elif motif
+	#endif
+}
+
 void GuiText_setSelection (Widget widget, long first, long last) {
 	if (widget != NULL) {
 	#if gtk
-		gtk_editable_select_region (GTK_EDITABLE (widget), first, last);
+		if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_ENTRY) {
+			gtk_editable_select_region (GTK_EDITABLE (widget), first, last);
+		} else if (G_OBJECT_TYPE (G_OBJECT (widget)) == GTK_TYPE_TEXT_VIEW) {
+			GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+			GtkTextIter from_it, to_it;
+			gtk_text_buffer_get_iter_at_offset(buffer, &from_it, first);
+			gtk_text_buffer_get_iter_at_offset(buffer, &to_it, last);
+			gtk_text_buffer_select_range(buffer, &from_it, &to_it);
+		}
 	#elif win
 		/* 'first' and 'last' are the positions of the selection in the text when separated by LF alone. */
 		/* We have to convert this to the positions that the selection has in a text separated by CR/LF sequences. */
@@ -1038,13 +1453,25 @@ void GuiText_setSelection (Widget widget, long first, long last) {
 		if (last >= length) last = length;
 		long numberOfLeadingLineBreaks = 0, numberOfSelectedLineBreaks = 0;
 		for (long i = 0; i < first; i ++) if (text [i] == '\n') numberOfLeadingLineBreaks ++;
-			for (long i = first; i < last; i ++) if (text [i] == 13) numberOfSelectedLineBreaks ++;
+		for (long i = first; i < last; i ++) if (text [i] == '\n') numberOfSelectedLineBreaks ++;
 		first += numberOfLeadingLineBreaks;
 		last += numberOfLeadingLineBreaks + numberOfSelectedLineBreaks;
 		Melder_free (text);
 		Edit_SetSel (widget -> window, first, last);
 	#elif mac
 		iam_text;
+		wchar_t *text = GuiText_getString (widget);
+		if (first < 0) first = 0;
+		if (last < 0) last = 0;
+		long length = wcslen (text);
+		if (first >= length) first = length;
+		if (last >= length) last = length;
+		long numberOfLeadingHighUnicodeValues = 0, numberOfSelectedHighUnicodeValues = 0;
+		for (long i = 0; i < first; i ++) if (text [i] > 0xFFFF) numberOfLeadingHighUnicodeValues ++;
+		for (long i = first; i < last; i ++) if (text [i] > 0xFFFF) numberOfSelectedHighUnicodeValues ++;
+		first += numberOfLeadingHighUnicodeValues;
+		last += numberOfLeadingHighUnicodeValues + numberOfSelectedHighUnicodeValues;
+		Melder_free (text);
 		if (isTextControl (widget)) {
 			ControlEditTextSelectionRec rec = { first, last };
 			SetControlData (widget -> nat.control.handle, kControlEntireControl, kControlEditTextSelectionTag, sizeof (rec), & rec);
@@ -1066,7 +1493,7 @@ void GuiText_setString (Widget widget, const wchar_t *text) {
 		} else if (G_OBJECT_TYPE (widget) == GTK_TYPE_TEXT_VIEW) {
 			GtkTextBuffer *textBuffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (widget));
 			gchar *new = Melder_peekWcsToUtf8 (text);
-			gtk_text_buffer_set_text (textBuffer, new, g_utf8_strlen (new, -1));   // TODO: lengte in bytes?
+			gtk_text_buffer_set_text (textBuffer, new, strlen (new));   // length in bytes!
 		}
 	#elif win
 		const wchar_t *from;
@@ -1082,22 +1509,35 @@ void GuiText_setString (Widget widget, const wchar_t *text) {
 		Melder_free (winText);
 	#elif mac
 		iam_text;
-		long length = wcslen (text);
-		UniChar *macText;
-		macText = Melder_malloc (UniChar, length + 1);
+		long length_utf32 = wcslen (text), length_utf16 = wcslen_utf16 (text, false);
+		UniChar *macText = Melder_malloc (UniChar, length_utf16 + 1);
 		Melder_assert (widget -> widgetClass == xmTextWidgetClass);
 		/*
-		 * Replace all LF with CR.
+		 * Convert from UTF-32 to UTF-16 and replace all LF with CR.
 		 */
-		for (long i = 0; i <= length; i ++) {
-			macText [i] = text [i] == '\n' ? 13 : text [i];
+		long j = 0;
+		for (long i = 0; i < length_utf32; i ++) {
+			MelderUtf32 kar = text [i];
+			if (kar == '\n') {   // LF
+				macText [j ++] = 13;   // CR
+			} else if (kar <= 0xFFFF) {
+				macText [j ++] = kar;
+			} else {
+				Melder_assert (kar <= 0x10FFFF);
+				kar -= 0x10000;
+				macText [j ++] = 0xD800 | (kar >> 10);   // first UTF-16 surrogate character
+				macText [j ++] = 0xDC00 | (kar & 0x3FF);   // second UTF-16 surrogate character
+			}
 		}
+		macText [j] = '\0';
+		if (j != length_utf16)
+			Melder_fatal ("GuiText_setString: incorrect number of UTF-16 words (%ld instead of %ld): <<%ls>>.", j, length_utf16, text);
 		if (isTextControl (widget)) {
-			CFStringRef cfString = CFStringCreateWithCharacters (NULL, macText, length);
+			CFStringRef cfString = CFStringCreateWithCharacters (NULL, macText, length_utf16);
 			SetControlData (widget -> nat.control.handle, kControlEntireControl, kControlEditTextCFStringTag, sizeof (CFStringRef), & cfString);
 			CFRelease (cfString);
 		} else if (isMLTE (me)) {
-			TXNSetData (my macMlteObject, kTXNUnicodeTextData, macText, length*2, 0, NativeText_getLength (widget));
+			TXNSetData (my macMlteObject, kTXNUnicodeTextData, macText, length_utf16*2, 0, NativeText_getLength (widget));
 		}
 		Melder_free (macText);
 		if (widget -> managed) {
@@ -1122,8 +1562,26 @@ void GuiText_setString (Widget widget, const wchar_t *text) {
 	#endif
 }
 
+void GuiText_setUndoItem(Widget widget, Widget item) {
+	#if gtk
+		iam_text;
+		if (my undo_item)
+			g_object_unref(my undo_item);
+		my undo_item = item;
+		if (my undo_item) {
+			g_object_ref(my undo_item);
+			GuiObject_setSensitive(my undo_item, history_has_undo(me));
+		}
+	#elif win
+	#elif mac
+	#elif motif
+	#endif
+}
+
 void GuiText_undo (Widget widget) {
 	#if gtk
+		iam_text;
+		history_do(me, 1);
 	#elif win
 	#elif mac
 		iam_text;
