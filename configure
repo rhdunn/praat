@@ -1,10 +1,6 @@
 #!/bin/sh
 
-case "$1" in
-	freebsd*) DEFFILE=freebsd.dynamic ;;
-	linux*)   DEFFILE=linux.gtk ;;
-	*)        DEFFILE=$1 ;;
-esac
+DEFFILE=$1
 
 rm -f makefile.defs
 ln -s makefiles/makefile.defs.${DEFFILE} makefile.defs
