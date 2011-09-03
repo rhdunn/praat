@@ -20,10 +20,11 @@
 /*
  * pb & sdk 2007/12/25 gtk
  * fb 2010/02/23 GTK
+ * pb 2010/06/14 HandleControlClick
  */
 
 #include "GuiP.h"
-#define my  me ->
+#undef iam
 #define iam(x)  x me = (x) void_me
 #if win || mac
 	#define iam_button \
@@ -84,7 +85,7 @@ typedef struct structGuiButton {
 		void _GuiMacButton_handleClick (Widget widget, EventRecord *macEvent) {
 			iam_button;
 			_GuiMac_clipOnParent (widget);
-			bool pushed = TrackControl (widget -> nat.control.handle, macEvent -> where, NULL);
+			bool pushed = HandleControlClick (widget -> nat.control.handle, macEvent -> where, macEvent -> modifiers, NULL);
 			GuiMac_clipOff ();
 			if (pushed && my activateCallback != NULL) {
 				struct structGuiButtonEvent event = { widget, 0 };
@@ -189,7 +190,7 @@ Widget GuiButton_create (Widget parent, int left, int right, int top, int bottom
 		Melder_assert (my widget -> nat.control.handle != NULL);
 		SetControlReference (my widget -> nat.control.handle, (long) my widget);
 		my widget -> isControl = true;
-		_GuiNativeControl_setFont (my widget, 12);
+		_GuiNativeControl_setFont (my widget, 13);
 		_GuiNativeControl_setTitle (my widget);
 		_GuiObject_position (my widget, left, right, top, bottom);
 		if (flags & GuiButton_DEFAULT) {

@@ -1,6 +1,6 @@
 /* manual_annotation.c
  *
- * Copyright (C) 1992-2004 Paul Boersma
+ * Copyright (C) 1992-2008 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ void manual_annotation_init (ManPages me) {
 
 MAN_BEGIN (L"Create TextGrid...", L"ppgb", 20060714)
 INTRO (L"A command to create a @TextGrid from scratch.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Start time% (seconds)")
 DEFINITION (L"the start time, usually 0 seconds.")
 TAG (L"%%End time% (seconds)")
@@ -37,7 +37,7 @@ DEFINITION (L"a list of the names of the tiers that you want to be %%point tiers
 MAN_END
 
 MAN_BEGIN (L"IntervalTier", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. "
+INTRO (L"One of the @@types of objects@ in Praat. "
 	"An IntervalTier represents a series of contiguous intervals in time. "
 	"Each interval contains a a string.")
 ENTRY (L"Creating a IntervalTier object in Praat")
@@ -113,7 +113,7 @@ MAN_END
 MAN_BEGIN (L"PointProcess: To TextGrid...", L"ppgb", 19980113)
 INTRO (L"A command to create an empty @TextGrid from every selected @PointProcess.")
 NORMAL (L"The only information in the PointProcess that is used, is its starting and finishing times.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Tier names")
 DEFINITION (L"a list of the names of the tiers that you want to create, separated by spaces.")
 TAG (L"%%Point tiers")
@@ -128,7 +128,7 @@ MAN_END
 MAN_BEGIN (L"PointProcess: To TextGrid (vuv)...", L"ppgb", 19980210)
 INTRO (L"A command to create a @TextGrid with voiced/unvoiced information "
 	"from every selected @PointProcess.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Maximum period% (s)")
 DEFINITION (L"the maximum interval that will be consider part of a larger voiced interval.")
 TAG (L"%%Mean period% (s)")
@@ -155,7 +155,7 @@ MAN_END
 
 MAN_BEGIN (L"Sound: To TextGrid...", L"ppgb", 19980730)
 INTRO (L"A command to create a @TextGrid without any labels, copying the time domain from the selected @Sound.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Tier names")
 DEFINITION (L"a list of the names of the tiers that you want to create, separated by spaces.")
 TAG (L"%%Point tiers")
@@ -168,7 +168,7 @@ NORMAL (L"If %%Tier names% is \"a b c\", and \"Point tiers\" is \"b\", "
 MAN_END
 
 MAN_BEGIN (L"SpellingChecker", L"ppgb", 20080622)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. For checking the spelling in texts and @TextGrid objects.")
+INTRO (L"One of the @@types of objects@ in Praat. For checking the spelling in texts and @TextGrid objects.")
 ENTRY (L"1. How to create a SpellingChecker object")
 NORMAL (L"You normally read in a SpellignChecker with @@Read from file...@ from the Read menu.")
 ENTRY (L"2. How to check the spelling of a @TextGrid")
@@ -216,7 +216,7 @@ DEFINITION (L"a space-separated list of suffixes that make a word correct even i
 MAN_END
 
 MAN_BEGIN (L"TextGrid", L"ppgb", 20040413)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}, used for %annotation (segmentation and labelling). "
+INTRO (L"One of the @@types of objects@ in Praat, used for %annotation (segmentation and labelling). "
 	"For tutorial information, see @@Intro 7. Annotation@.")
 ENTRY (L"Description")
 NORMAL (L"A #TextGrid object consists of a number of %tiers. There are two kinds of tiers: "
@@ -254,7 +254,7 @@ MAN_END
 MAN_BEGIN (L"TextGrid: Count labels...", L"ppgb", 19980630)
 INTRO (L"A command to ask the selected @TextGrid object how many of the specified labels "
 	"it contains in the specified tier.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Tier number")
 DEFINITION (L"the number (1, 2, 3...) of the tier whose labels you want to investigate.")
 TAG (L"%%Label text")
@@ -373,7 +373,7 @@ NORMAL (L"You can check the spelling of the intervals in your tiers by including
 MAN_END
 
 MAN_BEGIN (L"TextTier", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}.")
+INTRO (L"One of the @@types of objects@ in Praat.")
 NORMAL (L"A TextTier object represents a marked point process, i.e., it contains a series of (%time, %text) points, "
 	"sorted by time.")
 NORMAL (L"Each point is marked with a text string. Though this is a system-independent ASCII text string, "
@@ -418,7 +418,7 @@ MAN_END
 
 MAN_BEGIN (L"TextTier: Add point...", L"ppgb", 19980324)
 INTRO (L"A command to add a point to each selected @TextTier.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%Time (s)")
 DEFINITION (L"the time at which a point is to be added.")
 TAG (L"%Text")
@@ -445,7 +445,7 @@ INTRO (L"A command to merge all selected @TextTier and @IntervalTier objects int
 MAN_END
 
 MAN_BEGIN (L"WordList", L"ppgb", 19991129)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. "
+INTRO (L"One of the @@types of objects@ in Praat. "
 	"An object of class WordList contains a sorted list of strings in a system-independent format. "
 	"WordList objects can be used for spelling checking after conversion to a @SpellingChecker object.")
 ENTRY (L"1. How to create a WordList object")

@@ -270,7 +270,7 @@ static int click (RealTierEditor me, double xWC, double yWC, int shiftKeyPressed
 	/*
 	 * Perform the default action: move cursor.
 	 */
-	my startSelection = my endSelection = xWC;
+	//my startSelection = my endSelection = xWC;
 	if (my sound.data) {
 		if (yWC < 1 - SOUND_HEIGHT) {   /* Clicked in tier area? */
 			yWC /= 1 - SOUND_HEIGHT;
@@ -313,7 +313,6 @@ static int click (RealTierEditor me, double xWC, double yWC, int shiftKeyPressed
 	/*
 	 * Drag.
 	 */
-	#if motif
 	Graphics_xorOn (my graphics, Graphics_MAGENTA);
 	drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
 	while (Graphics_mouseStillDown (my graphics)) {
@@ -325,7 +324,6 @@ static int click (RealTierEditor me, double xWC, double yWC, int shiftKeyPressed
 		drawWhileDragging (me, xWC_new, yWC_new, ifirstSelected, ilastSelected, dt, df);
 	}
 	Graphics_xorOff (my graphics);
-	#endif
 
 	/*
 	 * Dragged inside window?

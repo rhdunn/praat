@@ -40,6 +40,7 @@
  * pb 2010/01/20 Reopen from disk
  * pb 2010/01/20 guard against Find Again before Find
  * fb 2010/02/26 tell Undo/Redo buttons to GuiText for (de)sensitivization
+ * pb 2010/05/16 correct order and types in Font menu
  */
 
 #include "TextEditor.h"
@@ -215,29 +216,28 @@ static void gui_button_cb_discardAndOpen (I, GuiButtonEvent event) {
 static int menu_cb_open (EDITOR_ARGS) {
 	EDITOR_IAM (TextEditor);
 	if (my dirty) {
-		if (! my dirtyOpenDialog) {
-			Widget form, buttons;
-			my dirtyOpenDialog = GuiDialog_create (my shell, 150, 70, 420, Gui_AUTOMATIC, L"Text changed", NULL, NULL, GuiDialog_MODAL);
-			#if gtk
-				  form = GTK_DIALOG (my dirtyOpenDialog) -> vbox;
-				  buttons = GTK_DIALOG (my dirtyOpenDialog) -> action_area;
-			#elif motif
-				  form = my dirtyOpenDialog;    /* TODO: Kan dit ook met een define? */
-				  buttons = my dirtyOpenDialog;
-			#endif
-			#if gtk
-			GuiLabel_createShown (form, Gui_AUTOMATIC, Gui_AUTOMATIC, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Save changes?", 0);
-			GuiButton_createShown (buttons, 10, 130, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Discard & Open", gui_button_cb_discardAndOpen, cmd, 0);
-			GuiButton_createShown (buttons, 150, 270, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Cancel", gui_button_cb_cancelOpen, cmd, 0);
-			GuiButton_createShown (buttons, 290, 410, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Save & Open", gui_button_cb_saveAndOpen, cmd, 0);
-			#elif motif
-			form = GuiColumn_createShown (my dirtyOpenDialog, 0);
-			GuiLabel_createShown (form, Gui_AUTOMATIC, Gui_AUTOMATIC, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Save changes?", 0);
-			buttons = GuiRow_createShown (form, Gui_HOMOGENEOUS);
-			GuiButton_createShown (buttons, 10, 130, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Discard & Open", gui_button_cb_discardAndOpen, cmd, 0);
-			GuiButton_createShown (buttons, 150, 270, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Cancel", gui_button_cb_cancelOpen, cmd, 0);
-			GuiButton_createShown (buttons, 290, 410, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Save & Open", gui_button_cb_saveAndOpen, cmd, 0);
-			#endif
+		if (my dirtyOpenDialog == NULL) {
+			int buttonWidth = 120, buttonSpacing = 20;
+			my dirtyOpenDialog = GuiDialog_create (my shell,
+				150, 70, Gui_LEFT_DIALOG_SPACING + 3 * buttonWidth + 2 * buttonSpacing + Gui_RIGHT_DIALOG_SPACING,
+					Gui_TOP_DIALOG_SPACING + Gui_TEXTFIELD_HEIGHT + Gui_VERTICAL_DIALOG_SPACING_SAME + 2 * Gui_BOTTOM_DIALOG_SPACING + Gui_PUSHBUTTON_HEIGHT,
+				L"Text changed", NULL, NULL, GuiDialog_MODAL);
+			GuiLabel_createShown (my dirtyOpenDialog,
+				Gui_LEFT_DIALOG_SPACING, Gui_AUTOMATIC, Gui_TOP_DIALOG_SPACING, Gui_AUTOMATIC,
+				L"The text has changed! Save changes?", 0);
+			Widget buttonArea = GuiDialog_getButtonArea (my dirtyOpenDialog);
+			int x = Gui_LEFT_DIALOG_SPACING, y = - Gui_BOTTOM_DIALOG_SPACING;
+			GuiButton_createShown (buttonArea,
+				x, x + buttonWidth, y - Gui_PUSHBUTTON_HEIGHT, y,
+				L"Discard & Open", gui_button_cb_discardAndOpen, cmd, 0);
+			x += buttonWidth + buttonSpacing;
+			GuiButton_createShown (buttonArea,
+				x, x + buttonWidth, y - Gui_PUSHBUTTON_HEIGHT, y,
+				L"Cancel", gui_button_cb_cancelOpen, cmd, 0);
+			x += buttonWidth + buttonSpacing;
+			GuiButton_createShown (buttonArea,
+				x, x + buttonWidth, y - Gui_PUSHBUTTON_HEIGHT, y,
+				L"Save & Open", gui_button_cb_saveAndOpen, cmd, 0);
 		}
 		GuiDialog_show (my dirtyOpenDialog);
 	} else {
@@ -278,13 +278,27 @@ static int menu_cb_new (EDITOR_ARGS) {
 	EDITOR_IAM (TextEditor);
 	if (our fileBased && my dirty) {
 		if (! my dirtyNewDialog) {
-			my dirtyNewDialog = GuiDialog_create (my shell, 150, 70, 420, Gui_AUTOMATIC, L"Text changed", NULL, NULL, GuiDialog_MODAL);
-			Widget column1 = GuiColumn_createShown (my dirtyNewDialog, 0);
-			GuiLabel_createShown (column1, Gui_AUTOMATIC, Gui_AUTOMATIC, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Save changes?", 0);
-			Widget row1 = GuiRow_createShown (column1, Gui_HOMOGENEOUS);
-			GuiButton_createShown (row1, 10, 130, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Discard & New", gui_button_cb_discardAndNew, cmd, 0);
-			GuiButton_createShown (row1, 150, 270, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Cancel", gui_button_cb_cancelNew, cmd, 0);
-			GuiButton_createShown (row1, 290, 410, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Save & New", gui_button_cb_saveAndNew, cmd, 0);
+			int buttonWidth = 120, buttonSpacing = 20;
+			my dirtyNewDialog = GuiDialog_create (my shell,
+				150, 70, Gui_LEFT_DIALOG_SPACING + 3 * buttonWidth + 2 * buttonSpacing + Gui_RIGHT_DIALOG_SPACING,
+					Gui_TOP_DIALOG_SPACING + Gui_TEXTFIELD_HEIGHT + Gui_VERTICAL_DIALOG_SPACING_SAME + 2 * Gui_BOTTOM_DIALOG_SPACING + Gui_PUSHBUTTON_HEIGHT,
+				L"Text changed", NULL, NULL, GuiDialog_MODAL);
+			GuiLabel_createShown (my dirtyNewDialog,
+				Gui_LEFT_DIALOG_SPACING, Gui_AUTOMATIC, Gui_TOP_DIALOG_SPACING, Gui_AUTOMATIC,
+				L"The text has changed! Save changes?", 0);
+			Widget buttonArea = GuiDialog_getButtonArea (my dirtyNewDialog);
+			int x = Gui_LEFT_DIALOG_SPACING, y = - Gui_BOTTOM_DIALOG_SPACING;
+			GuiButton_createShown (buttonArea,
+				x, x + buttonWidth, y - Gui_PUSHBUTTON_HEIGHT, y,
+				L"Discard & New", gui_button_cb_discardAndNew, cmd, 0);
+			x += buttonWidth + buttonSpacing;
+			GuiButton_createShown (buttonArea,
+				x, x + buttonWidth, y - Gui_PUSHBUTTON_HEIGHT, y,
+				L"Cancel", gui_button_cb_cancelNew, cmd, 0);
+			x += buttonWidth + buttonSpacing;
+			GuiButton_createShown (buttonArea,
+				x, x + buttonWidth, y - Gui_PUSHBUTTON_HEIGHT, y,
+				L"Save & New", gui_button_cb_saveAndNew, cmd, 0);
 		}
 		GuiDialog_show (my dirtyNewDialog);
 	} else {
@@ -331,6 +345,12 @@ static void gui_button_cb_saveAndClose (I, GuiButtonEvent event) {
 	}
 }
 
+static void gui_button_cb_cancelClose (I, GuiButtonEvent event) {
+	(void) event;
+	iam (TextEditor);
+	GuiObject_hide (my dirtyCloseDialog);
+}
+
 static void gui_button_cb_discardAndClose (I, GuiButtonEvent event) {
 	(void) event;
 	iam (TextEditor);
@@ -341,12 +361,27 @@ static void gui_button_cb_discardAndClose (I, GuiButtonEvent event) {
 static void classTextEditor_goAway (TextEditor me) {
 	if (our fileBased && my dirty) {
 		if (! my dirtyCloseDialog) {
-			my dirtyCloseDialog = GuiDialog_create (my shell, 150, 70, 290, Gui_AUTOMATIC, L"Text changed", NULL, NULL, GuiDialog_MODAL);
-			Widget column1 = GuiColumn_createShown (my dirtyCloseDialog, 0);
-			GuiLabel_createShown (column1, Gui_AUTOMATIC, Gui_AUTOMATIC, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Save changes?", 0);
-			Widget row1 = GuiRow_createShown (column1, Gui_HOMOGENEOUS);
-			GuiButton_createShown (row1, 10, 130, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Discard & Close", gui_button_cb_discardAndClose, me, 0);
-			GuiButton_createShown (row1, 150, 270, Gui_AUTOMATIC, Gui_AUTOMATIC, L"Save & Close", gui_button_cb_saveAndClose, me, 0);
+			int buttonWidth = 120, buttonSpacing = 20;
+			my dirtyCloseDialog = GuiDialog_create (my shell,
+				150, 70, Gui_LEFT_DIALOG_SPACING + 3 * buttonWidth + 2 * buttonSpacing + Gui_RIGHT_DIALOG_SPACING,
+					Gui_TOP_DIALOG_SPACING + Gui_TEXTFIELD_HEIGHT + Gui_VERTICAL_DIALOG_SPACING_SAME + 2 * Gui_BOTTOM_DIALOG_SPACING + Gui_PUSHBUTTON_HEIGHT,
+				L"Text changed", NULL, NULL, GuiDialog_MODAL);
+			GuiLabel_createShown (my dirtyCloseDialog,
+				Gui_LEFT_DIALOG_SPACING, Gui_AUTOMATIC, Gui_TOP_DIALOG_SPACING, Gui_AUTOMATIC,
+				L"The text has changed! Save changes?", 0);
+			Widget buttonArea = GuiDialog_getButtonArea (my dirtyCloseDialog);
+			int x = Gui_LEFT_DIALOG_SPACING, y = - Gui_BOTTOM_DIALOG_SPACING;
+			GuiButton_createShown (buttonArea,
+				x, x + buttonWidth, y - Gui_PUSHBUTTON_HEIGHT, y,
+				L"Discard & Close", gui_button_cb_discardAndClose, me, 0);
+			x += buttonWidth + buttonSpacing;
+			GuiButton_createShown (buttonArea,
+				x, x + buttonWidth, y - Gui_PUSHBUTTON_HEIGHT, y,
+				L"Cancel", gui_button_cb_cancelClose, me, 0);
+			x += buttonWidth + buttonSpacing;
+			GuiButton_createShown (buttonArea,
+				x, x + buttonWidth, y - Gui_PUSHBUTTON_HEIGHT, y,
+				L"Save & Close", gui_button_cb_saveAndClose, me, 0);
 		}
 		GuiDialog_show (my dirtyCloseDialog);
 	} else {
@@ -390,30 +425,32 @@ static int menu_cb_erase (EDITOR_ARGS) {
 	return 1;
 }
 
-static int getSelectedLines (TextEditor me, long *firstLine, long *lastLine) {
+static bool getSelectedLines (TextEditor me, long *firstLine, long *lastLine) {
 	long left, right;
 	wchar_t *text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
-	long i;
+	long textLength = wcslen (text);
+	Melder_assert (left >= 0);
+	Melder_assert (left <= right);
+	Melder_assert (right <= textLength);
+	long i = 0;
 	*firstLine = 1;
 	/*
 	 * Cycle through the text in order to see how many linefeeds we pass.
 	 */
-	for (i = 0; i < left; i ++) {
+	for (; i < left; i ++) {
 		if (text [i] == '\n') {
 			(*firstLine) ++;
 		}
 	}
-	Melder_assert (left <= (long) wcslen (text));
-	if (left == right) return FALSE;
+	if (left == right) return false;
 	*lastLine = *firstLine;
 	for (; i < right; i ++) {
 		if (text [i] == '\n') {
 			(*lastLine) ++;
 		}
 	}
-	Melder_assert (right <= (long) wcslen (text));
 	Melder_free (text);
-	return TRUE;
+	return true;
 }
 
 static wchar_t *theFindString = NULL, *theReplaceString = NULL;
@@ -426,6 +463,9 @@ static void do_find (TextEditor me) {
 		long index = location - text;
 		GuiText_setSelection (my textWidget, index, index + wcslen (theFindString));
 		GuiText_scrollToSelection (my textWidget);
+		#ifdef _WIN32
+			GuiWindow_show (my dialog);
+		#endif
 	} else {
 		/* Try from the start of the document. */
 		location = wcsstr (text, theFindString);
@@ -433,6 +473,9 @@ static void do_find (TextEditor me) {
 			long index = location - text;
 			GuiText_setSelection (my textWidget, index, index + wcslen (theFindString));
 			GuiText_scrollToSelection (my textWidget);
+			#ifdef _WIN32
+				GuiWindow_show (my dialog);
+			#endif
 		} else {
 			Melder_beep ();
 		}
@@ -442,23 +485,20 @@ static void do_find (TextEditor me) {
 
 static void do_replace (TextEditor me) {
 	if (theReplaceString == NULL) return;   // e.g. when the user does "Replace again" before having done any "Replace"
-	long left, right;
-	wchar_t *text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
 	wchar_t *selection = GuiText_getSelection (my textWidget);
 	if (! Melder_wcsequ (selection, theFindString)) {
-		Melder_free (text);
 		do_find (me);
 		return;
 	}
-	wchar_t *newText = Melder_calloc (wchar_t, wcslen (text) - wcslen (selection) + wcslen (theReplaceString) + 1);
-	wcsncpy (newText, text, left);
-	wcscpy (newText + left, theReplaceString);
-	wcscpy (newText + left + wcslen (theReplaceString), text + right);
-	GuiText_setString (my textWidget, newText);
+	long left, right;
+	wchar_t *text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
+	Melder_free (text);
+	GuiText_replace (my textWidget, left, right, theReplaceString);
 	GuiText_setSelection (my textWidget, left, left + wcslen (theReplaceString));
 	GuiText_scrollToSelection (my textWidget);
-	Melder_free (text);
-	Melder_free (newText);
+	#ifdef _WIN32
+		GuiWindow_show (my dialog);
+	#endif
 }
 
 static int menu_cb_find (EDITOR_ARGS) {
@@ -565,13 +605,11 @@ static int menu_cb_goToLine (EDITOR_ARGS) {
 /***** 'Font' menu *****/
 
 static void updateSizeMenu (TextEditor me) {
-	#if motif
-	if (my fontSizeButton_10) XmToggleButtonGadgetSetState (my fontSizeButton_10, my fontSize == 10, 0);
-	if (my fontSizeButton_12) XmToggleButtonGadgetSetState (my fontSizeButton_12, my fontSize == 12, 0);
-	if (my fontSizeButton_14) XmToggleButtonGadgetSetState (my fontSizeButton_14, my fontSize == 14, 0);
-	if (my fontSizeButton_18) XmToggleButtonGadgetSetState (my fontSizeButton_18, my fontSize == 18, 0);
-	if (my fontSizeButton_24) XmToggleButtonGadgetSetState (my fontSizeButton_24, my fontSize == 24, 0);
-	#endif
+	if (my fontSizeButton_10) GuiMenuItem_check (my fontSizeButton_10, my fontSize == 10);
+	if (my fontSizeButton_12) GuiMenuItem_check (my fontSizeButton_12, my fontSize == 12);
+	if (my fontSizeButton_14) GuiMenuItem_check (my fontSizeButton_14, my fontSize == 14);
+	if (my fontSizeButton_18) GuiMenuItem_check (my fontSizeButton_18, my fontSize == 18);
+	if (my fontSizeButton_24) GuiMenuItem_check (my fontSizeButton_24, my fontSize == 24);
 }
 static void setFontSize (TextEditor me, int fontSize) {
 	GuiText_setFontSize (my textWidget, fontSize);
@@ -629,12 +667,12 @@ static void classTextEditor_createMenus (TextEditor me) {
 	Editor_addCommand (me, L"Search", L"Go to line...", 'L', menu_cb_goToLine);
 	#ifdef macintosh
 		Editor_addMenu (me, L"Font", 0);
-		my fontSizeButton_10 = Editor_addCommand (me, L"Font", L"10", GuiMenu_RADIO_FIRST, menu_cb_10);
-		my fontSizeButton_12 = Editor_addCommand (me, L"Font", L"12", GuiMenu_RADIO_NEXT, menu_cb_12);
-		my fontSizeButton_14 = Editor_addCommand (me, L"Font", L"14", GuiMenu_RADIO_NEXT, menu_cb_14);
-		my fontSizeButton_18 = Editor_addCommand (me, L"Font", L"18", GuiMenu_RADIO_NEXT, menu_cb_18);
-		my fontSizeButton_24 = Editor_addCommand (me, L"Font", L"24", GuiMenu_RADIO_NEXT, menu_cb_24);
 		Editor_addCommand (me, L"Font", L"Font size...", 0, menu_cb_fontSize);
+		my fontSizeButton_10 = Editor_addCommand (me, L"Font", L"10", GuiMenu_CHECKBUTTON, menu_cb_10);
+		my fontSizeButton_12 = Editor_addCommand (me, L"Font", L"12", GuiMenu_CHECKBUTTON, menu_cb_12);
+		my fontSizeButton_14 = Editor_addCommand (me, L"Font", L"14", GuiMenu_CHECKBUTTON, menu_cb_14);
+		my fontSizeButton_18 = Editor_addCommand (me, L"Font", L"18", GuiMenu_CHECKBUTTON, menu_cb_18);
+		my fontSizeButton_24 = Editor_addCommand (me, L"Font", L"24", GuiMenu_CHECKBUTTON, menu_cb_24);
 	#endif
 }
 
@@ -650,8 +688,8 @@ static void gui_text_cb_change (I, GuiTextEvent event) {
 static void classTextEditor_createChildren (TextEditor me) {
 	my textWidget = GuiText_createShown (my dialog, 0, 0, Machine_getMenuBarHeight (), 0, GuiText_SCROLLED);
 	GuiText_setChangeCallback (my textWidget, gui_text_cb_change, me);
-	GuiText_setUndoItem(my textWidget, Editor_getMenuCommand(TextEditor_as_Editor(me), L"Edit", L"Undo")->itemWidget);
-	GuiText_setRedoItem(my textWidget, Editor_getMenuCommand(TextEditor_as_Editor(me), L"Edit", L"Redo")->itemWidget);
+	GuiText_setUndoItem (my textWidget, Editor_getMenuCommand (TextEditor_as_Editor (me), L"Edit", L"Undo") -> itemWidget);
+	GuiText_setRedoItem (my textWidget, Editor_getMenuCommand (TextEditor_as_Editor (me), L"Edit", L"Redo") -> itemWidget);
 }
 
 static void classTextEditor_clear (TextEditor me) {

@@ -1,6 +1,6 @@
 /* UiPause.c
  *
- * Copyright (C) 2009 Paul Boersma
+ * Copyright (C) 2009-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 
 /*
  * pb 2009/01/20 created
+ * pb 2010/07/13 GTK
+ * pb 2010/07/26 removed UiFile_hide
  */
 
 #include "UiPause.h"
@@ -177,7 +179,6 @@ int UiPause_end (int numberOfContinueButtons, int defaultContinueButton,
 	structMelderDir dir = { { 0 } };
 	Melder_getDefaultDir (& dir);
 	if (theCurrentPraatApplication -> batch) goto end;
-	UiFile_hide ();
 	if (wasBackgrounding) praat_foreground ();
 	/*
 	 * Put the pause form on the screen.
@@ -191,12 +192,16 @@ int UiPause_end (int numberOfContinueButtons, int defaultContinueButton,
 		thePauseForm_clicked = 0;
 		Melder_assert (theEventLoopDepth == 0);
 		theEventLoopDepth ++;
-		#if ! gtk
-		do {
-			XEvent event;
-			XtAppNextEvent (Melder_appContext, & event);
-			XtDispatchEvent (& event);
-		} while (! thePauseForm_clicked);
+		#if gtk
+			do {
+				gtk_main_iteration ();
+			} while (! thePauseForm_clicked);
+		#else
+			do {
+				XEvent event;
+				XtAppNextEvent (Melder_appContext, & event);
+				XtDispatchEvent (& event);
+			} while (! thePauseForm_clicked);
 		#endif
 		theEventLoopDepth --;
 		if (wasBackgrounding) praat_background ();
