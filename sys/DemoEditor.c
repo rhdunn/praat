@@ -20,11 +20,13 @@
 /*
  * pb 2009/05/04 created
  * pb 2009/05/06 Demo_waitForInput ()
+ * pb 2009/05/08 Demo_input ()
  */
 
 #include "DemoEditor.h"
 #include "machine.h"
 #include "praatP.h"
+#include "UnicodeData.h"
 
 #define DemoEditor__members(Klas) Editor__members(Klas) \
 	Widget drawingArea; \
@@ -90,8 +92,10 @@ static void gui_drawingarea_cb_click (I, GuiDrawingAreaClickEvent event) {
 	iam (DemoEditor);
 	if (my graphics == NULL) return;   // Could be the case in the very beginning.
 	my clicked = true;
+	my keyPressed = false;
 	my x = event -> x;
 	my y = event -> y;
+	my key = UNICODE_BULLET;
 	my shiftKeyPressed = event -> shiftKeyPressed;
 	my commandKeyPressed = event -> commandKeyPressed;
 	my optionKeyPressed = event -> optionKeyPressed;
@@ -101,7 +105,10 @@ static void gui_drawingarea_cb_click (I, GuiDrawingAreaClickEvent event) {
 static void gui_drawingarea_cb_key (I, GuiDrawingAreaKeyEvent event) {
 	iam (DemoEditor);
 	if (my graphics == NULL) return;   // Could be the case in the very beginning.
+	my clicked = false;
 	my keyPressed = true;
+	my x = 0;
+	my y = 0;
 	my key = event -> key;
 	my shiftKeyPressed = event -> shiftKeyPressed;
 	my commandKeyPressed = event -> commandKeyPressed;
@@ -122,19 +129,6 @@ static void gui_drawingarea_cb_resize (I, GuiDrawingAreaResizeEvent event) {
 static void createChildren (DemoEditor me) {
 	my drawingArea = GuiDrawingArea_createShown (my dialog, 0, 0, Machine_getMenuBarHeight (), 0,
 		gui_drawingarea_cb_expose, gui_drawingarea_cb_click, gui_drawingarea_cb_key, gui_drawingarea_cb_resize, me, 0);
-	my graphics = Graphics_create_xmdrawingarea (my drawingArea);
-	Graphics_setColour (my graphics, Graphics_WHITE);
-	Graphics_setWindow (my graphics, 0, 1, 0, 1);
-	Graphics_fillRectangle (my graphics, 0, 1, 0, 1);
-	Graphics_setColour (my graphics, Graphics_BLACK);
-	Graphics_startRecording (my graphics);
-	//Graphics_setViewport (my graphics, 0, 100, 0, 100);
-	//Graphics_setWindow (my graphics, 0, 100, 0, 100);
-	//Graphics_line (my graphics, 0, 100, 100, 0);
-}
-
-static void clear (DemoEditor me) {
-	(void) me;
 }
 
 class_methods (DemoEditor, Editor) {
@@ -148,7 +142,16 @@ class_methods (DemoEditor, Editor) {
 }
 
 int DemoEditor_init (DemoEditor me, Widget parent) {
-	Editor_init (DemoEditor_as_parent (me), parent, 0, 0, 600, 400, NULL, NULL); cherror
+	Editor_init (DemoEditor_as_parent (me), parent, 0, 0, 1024, 768 + Machine_getMenuBarHeight (), NULL, NULL); cherror
+	my graphics = Graphics_create_xmdrawingarea (my drawingArea);
+	Graphics_setColour (my graphics, Graphics_WHITE);
+	Graphics_setWindow (my graphics, 0, 1, 0, 1);
+	Graphics_fillRectangle (my graphics, 0, 1, 0, 1);
+	Graphics_setColour (my graphics, Graphics_BLACK);
+	Graphics_startRecording (my graphics);
+	//Graphics_setViewport (my graphics, 0, 100, 0, 100);
+	//Graphics_setWindow (my graphics, 0, 100, 0, 100);
+	//Graphics_line (my graphics, 0, 100, 100, 0);
 
 struct structGuiDrawingAreaResizeEvent event = { my drawingArea, 0 };
 event. width = GuiObject_getWidth (my drawingArea);
@@ -172,6 +175,7 @@ void Demo_open (Interpreter interpreter) {
 		if (theDemoEditor == NULL) {
 			theDemoEditor = DemoEditor_create (Melder_topShell);
 			Melder_assert (theDemoEditor != NULL);
+			//GuiWindow_show (theDemoEditor -> dialog);
 			theDemoEditor -> praatPicture = Melder_calloc (structPraatPicture, 1);
 			theCurrentPraatPicture = theDemoEditor -> praatPicture;
 			theCurrentPraatPicture -> graphics = theDemoEditor -> graphics;
@@ -205,6 +209,7 @@ void Demo_show (void) {
 
 bool Demo_waitForInput (void) {
 	if (theDemoEditor == NULL) return false;
+	GuiWindow_show (theDemoEditor -> dialog);
 	theDemoEditor -> clicked = false;
 	theDemoEditor -> keyPressed = false;
 	theDemoEditor -> waitingForInput = true;
@@ -281,6 +286,17 @@ bool Demo_optionKeyPressed (void) {
 bool Demo_extraControlKeyPressed (void) {
 	if (theDemoEditor == NULL) return false;
 	return theDemoEditor -> extraControlKeyPressed;
+}
+
+bool Demo_input (const wchar_t *keys) {
+	if (theDemoEditor == NULL) return false;
+	return wcschr (keys, theDemoEditor -> key) != NULL;
+}
+
+bool Demo_clickedIn (double left, double right, double bottom, double top) {
+	if (theDemoEditor == NULL || ! theDemoEditor -> clicked) return false;
+	double xWC = Demo_x (), yWC = Demo_y ();
+	return xWC >= left && xWC < right && yWC >= bottom && yWC < top;
 }
 
 /* End of file DemoEditor.c */

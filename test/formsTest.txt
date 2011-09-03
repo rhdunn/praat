@@ -1,4 +1,4 @@
-# Praat script formsTest.txt
+#! Praat script formsTest.txt
 # Paul Boersma, 20 January 2009
 
 echo script
