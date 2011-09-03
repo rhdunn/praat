@@ -56,6 +56,7 @@
  * pb 2009/05/05 demoWaitForInput
  * pb 2009/08/09 variableExists
  * pb 2009/08/21 demoWindowTitle
+ * pb 2009/12/25 error checking for Demo commands (should yield an error if the Demo window is waiting for input)
  */
 
 #include <ctype.h>
@@ -306,16 +307,15 @@ static int languageNameCompare (const void *first, const void *second) {
 
 static int Formula_hasLanguageName (const wchar_t *f) {
 	static int *index;
-	int tok;
 	if (index == NULL) {
 		index = NUMivector (1, hoogsteInvoersymbool);
-		for (tok = 1; tok <= hoogsteInvoersymbool; tok ++) {
+		for (int tok = 1; tok <= hoogsteInvoersymbool; tok ++) {
 			index [tok] = tok;
 		}
 		qsort (& index [1], hoogsteInvoersymbool, sizeof (int), languageNameCompare);
 	}
 	if (index == NULL) {   /* Linear search. */
-		for (tok = 1; tok <= hoogsteInvoersymbool; tok ++) {
+		for (int tok = 1; tok <= hoogsteInvoersymbool; tok ++) {
 			if (wcsequ (f, Formula_instructionNames [tok])) return tok;
 		}
 	} else {   /* Binary search. */
@@ -1293,11 +1293,11 @@ static int parsePowerFactor (void) {
 			nieuwontleed (NUMBER_); parsenumber (0.0);   // initialize the sum
 			if (! pas (HAAKJEOPENEN_)) return 0;
 			int symbol = nieuwlees;
-			if (symbol == NUMERIC_VARIABLE_) {
+			if (symbol == NUMERIC_VARIABLE_) {   // an existing variable
 				nieuwontleed (VARIABLE_REFERENCE_);
 				InterpreterVariable loopVariable = lexan [ilexan]. content.variable;
 				parse [iparse]. content.variable = loopVariable;
-			} else if (symbol == VARIABLE_NAME_) {
+			} else if (symbol == VARIABLE_NAME_) {   // a new variable
 				InterpreterVariable loopVariable = Interpreter_lookUpVariable (theInterpreter, lexan [ilexan]. content.string);
 				nieuwontleed (VARIABLE_REFERENCE_);
 				parse [iparse]. content.variable = loopVariable;
@@ -1887,7 +1887,15 @@ static void Stackel_cleanUp (Stackel me) {
 static Stackel theStack;
 static int w, wmax;   /* w = stack pointer; */
 #define pop  & theStack [w --]
-static void pushNumber (double x) {
+static inline void pushNumber (double x) {
+	/* inline runs 10 to 20 percent faster on i386; here's the test script:
+		stopwatch
+		Create Sound from formula... test mono 0 100 44100 1/2 * (2*pi*377*x)
+		t = stopwatch
+		echo 't'
+	 * Mac: 0.75 -> 0.67 seconds
+	 * Win: 1.10 -> 0.90 seconds (20100107)
+	 */
 	Stackel stackel = & theStack [++ w];
 	if (stackel -> which > Stackel_NUMBER) Stackel_cleanUp (stackel);
 	if (w > wmax) wmax ++;
@@ -2438,13 +2446,12 @@ end: return;
 static void do_min (void) {
 	Stackel n = pop, last;
 	double result;
-	int j;
 	Melder_assert (n->which == Stackel_NUMBER);
 	if (n->content.number < 1) error1 (L"The function \"min\" requires at least one argument.")
 	last = pop;
 	if (last->which != Stackel_NUMBER) error3 (L"The function \"min\" can only have numeric arguments, not ", Stackel_whichText (last), L".")
 	result = last->content.number;
-	for (j = n->content.number - 1; j > 0; j --) {
+	for (int j = n->content.number - 1; j > 0; j --) {
 		Stackel previous = pop;
 		if (previous->which != Stackel_NUMBER)
 			error3 (L"The function \"min\" can only have numeric arguments, not ", Stackel_whichText (previous), L".")
@@ -2457,13 +2464,12 @@ end: return;
 static void do_max (void) {
 	Stackel n = pop, last;
 	double result;
-	int j;
 	Melder_assert (n->which == Stackel_NUMBER);
 	if (n->content.number < 1) error1 (L"The function \"max\" requires at least one argument.")
 	last = pop;
 	if (last->which != Stackel_NUMBER) error3 (L"The function \"max\" can only have numeric arguments, not ", Stackel_whichText (last), L".")
 	result = last->content.number;
-	for (j = n->content.number - 1; j > 0; j --) {
+	for (int j = n->content.number - 1; j > 0; j --) {
 		Stackel previous = pop;
 		if (previous->which != Stackel_NUMBER) error3 (L"The function \"max\" can only have numeric arguments, not ", Stackel_whichText (previous), L".")
 		result = result == NUMundefined || previous->content.number == NUMundefined ? NUMundefined :
@@ -2475,14 +2481,13 @@ end: return;
 static void do_imin (void) {
 	Stackel n = pop, last;
 	double minimum, result;
-	int j;
 	Melder_assert (n->which == Stackel_NUMBER);
 	if (n->content.number < 1) error1 (L"The function \"imin\" requires at least one argument.")
 	last = pop;
 	if (last->which != Stackel_NUMBER) error3 (L"The function \"imin\" can only have numeric arguments, not ", Stackel_whichText (last), L".")
 	minimum = last->content.number;
 	result = n->content.number;
-	for (j = n->content.number - 1; j > 0; j --) {
+	for (int j = n->content.number - 1; j > 0; j --) {
 		Stackel previous = pop;
 		if (previous->which != Stackel_NUMBER) error3 (L"The function \"imin\" can only have numeric arguments, not ", Stackel_whichText (previous), L".")
 		if (minimum == NUMundefined || previous->content.number == NUMundefined) {
@@ -2499,14 +2504,13 @@ end: return;
 static void do_imax (void) {
 	Stackel n = pop, last;
 	double maximum, result;
-	int j;
 	Melder_assert (n->which == Stackel_NUMBER);
 	if (n->content.number < 1) error1 (L"The function \"imax\" requires at least one argument.")
 	last = pop;
 	if (last->which != Stackel_NUMBER) error3 (L"The function \"imax\" can only have numeric arguments, not ", Stackel_whichText (last), L".")
 	maximum = last->content.number;
 	result = n->content.number;
-	for (j = n->content.number - 1; j > 0; j --) {
+	for (int j = n->content.number - 1; j > 0; j --) {
 		Stackel previous = pop;
 		if (previous->which != Stackel_NUMBER) error3 (L"The function \"imax\" can only have numeric arguments, not ", Stackel_whichText (previous), L".")
 		if (maximum == NUMundefined || previous->content.number == NUMundefined) {
@@ -3395,6 +3399,7 @@ static void do_endPauseForm (void) {
 		c [7] == NULL ? NULL : c[7]->content.string, c [8] == NULL ? NULL : c[8]->content.string,
 		c [9] == NULL ? NULL : c[9]->content.string, c [10] == NULL ? NULL : c[10]->content.string,
 		theInterpreter); cherror
+	//Melder_casual ("Button %d", buttonClicked);
 	pushNumber (buttonClicked);
 end: return;
 }
@@ -3403,7 +3408,7 @@ static void do_demoWindowTitle (void) {
 	if (n->content.number == 1) {
 		Stackel keys = pop;
 		if (keys->which == Stackel_STRING) {
-			Demo_windowTitle (keys->content.string);
+			Demo_windowTitle (keys->content.string); cherror
 		} else {
 			error3 (L"The argument of \"do_demoWindowTitle\" must be a string (the title), not ", Stackel_whichText (keys), L".")
 		}
@@ -3417,7 +3422,7 @@ static void do_demoShow (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoShow\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	Demo_show (theInterpreter);
+	Demo_show (); cherror
 	pushNumber (1);
 end: return;
 }
@@ -3425,7 +3430,7 @@ static void do_demoWaitForInput (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoWaitForInput\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	Demo_waitForInput (theInterpreter);
+	Demo_waitForInput (theInterpreter); cherror
 	pushNumber (1);
 end: return;
 }
@@ -3434,7 +3439,8 @@ static void do_demoInput (void) {
 	if (n->content.number == 1) {
 		Stackel keys = pop;
 		if (keys->which == Stackel_STRING) {
-			pushNumber (Demo_input (keys->content.string));
+			bool result = Demo_input (keys->content.string); cherror
+			pushNumber (result);
 		} else {
 			error3 (L"The argument of \"demoInput\" must be a string (the keys), not ", Stackel_whichText (keys), L".")
 		}
@@ -3448,7 +3454,8 @@ static void do_demoClickedIn (void) {
 	if (n->content.number == 4) {
 		Stackel top = pop, bottom = pop, right = pop, left = pop;
 		if (left->which == Stackel_NUMBER && right->which == Stackel_NUMBER && bottom->which == Stackel_NUMBER && top->which == Stackel_NUMBER) {
-			pushNumber (Demo_clickedIn (left->content.number, right->content.number, bottom->content.number, top->content.number));
+			bool result = Demo_clickedIn (left->content.number, right->content.number, bottom->content.number, top->content.number); cherror
+			pushNumber (result);
 		} else {
 			error1 (L"All arguments of \"demoClickedIn\" must be numbers (the x and y ranges).")
 		}
@@ -3461,28 +3468,32 @@ static void do_demoClicked (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoClicked\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	pushNumber (Demo_clicked ());
+	bool result = Demo_clicked (); cherror
+	pushNumber (result);
 end: return;
 }
 static void do_demoX (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoX\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	pushNumber (Demo_x ());
+	double result = Demo_x (); cherror
+	pushNumber (result);
 end: return;
 }
 static void do_demoY (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoY\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	pushNumber (Demo_y ());
+	double result = Demo_y (); cherror
+	pushNumber (result);
 end: return;
 }
 static void do_demoKeyPressed (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoKeyPressed\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	pushNumber (Demo_keyPressed ());
+	bool result = Demo_keyPressed (); cherror
+	pushNumber (result);
 end: return;
 }
 static void do_demoKey (void) {
@@ -3490,7 +3501,7 @@ static void do_demoKey (void) {
 	if (n->content.number != 0)
 		error3 (L"The function \"demoKey\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
 	wchar_t *key = Melder_malloc (wchar_t, 2);
-	key [0] = Demo_key ();
+	key [0] = Demo_key (); cherror
 	key [1] = '\0';
 	pushString (key);
 end: return;
@@ -3499,28 +3510,32 @@ static void do_demoShiftKeyPressed (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoShiftKeyPressed\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	pushNumber (Demo_shiftKeyPressed ());
+	bool result = Demo_shiftKeyPressed (); cherror
+	pushNumber (result);
 end: return;
 }
 static void do_demoCommandKeyPressed (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoCommandKeyPressed\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	pushNumber (Demo_commandKeyPressed ());
+	bool result = Demo_commandKeyPressed (); cherror
+	pushNumber (result);
 end: return;
 }
 static void do_demoOptionKeyPressed (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoOptionKeyPressed\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	pushNumber (Demo_optionKeyPressed ());
+	bool result = Demo_optionKeyPressed (); cherror
+	pushNumber (result);
 end: return;
 }
 static void do_demoExtraControlKeyPressed (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoControlKeyPressed\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	pushNumber (Demo_extraControlKeyPressed ());
+	bool result = Demo_extraControlKeyPressed (); cherror
+	pushNumber (result);
 end: return;
 }
 static long Stackel_getRowNumber (Stackel row, Data thee) {

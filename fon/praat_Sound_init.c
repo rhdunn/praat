@@ -105,7 +105,7 @@ END
 
 DIRECT (LongSound_help) Melder_help (L"LongSound"); END
 
-FORM_READ (LongSound_open, L"Open long sound file", 0)
+FORM_READ (LongSound_open, L"Open long sound file", 0, true)
 	if (! praat_new1 (LongSound_open (file), MelderFile_name (file))) return 0;
 END
 
@@ -1079,14 +1079,14 @@ DO
 	}
 END
 
-FORM_READ (Sound_read2FromStereoFile, L"Read two Sounds from stereo file", 0)
+FORM_READ (Sound_read2FromStereoFile, L"Read two Sounds from stereo file", 0, true)
 	Sound left, right;
 	if (! Sound_read2FromSoundFile (file, & left, & right)) return 0;
 	if (! praat_new1 (left, L"left")) return 0;
 	if (right) { if (! praat_new1 (right, L"right")) return 0; }
 END
 
-FORM_READ (Sound_readFromRawAlawFile, L"Read Sound from raw Alaw file", 0)
+FORM_READ (Sound_readFromRawAlawFile, L"Read Sound from raw Alaw file", 0, true)
 	if (! praat_new1 (Sound_readFromRawAlawFile (file), MelderFile_name (file))) return 0;
 END
 
@@ -2013,7 +2013,8 @@ void praat_uvafon_Sound_init (void) {
 	praat_addAction1 (classSound, 0, L"Sound help", 0, 0, DO_Sound_help);
 	praat_addAction1 (classSound, 1, L"Edit", 0, 0, DO_Sound_edit);
 	praat_addAction1 (classSound, 0, L"Play", 0, 0, DO_Sound_play);
-	praat_addAction1 (classSound, 0, L"Draw...", 0, 0, DO_Sound_draw);
+	praat_addAction1 (classSound, 1, L"Draw -          ", 0, 0, 0);
+		praat_addAction1 (classSound, 0, L"Draw...", 0, 1, DO_Sound_draw);
 	praat_addAction1 (classSound, 1, L"Query -          ", 0, 0, 0);
 		praat_TimeFunction_query_init (classSound);
 		praat_addAction1 (classSound, 1, L"Get number of channels", 0, 1, DO_Sound_getNumberOfChannels);

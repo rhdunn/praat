@@ -1,6 +1,6 @@
 /* manual_dwtools.c
  *
- * Copyright (C) 1993-2009 David Weenink
+ * Copyright (C) 1993-2010 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 /*
  djmw 20020313 GPL
- djmw 20091026 Latest modification
+ djmw 20100107 Latest modification
 */
 
 #include "ManPagesM.h"
@@ -1042,6 +1042,40 @@ INTRO (L"Extract those rows from the selected @TableOfReal object whose Mahalano
 	"quantile range.")
 MAN_END
 
+MAN_BEGIN (L"Covariance & TableOfReal: To TableOfReal (mahalanobis)...", L"djmw", 20100106)
+INTRO (L"Calculate Mahalanobis distance for the selected @TableOfReal with respect to the "
+	"selected @Covariance object.")
+ENTRY (L"Arguments")
+TAG (L"%%Use table centroid%")
+DEFINITION (L"Use the mean vector calculated from the columns in the selected TableOfReal instead of the means in the selected Covariance.")
+ENTRY (L"Explanation")
+NORMAL (L"The Mahalanobis distance is defined as")
+FORMULA (L"%d = \\Vr((#%x - #mean)\\'p #S^^-1^ (#%x - #mean)),")
+NORMAL (L"where #%x is a vector, #mean is the average and #S is the covariance matrix. ")
+NORMAL (L"It is the multivariate form of the distance measured in units of standard deviation.")
+ENTRY (L"Example")
+NORMAL (L"Count the number of items that are within 1, 2, 3, 4 and 5 standard deviations from the mean.")
+NORMAL (L"We first create a table with only one column and 10000 rows and fill it with numbers drawn from "
+	"a normal distribution with mean zero and standard deviation one. Its covariance matrix, of course, is "
+	"one dimensional. We next create a table with Mahalanobis distances.")
+CODE (L"n = 100000")
+CODE (L"t0 = Create TableOfReal... table n 1")
+CODE (L"Formula...  randomGauss(0,1)")
+CODE (L"c = To Covariance")
+CODE (L"plus t0")
+CODE (L"ts = To TableOfReal (mahalanobis, 0)")
+CODE (L"")
+CODE (L"for nsigma to 5")
+CODE1 (L"select ts")
+CODE1 (L"Extract rows where...  self < nsigma")
+CODE1 (L"nr = Get number of rows")
+CODE1 (L"nrp = nr / n * 100")
+CODE1 (L"expect = (1 - 2 * gaussQ (nsigma)) * 100")
+CODE1 (L"printline 'nsigma'-sigma: 'nrp:4'%, 'expect:4'%")
+CODE1 (L"Remove")
+CODE (L"endfor")
+MAN_END
+
 MAN_BEGIN (L"Create ChebyshevSeries...", L"djmw", 20040407)
 INTRO (L"A command to create a @ChebyshevSeries from a list of coefficients.")
 ENTRY (L"Arguments")
@@ -1582,6 +1616,37 @@ ENTRY (L"Precondition")
 NORMAL (L"The number of columns in the TableOfReal must equal the dimension of the "
 	"eigenvectors in the Discriminant.")
 NORMAL (L"See also @@Eigen & TableOfReal: Project...@.")
+MAN_END
+
+MAN_BEGIN (L"Discriminant & TableOfReal: To TableOfReal (mahalanobis)...", L"djmw", 20100107)
+INTRO (L"Calculate Mahalanobis distances for the selected @TableOfReal with respect to one group in the "
+	"selected @Discriminant object.")
+ENTRY (L"Arguments")
+TAG (L"%%Group label%,")
+DEFINITION (L"defines which group mean to use for the distance calculation.")
+TAG (L"%%Pool covariance matrices%,")
+DEFINITION (L"when on use a pooled covariance matrix instead of the group covariance matrix.")
+ENTRY (L"Algorithm")
+NORMAL (L"See @@Covariance & TableOfReal: To TableOfReal (mahalanobis)...@.")
+ENTRY (L"Example")
+NORMAL (L"Calculate the number of datapoints that are within the one-sigma elipses of two different groups, i.e. "
+	"the number of data points that are in the overlapping area. ")
+NORMAL (L"Suppose the group labels are \\o/ and \\yc.")
+CODE (L"t = Create TableOfReal (Pols 1973)... no")
+CODE (L"Formula... log10(self)")
+CODE (L"d = To Discriminant")
+CODE (L"select t")
+CODE (L"plus d")
+CODE (L"t1 = To TableOfReal (mahalanobis)... \\bso/ no")
+CODE (L"select t")
+CODE (L"plus d")
+CODE (L"t2 = To TableOfReal (mahalanobis)... \\bsyc no")
+NORMAL (L"Now we count when both the t1 and t2 values are smaller than 1 (sigma):")
+CODE (L"Copy... tr")
+CODE (L"Formula... Object_'t1'[] < 1 and Object_'t2'[] < 1")
+CODE (L"Extract rows where column... 1 \"equal to\" 1")
+CODE (L"no = Get number of rows")
+
 MAN_END
 
 MAN_BEGIN (L"DTW", L"djmw", 20090523)
@@ -2911,37 +2976,33 @@ NORMAL (L"The shifting of formant frequencies is done via manipulation of the sa
 	"Pitch and duration changes are generated with @@overlap-add@ synthesis.")
 MAN_END
 
-MAN_BEGIN (L"Sound: Draw parts...", L"djmw", 20090927)
-INTRO (L"A command to draw selected parts of a @Sound.")
+MAN_BEGIN (L"Sound: Draw where...", L"djmw", 20091126)
+INTRO (L"A command to draw only those parts of a @Sound where a condition holds.")
 ENTRY (L"Arguments")
-NORMAL (L"The standard arguments of ##Sound: Draw...# with two extras.")
-TAG (L"%%Number of bisections%,")
-DEFINITION (L"determines the precision of the start and end times of all selected intervals. "
-	"If you select %%numberOfBisections% = 0, start and end times are always at @@Get time from sample number...|sample numbers@. This means that selected intervals are separated from not selected intervals by one @@sampling period@. "
-	"If you select a %%numberOfBisections% > 0, we try to find a more precise time where the selected and not selected parts meet.")
-TAG (L"%%Formula%,")
-DEFINITION (L"determines the selection of the sound that will be drawn.")
+NORMAL (L"The standard arguments of ##Sound: Draw...# and:")
+TAG (L"%%...condition...%,")
+DEFINITION (L"determines the part of the sound that will be drawn. All parts where the formula evaluates to true will be drawn.")
 ENTRY (L"Examples")
 NORMAL (L"Draw the second half of a sound:")
-CODE (L"Draw parts... 0 0 -1 1 n Curve 10 x > xmin + (xmax - xmin) / 2")
-NORMAL (L"Draw amplitudes larger than zero:")
-CODE (L"Draw parts... 0 0 -1 1 n Curve 10 self>0")
-NORMAL (L"Mark clipped parts of a sound with red colour: ")
+CODE (L"Draw where... 0 0 -1 1 n Curve x > xmin + (xmax - xmin) / 2")
+NORMAL (L"Draw only positive amplitudes:")
+CODE (L"Draw where... 0 0 -1 1 n Curve self>0")
+NORMAL (L"Draw the clipped parts of a sound in red: ")
 CODE (L"Red")
-CODE (L"Draw parts... 0 0 -1 1 n Curve 10 abs(self)>1")
+CODE (L"Draw where... 0 0 -1 1 n Curve abs(self)>1")
 CODE (L"Black")
-CODE (L"Draw parts... 0 0 -1 1 y Curve 10 not (abs(self)>1)")
-NORMAL (L"Mark parts where pitch is smaller than 100 Hz with red colour.")
+CODE (L"Draw where... 0 0 -1 1 y Curve not (abs(self)>1)")
+NORMAL (L"Draw parts where pitch is larger than 300 Hz in red:")
 CODE (L"s = selected (\"Sound\")")
 CODE (L"p = To Pitch... 0 75 600")
 CODE (L"pt = Down to PitchTier")
 CODE (L"select s")
 CODE (L"Red")
-CODE (L"Draw parts... 0 0 -1 1 yes Curve 10 Object_'pt'(x) < 100")
+CODE (L"Draw where... 0 0 -1 1 yes Curve Object_'pt'(x) > 300")
 CODE (L"Black")
-CODE (L"Draw parts... 0 0 -1 1 yes  Curve 10 not (Object_'pt'(x) < 100)")
+CODE (L"Draw where... 0 0 -1 1 yes Curve not (Object_'pt'(x) > 300)")
 ENTRY (L"Warning")
-NORMAL (L"Please do not use formulas with references to column numbers, the 'col' variable, in combination with %%numberOfBisections > 0%.")
+NORMAL (L"Do not use a formula wich references the sampling of the sound, i.e. don't use the 'col', 'x1', 'dx' and 'ncol' variables.")
 
 MAN_END
 

@@ -23,9 +23,25 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (L"What's new?", L"ppgb", 20091026)
+MAN_BEGIN (L"What's new?", L"ppgb", 20100120)
 INTRO (L"Latest changes in Praat.")
 /*LIST_ITEM (L"\\bu Manual page about @@drawing a vowel triangle@.")*/
+NORMAL (L"##5.1.25# (20 January 2010)")
+LIST_ITEM (L"\\bu Script window: the new command ##Reopen from disk# allows you to edit the script with an external editor.")
+LIST_ITEM (L"\\bu Script window: removed a bug that could cause Praat to crash of you did ##Find again# before having done any #Find.")
+NORMAL (L"##5.1.24# (15 January 2010)")
+LIST_ITEM (L"\\bu Formulas run 10 to 20 percent faster.")
+LIST_ITEM (L"\\bu Macintosh: support for forward delete key and Command-`.")
+NORMAL (L"##5.1.23# (1 January 2010)")
+LIST_ITEM (L"\\bu Allowed multiple files to be selected with e.g. @@Read from file...@.")
+LIST_ITEM (L"\\bu Demo window: guarded against handling the Demo window from two scripts at a time.")
+NORMAL (L"##5.1.22# (15 December 2009)")
+LIST_ITEM (L"\\bu Picture window: millions of @@colour|colours@ instead of just twelve.")
+LIST_ITEM (L"\\bu Sound window: ##Move frequency cursor to...#")
+NORMAL (L"##5.1.21# (30 November 2009)")
+LIST_ITEM (L"\\bu @@Sound: Draw where...@")
+LIST_ITEM (L"\\bu ##Matrix: Draw contours...# and ##LogisticRegression: Draw boundary...# support reversed axes.")
+LIST_ITEM (L"\\bu Sound window: ##Move frequency cursor to...#.")
 NORMAL (L"##5.1.20# (26 October 2009)")
 LIST_ITEM (L"\\bu Editor windows: repaired the Synchronized Zoom And Scroll preference.")
 NORMAL (L"##5.1.19# (21 October 2009)")
