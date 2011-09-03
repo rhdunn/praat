@@ -18,11 +18,12 @@
  */
 
 /*
- * pb 2009/01/18
+ * pb 2009/03/21
  */
 
 #undef FORM
 #undef REAL
+#undef REAL_OR_UNDEFINED
 #undef POSITIVE
 #undef INTEGER
 #undef NATURAL
@@ -35,9 +36,10 @@
 #undef RADIOBUTTON
 #undef OPTIONMENU
 #undef OPTION
-#undef ENUM
 #undef RADIOBUTTONS_ENUM
 #undef OPTIONS_ENUM
+#undef RADIO_ENUM
+#undef OPTIONMENU_ENUM
 #undef LIST
 #undef OK
 #undef SET_REAL
@@ -54,6 +56,7 @@
 #undef GET_FILE
 
 #define REAL(label,def)		UiForm_addReal (cmd -> dialog, label, def);
+#define REAL_OR_UNDEFINED(label,def)  UiForm_addRealOrUndefined (cmd -> dialog, label, def);
 #define POSITIVE(label,def)	UiForm_addPositive (cmd -> dialog, label, def);
 #define INTEGER(label,def)	UiForm_addInteger (cmd -> dialog, label, def);
 #define NATURAL(label,def)	UiForm_addNatural (cmd -> dialog, label, def);
@@ -66,7 +69,6 @@
 #define RADIOBUTTON(label)	UiRadio_addButton (radio, label);
 #define OPTIONMENU(label,def)	radio = UiForm_addOptionMenu (cmd -> dialog, label, def);
 #define OPTION(label)	UiOptionMenu_addButton (radio, label);
-#define ENUM(label,type,def)	UiForm_addEnum (cmd -> dialog, label, & enum_##type, def);
 #define RADIOBUTTONS_ENUM(labelProc,min,max) { int itext; for (itext = min; itext <= max; itext ++) RADIOBUTTON (labelProc) }
 #define OPTIONS_ENUM(labelProc,min,max) { int itext; for (itext = min; itext <= max; itext ++) OPTION (labelProc) }
 #define RADIO_ENUM(label,enum,def) \

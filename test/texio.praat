@@ -128,7 +128,7 @@ asserterror Found strange text while reading an enumerated value in text (line 6
 ...'newline$'No object was put into the list.
 Read from file... texio/texio19.TextGrid
 
-asserterror "exi" is not a value of enumerated type "Existence".
+asserterror "exi" is not a value of the enumerated type.
 ...'newline$'TextGrid not read.
 ...'newline$'No object was put into the list.
 Read from file... texio/texio20.TextGrid

@@ -623,6 +623,17 @@ DO
 		GET_INTEGER (STRING_TIER_NUMBER), GET_STRING (L"Label text"))), L" labels");
 END
 
+FORM (TextGrid_downto_Table, L"TextGrid: Down to Table", 0)
+	BOOLEAN (L"Include line number", false)
+	NATURAL (L"Time decimals", L"6")
+	BOOLEAN (L"Include tier names", true)
+	BOOLEAN (L"Include empty intervals", false)
+	OK
+DO
+	EVERY_TO (TextGrid_downto_Table (OBJECT, GET_INTEGER (L"Include line number"), GET_INTEGER (L"Time decimals"),
+		GET_INTEGER (L"Include tier names"), GET_INTEGER (L"Include empty intervals")))
+END
+
 FORM (TextGrid_draw, L"TextGrid: Draw", 0)
 	praat_dia_timeRange (dia);
 	BOOLEAN (L"Show boundaries", 1)
@@ -664,18 +675,18 @@ static void cb_TextGridEditor_publish (Any editor, void *closure, Any publish) {
 	if (Thing_member (publish, classSpectrum) && wcsequ (Thing_getName (publish), L"slice")) {
 		int IOBJECT;
 		WHERE (SELECTED) {
-			SpectrumEditor editor2 = SpectrumEditor_create (theCurrentPraat -> topShell, ID_AND_FULL_NAME, OBJECT);
+			SpectrumEditor editor2 = SpectrumEditor_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME, OBJECT);
 			if (! editor2) return;
 			if (! praat_installEditor (editor2, IOBJECT)) Melder_flushError (NULL);
 		}
 	}
 }
 DIRECT (TextGrid_edit)
-	if (theCurrentPraat -> batch) {
+	if (theCurrentPraatApplication -> batch) {
 		return Melder_error1 (L"Cannot edit a TextGrid from batch.");
 	} else {
 		WHERE (SELECTED && CLASS == classTextGrid) {
-			TextGridEditor editor = TextGridEditor_create (theCurrentPraat -> topShell, ID_AND_FULL_NAME,
+			TextGridEditor editor = TextGridEditor_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME,
 				OBJECT, ONLY (classSound), NULL);
 			if (! praat_installEditor (editor, IOBJECT)) return 0;
 			Editor_setPublishCallback (TextGridEditor_as_Editor (editor), cb_TextGridEditor_publish, NULL);
@@ -684,7 +695,7 @@ DIRECT (TextGrid_edit)
 END
 
 DIRECT (TextGrid_LongSound_edit)
-	if (theCurrentPraat -> batch) {
+	if (theCurrentPraatApplication -> batch) {
 		return Melder_error1 (L"Cannot edit a TextGrid from batch.");
 	} else {
 		LongSound longSound = NULL;
@@ -693,13 +704,13 @@ DIRECT (TextGrid_LongSound_edit)
 			if (CLASS == classLongSound) longSound = OBJECT, ilongSound = IOBJECT;
 		Melder_assert (ilongSound != 0);
 		WHERE (SELECTED && CLASS == classTextGrid)
-			if (! praat_installEditor2 (TextGridEditor_create (theCurrentPraat -> topShell, ID_AND_FULL_NAME,
+			if (! praat_installEditor2 (TextGridEditor_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME,
 				OBJECT, longSound, NULL), IOBJECT, ilongSound)) return 0;
 	}
 END
 
 DIRECT (TextGrid_SpellingChecker_edit)
-	if (theCurrentPraat -> batch) {
+	if (theCurrentPraatApplication -> batch) {
 		return Melder_error1 (L"Cannot edit a TextGrid from batch.");
 	} else {
 		SpellingChecker spellingChecker = NULL;
@@ -708,13 +719,13 @@ DIRECT (TextGrid_SpellingChecker_edit)
 			if (CLASS == classSpellingChecker) spellingChecker = OBJECT, ispellingChecker = IOBJECT;
 		Melder_assert (ispellingChecker != 0);
 		WHERE (SELECTED && CLASS == classTextGrid)
-			if (! praat_installEditor2 (TextGridEditor_create (theCurrentPraat -> topShell, ID_AND_FULL_NAME,
+			if (! praat_installEditor2 (TextGridEditor_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME,
 				OBJECT, ONLY (classSound), spellingChecker), IOBJECT, ispellingChecker)) return 0;
 	}
 END
 
 DIRECT (TextGrid_LongSound_SpellingChecker_edit)
-	if (theCurrentPraat -> batch) {
+	if (theCurrentPraatApplication -> batch) {
 		return Melder_error1 (L"Cannot edit a TextGrid from batch.");
 	} else {
 		LongSound longSound = NULL;
@@ -726,7 +737,7 @@ DIRECT (TextGrid_LongSound_SpellingChecker_edit)
 		}
 		Melder_assert (ilongSound != 0 && ispellingChecker != 0);
 		WHERE (SELECTED && CLASS == classTextGrid)
-			if (! praat_installEditor3 (TextGridEditor_create (theCurrentPraat -> topShell, ID_AND_FULL_NAME,
+			if (! praat_installEditor3 (TextGridEditor_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME,
 				OBJECT, longSound, spellingChecker), IOBJECT, ilongSound, ispellingChecker)) return 0;
 	}
 END
@@ -999,6 +1010,17 @@ DO
 	} else {
 		Melder_information3 (L"0 (no, tier ", Melder_integer (GET_INTEGER (STRING_TIER_NUMBER)), L" is a point tier)");
 	}
+END
+
+FORM (TextGrid_list, L"TextGrid: List", 0)
+	BOOLEAN (L"Include line number", false)
+	NATURAL (L"Time decimals", L"6")
+	BOOLEAN (L"Include tier names", true)
+	BOOLEAN (L"Include empty intervals", false)
+	OK
+DO
+	EVERY (TextGrid_list (OBJECT, GET_INTEGER (L"Include line number"), GET_INTEGER (L"Time decimals"),
+		GET_INTEGER (L"Include tier names"), GET_INTEGER (L"Include empty intervals")))
 END
 
 DIRECT (TextGrids_merge)
@@ -1292,10 +1314,12 @@ void praat_uvafon_TextGrid_init (void) {
 	praat_addAction1 (classTextGrid, 0, L"Edit", 0, 0, 0);
 	praat_addAction1 (classTextGrid, 1, L"Edit", 0, 0, DO_TextGrid_edit);
 	praat_addAction1 (classTextGrid, 1, L"& Sound: Edit?", 0, 0, DO_info_TextGrid_Sound_edit);
-	praat_addAction1 (classTextGrid, 0, L"Draw", 0, 0, 0);
-	praat_addAction1 (classTextGrid, 0, L"Draw...", 0, 0, DO_TextGrid_draw);
-	praat_addAction1 (classTextGrid, 1, L"& Sound: Draw?", 0, 0, DO_info_TextGrid_Sound_draw);
-	praat_addAction1 (classTextGrid, 1, L"& Pitch: Draw?", 0, 0, DO_info_TextGrid_Pitch_draw);
+	praat_addAction1 (classTextGrid, 0, L"Draw -", 0, 0, 0);
+	praat_addAction1 (classTextGrid, 0, L"Draw...", 0, 1, DO_TextGrid_draw);
+	praat_addAction1 (classTextGrid, 1, L"& Sound: Draw?", 0, 1, DO_info_TextGrid_Sound_draw);
+	praat_addAction1 (classTextGrid, 1, L"& Pitch: Draw?", 0, 1, DO_info_TextGrid_Pitch_draw);
+	praat_addAction1 (classTextGrid, 0, L"List...", 0, 0, DO_TextGrid_list);
+	praat_addAction1 (classTextGrid, 0, L"Down to Table...", 0, 0, DO_TextGrid_downto_Table);
 	praat_addAction1 (classTextGrid, 0, L"Query -          ", 0, 0, 0);
 		praat_TimeFunction_query_init (classTextGrid);
 		praat_addAction1 (classTextGrid, 1, L"-- query tiers --", 0, 1, 0);

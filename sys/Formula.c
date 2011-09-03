@@ -51,10 +51,14 @@
  * pb 2009/01/05 pause forms
  * pb 2009/01/17 arguments to UiForm callbacks
  * pb 2009/01/20 pause forms moved to UiPause.c
+ * pb 2009/02/06 createDirectory
  */
 
 #include <ctype.h>
 #include <time.h>
+#if defined (UNIX)
+	#include <sys/stat.h>
+#endif
 #include "NUM.h"
 #include "NUM2.h"
 #include "regularExp.h"
@@ -161,8 +165,8 @@ enum { GEENSYMBOOL_,
 	/* String functions. */
 	#define LOW_STRING_FUNCTION  LOW_FUNCTION_STRNUM
 	#define LOW_FUNCTION_STRNUM  LENGTH_
-		LENGTH_, FILE_READABLE_, DELETEFILE_,
-	#define HIGH_FUNCTION_STRNUM  DELETEFILE_
+		LENGTH_, FILE_READABLE_, DELETEFILE_, CREATEDIRECTORY_,
+	#define HIGH_FUNCTION_STRNUM  CREATEDIRECTORY_
 		DATESTR_,
 		ENVIRONMENTSTR_, INDEX_, RINDEX_,
 		STARTS_WITH_, ENDS_WITH_, REPLACESTR_, INDEX_REGEX_, RINDEX_REGEX_, REPLACE_REGEXSTR_,
@@ -244,7 +248,7 @@ static wchar_t *Formula_instructionNames [1 + hoogsteSymbool] = { L"",
 	L"zero#", L"linear#", L"randomUniform#", L"randomInteger#", L"randomGauss#",
 	L"numberOfRows", L"numberOfColumns",
 
-	L"length", L"fileReadable",	L"deleteFile",
+	L"length", L"fileReadable",	L"deleteFile", L"createDirectory",
 	L"date$",
 	L"environment$", L"index", L"rindex",
 	L"startsWith", L"endsWith", L"replace$", L"index_regex", L"rindex_regex", L"replace_regex$",
@@ -587,27 +591,27 @@ static int Formula_lexan (void) {
 					L"(variables start with lower case; object names contain an underscore).");
 			} else if (wcsnequ (token.string, L"Object_", 7)) {
 				long uniqueID = wcstol (token.string + 7, NULL, 10);
-				int i = theCurrentPraat -> n;
-				while (i > 0 && uniqueID != theCurrentPraat -> list [i]. id)
+				int i = theCurrentPraatObjects -> n;
+				while (i > 0 && uniqueID != theCurrentPraatObjects -> list [i]. id)
 					i --;
 				if (i == 0) {
 					formulefout (L"No such object (note: variables start with lower case)", ikar);
 					return 0;
 				}
 				nieuwtok (endsInDollarSign ? MATRIKSSTR_ : MATRIKS_)
-				tokmatriks (theCurrentPraat -> list [i]. object);
+				tokmatriks (theCurrentPraatObjects -> list [i]. object);
 			} else {
-				int i = theCurrentPraat -> n;
+				int i = theCurrentPraatObjects -> n;
 				*underscore = ' ';
 				if (endsInDollarSign) token.string [-- token.length] = '\0';
-				while (i > 0 && ! wcsequ (token.string, theCurrentPraat -> list [i]. name))
+				while (i > 0 && ! wcsequ (token.string, theCurrentPraatObjects -> list [i]. name))
 					i --;
 				if (i == 0) {
 					formulefout (L"No such object (note: variables start with lower case)", ikar);
 					return 0;
 				}
 				nieuwtok (endsInDollarSign ? MATRIKSSTR_ : MATRIKS_)
-				tokmatriks (theCurrentPraat -> list [i]. object);
+				tokmatriks (theCurrentPraatObjects -> list [i]. object);
 			}
 		} else if (kar == '(') {
 			nieuwtok (HAAKJEOPENEN_)
@@ -2380,14 +2384,14 @@ static void do_objects_are_identical (void) {
 	Stackel y = pop, x = pop;
 	if (x->which == Stackel_NUMBER && y->which == Stackel_NUMBER) {
 		int id1 = x->content.number, id2 = y->content.number;
-		int i = theCurrentPraat -> n;
-		while (i > 0 && id1 != theCurrentPraat -> list [i]. id) i --;
+		int i = theCurrentPraatObjects -> n;
+		while (i > 0 && id1 != theCurrentPraatObjects -> list [i]. id) i --;
 		if (i == 0) error3 (L"Object #", Melder_integer (id1), L" does not exist in function objectsAreIdentical.")
-		Data object1 = theCurrentPraat -> list [i]. object;
-		i = theCurrentPraat -> n;
-		while (i > 0 && id2 != theCurrentPraat -> list [i]. id) i --;
+		Data object1 = theCurrentPraatObjects -> list [i]. object;
+		i = theCurrentPraatObjects -> n;
+		while (i > 0 && id2 != theCurrentPraatObjects -> list [i]. id) i --;
 		if (i == 0) error3 (L"Object #", Melder_integer (id2), L" does not exist in function objectsAreIdentical.")
-		Data object2 = theCurrentPraat -> list [i]. object;
+		Data object2 = theCurrentPraatObjects -> list [i]. object;
 		pushNumber (x->content.number == NUMundefined || y->content.number == NUMundefined ? NUMundefined :
 			Data_equal (object1, object2));
 	} else {
@@ -3034,8 +3038,8 @@ static void do_percentStr (void) {
 end: return;
 }
 static void do_deleteFile (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"deleteFile\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"deleteFile\" is not available inside manuals.")
 	Stackel f = pop;
 	if (f->which == Stackel_STRING) {
 		structMelderFile file = { 0 };
@@ -3047,14 +3051,32 @@ static void do_deleteFile (void) {
 	}
 end: return;
 }
+static void do_createDirectory (void) {
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"createDirectory\" is not available inside manuals.")
+	Stackel f = pop;
+	if (f->which == Stackel_STRING) {
+		structMelderDir currentDirectory = { { 0 } };
+		Melder_getDefaultDir (& currentDirectory);
+		#if defined (UNIX) || defined (macintosh)
+			Melder_createDirectory (& currentDirectory, f->content.string, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH); cherror
+		#else
+			Melder_createDirectory (& currentDirectory, f->content.string, 0); cherror
+		#endif
+		pushNumber (1);
+	} else {
+		error3 (L"The function \"deleteFile\" requires a string, not ", Stackel_whichText (f), L".")
+	}
+end: return;
+}
 static void do_beginPauseForm (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"beginPauseForm\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"beginPauseForm\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 1) {
 		Stackel title = pop;
 		if (title->which == Stackel_STRING) {
-			UiPause_begin (theCurrentPraat -> topShell, title->content.string, theInterpreter); cherror
+			UiPause_begin (theCurrentPraatApplication -> topShell, title->content.string, theInterpreter); cherror
 		} else {
 			error3 (L"The function \"beginPauseForm\" requires a string (the title), not ", Stackel_whichText (title), L".")
 		}
@@ -3065,8 +3087,8 @@ static void do_beginPauseForm (void) {
 end: return;
 }
 static void do_pauseFormAddReal (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"real\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"real\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 2) {
 		Stackel defaultValue = pop;
@@ -3091,8 +3113,8 @@ static void do_pauseFormAddReal (void) {
 end: return;
 }
 static void do_pauseFormAddPositive (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"positive\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"positive\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 2) {
 		Stackel defaultValue = pop;
@@ -3117,8 +3139,8 @@ static void do_pauseFormAddPositive (void) {
 end: return;
 }
 static void do_pauseFormAddInteger (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"integer\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"integer\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 2) {
 		Stackel defaultValue = pop;
@@ -3143,8 +3165,8 @@ static void do_pauseFormAddInteger (void) {
 end: return;
 }
 static void do_pauseFormAddNatural (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"natural\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"natural\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 2) {
 		Stackel defaultValue = pop;
@@ -3169,8 +3191,8 @@ static void do_pauseFormAddNatural (void) {
 end: return;
 }
 static void do_pauseFormAddWord (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"word\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"word\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 2) {
 		Stackel defaultValue = pop;
@@ -3190,8 +3212,8 @@ static void do_pauseFormAddWord (void) {
 end: return;
 }
 static void do_pauseFormAddSentence (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"sentence\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"sentence\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 2) {
 		Stackel defaultValue = pop;
@@ -3211,8 +3233,8 @@ static void do_pauseFormAddSentence (void) {
 end: return;
 }
 static void do_pauseFormAddText (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"text\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"text\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 2) {
 		Stackel defaultValue = pop;
@@ -3232,8 +3254,8 @@ static void do_pauseFormAddText (void) {
 end: return;
 }
 static void do_pauseFormAddBoolean (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"boolean\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"boolean\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 2) {
 		Stackel defaultValue = pop;
@@ -3253,8 +3275,8 @@ static void do_pauseFormAddBoolean (void) {
 end: return;
 }
 static void do_pauseFormAddChoice (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"choice\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"choice\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 2) {
 		Stackel defaultValue = pop;
@@ -3274,8 +3296,8 @@ static void do_pauseFormAddChoice (void) {
 end: return;
 }
 static void do_pauseFormAddOptionMenu (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"optionMenu\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"optionMenu\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 2) {
 		Stackel defaultValue = pop;
@@ -3295,8 +3317,8 @@ static void do_pauseFormAddOptionMenu (void) {
 end: return;
 }
 static void do_pauseFormAddOption (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"option\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"option\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 1) {
 		Stackel text = pop;
@@ -3312,8 +3334,8 @@ static void do_pauseFormAddOption (void) {
 end: return;
 }
 static void do_pauseFormAddComment (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"comment\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"comment\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number == 1) {
 		Stackel text = pop;
@@ -3329,8 +3351,8 @@ static void do_pauseFormAddComment (void) {
 end: return;
 }
 static void do_endPauseForm (void) {
-	if (theCurrentPraat != & theForegroundPraat)
-		error1 (L"The function \"endPauseForm\" is not available inside pictures.")
+	if (theCurrentPraatObjects != & theForegroundPraatObjects)
+		error1 (L"The function \"endPauseForm\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number < 2 || n->content.number > 11)
 		error3 (L"The function \"endPauseForm\" requires 2 to 11 arguments, not ", Melder_integer (n->content.number), L".")
@@ -3461,21 +3483,21 @@ end: return;
 static Data getObjectFromUniqueID (Stackel object) {
 	Data thee = NULL;
 	if (object->which == Stackel_NUMBER) {
-		int i = theCurrentPraat -> n;
-		while (i > 0 && object->content.number != theCurrentPraat -> list [i]. id)
+		int i = theCurrentPraatObjects -> n;
+		while (i > 0 && object->content.number != theCurrentPraatObjects -> list [i]. id)
 			i --;
 		if (i == 0) {
 			error2 (L"No such object: ", Melder_integer (object->content.number));
 		}
-		thee = theCurrentPraat -> list [i]. object;
+		thee = theCurrentPraatObjects -> list [i]. object;
 	} else if (object->which == Stackel_STRING) {
-		int i = theCurrentPraat -> n;
-		while (i > 0 && ! Melder_wcsequ (object->content.string, theCurrentPraat -> list [i]. name))
+		int i = theCurrentPraatObjects -> n;
+		while (i > 0 && ! Melder_wcsequ (object->content.string, theCurrentPraatObjects -> list [i]. name))
 			i --;
 		if (i == 0) {
 			error2 (L"No such object: ", object->content.string);
 		}
-		thee = theCurrentPraat -> list [i]. object;
+		thee = theCurrentPraatObjects -> list [i]. object;
 	} else {
 		error3 (L"The first argument to \"object\" must be a number (unique ID) or a string (name), not ", Stackel_whichText (object), L".")
 	}
@@ -4092,6 +4114,7 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 } break; case FIXEDSTR_: { do_fixedStr ();
 } break; case PERCENTSTR_: { do_percentStr ();
 } break; case DELETEFILE_: { do_deleteFile ();
+} break; case CREATEDIRECTORY_: { do_createDirectory ();
 /********** Pause form functions: **********/
 } break; case BEGIN_PAUSE_FORM_: { do_beginPauseForm ();
 } break; case PAUSE_FORM_ADD_REAL_: { do_pauseFormAddReal ();

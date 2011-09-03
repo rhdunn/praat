@@ -20,7 +20,7 @@
  */
 
 /*
- * pb 2009/01/19
+ * pb 2009/03/21
  */
 
 #include "Thing.h"
@@ -78,6 +78,7 @@ Any UiForm_create (Widget parent, const wchar_t *title,
 	int (*okCallback) (UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter, void *closure), void *okClosure,
 	const wchar_t *helpTitle);
 Any UiForm_addReal (I, const wchar_t *label, const wchar_t *defaultValue);
+Any UiForm_addRealOrUndefined (I, const wchar_t *label, const wchar_t *defaultValue);
 Any UiForm_addPositive (I, const wchar_t *label, const wchar_t *defaultValue);
 Any UiForm_addInteger (I, const wchar_t *label, const wchar_t *defaultValue);
 Any UiForm_addNatural (I, const wchar_t *label, const wchar_t *defaultValue);
@@ -90,7 +91,6 @@ Any UiForm_addRadio (I, const wchar_t *label, int defaultValue);
 	Any UiRadio_addButton (I, const wchar_t *label);
 Any UiForm_addOptionMenu (I, const wchar_t *label, int defaultValue);
 	Any UiOptionMenu_addButton (I, const wchar_t *label);
-Any UiForm_addEnum (I, const wchar_t *label, void *enumerated, int defaultValue);
 Any UiForm_addList (I, const wchar_t *label, long numberOfStrings, const wchar_t **strings, long defaultValue);
 Any UiForm_addColour (I, const wchar_t *label, const wchar_t *defaultValue);
 void UiForm_finish (I);
@@ -108,11 +108,11 @@ void UiForm_setPauseForm (I,
 /* 'fieldName' is name from UiForm_addXXXXXX (), */
 /* without anything from and including the first " (" or ":". */
 void UiForm_setString (I, const wchar_t *fieldName, const wchar_t *text);
-	/* Real, Positive, Integer, Natural, Word, Sentence, Label, Text, Radio, Enum, List. */
+	/* Real, Positive, Integer, Natural, Word, Sentence, Label, Text, Radio, List. */
 void UiForm_setReal (I, const wchar_t *fieldName, double value);
 	/* Real, Positive. */
 void UiForm_setInteger (I, const wchar_t *fieldName, long value);
-	/* Integer, Natural, Boolean, Radio, Enum, List. */
+	/* Integer, Natural, Boolean, Radio, List. */
 
 void UiForm_do (I, bool modified);
 /*
@@ -148,8 +148,8 @@ void UiForm_do (I, bool modified);
 /* without anything from parentheses or from a colon. */
 /* These routines work from the screen and from batch. */
 double UiForm_getReal (I, const wchar_t *fieldName);	/* Real, Positive. */
-long UiForm_getInteger (I, const wchar_t *fieldName);	/* Integer, Natural, Boolean, Radio, Enum, List. */
-wchar_t * UiForm_getString (I, const wchar_t *fieldName);	/* Word, Sentence, Text, Radio, Enum, List. */
+long UiForm_getInteger (I, const wchar_t *fieldName);	/* Integer, Natural, Boolean, Radio, List. */
+wchar_t * UiForm_getString (I, const wchar_t *fieldName);	/* Word, Sentence, Text, Radio, List. */
 MelderFile UiForm_getFile (I, const wchar_t *fieldName); /* FileIn, FileOut */
 
 double UiForm_getReal_check (I, const wchar_t *fieldName);

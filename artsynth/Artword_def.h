@@ -1,6 +1,6 @@
 /* Artword_def.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2009 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 /*
  * pb 1996/06/14
  * pb 2002/07/16 GPL
+ * pb 2009/03/21
  */
 
 
@@ -32,18 +33,6 @@ oo_DEFINE_STRUCT (ArtwordData)
 	#if oo_DECLARING
 		oo_INT (_iTarget)
 	#endif
-	#if oo_READING
-		double *newTargets = NUMdvector (1, 100);
-		double *newTimes = NUMdvector (1, 100);
-		if (my numberOfTargets > 0) {
-			NUMdvector_copyElements (my targets, newTargets, 1, my numberOfTargets);
-			NUMdvector_copyElements (my times, newTimes, 1, my numberOfTargets);
-			NUMdvector_free (my targets, 1);
-			NUMdvector_free (my times, 1);
-		}
-		my targets = newTargets;
-		my times = newTimes;
-	#endif
 
 oo_END_STRUCT (ArtwordData)
 #undef ooSTRUCT
@@ -53,7 +42,7 @@ oo_END_STRUCT (ArtwordData)
 oo_DEFINE_CLASS (Artword, Data)
 
 	oo_DOUBLE (totalTime)
-	oo_STRUCT_SET (ArtwordData, data, Art_MUSCLE)
+	oo_STRUCT_SET (ArtwordData, data, kArt_muscle)
 
 oo_END_CLASS (Artword)
 #undef ooSTRUCT
