@@ -1,6 +1,6 @@
 /* manual_Manual.c
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,28 +17,24 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2003/05/28
- */
-
 #include "ManPagesM.h"
 
 void manual_Manual_init (ManPages me);
 void manual_Manual_init (ManPages me) {
 
-MAN_BEGIN (L"Manual", L"ppgb", 20061020)
+MAN_BEGIN (L"Manual", L"ppgb", 20110101)
 INTRO (L"The documentation system for the Praat program.")
 NORMAL (L"You will get a manual window every time you choose anything from a #Help menu or press a #Help button.")
 ENTRY (L"How to find what you are looking for")
 NORMAL (L"You can navigate the manual in several ways:")
-LIST_ITEM (L"\\bu To go to the Intro, use the #H button.")
-LIST_ITEM (L"\\bu To go to the information behind a %link (a piece of blue text), #click on it.")
-LIST_ITEM (L"\\bu To go forward and backward through a tutorial with numbered pages, use \"1 >\" and \"< 1\".")
+LIST_ITEM (L"\\bu To go to the Intro, use the #Home button.")
+LIST_ITEM (L"\\bu To go to the information behind a %link (a piece of blue text), just click on it.")
+LIST_ITEM (L"\\bu To go forward and backward through a tutorial with numbered pages, use ##1 ># and ##< 1#.")
 LIST_ITEM (L"\\bu To %revisit previous pages, use the #< and #> buttons.")
 LIST_ITEM (L"\\bu To browse %alphabetically, use the horizontal scroll bar and the buttons "
-	"named \"< 1\" and \"1 >\", or the ##Search for page (list)...# command in the ##Go to# menu.")
+	"named ##< 1# and ##1 >#, or the ##Search for page (list)...# command in the ##Go to# menu.")
 LIST_ITEM (L"\\bu To find a page with a %%known title%, use the ##Search for page...# command.")
-NORMAL (L"The fastest way to find what you want is often the #Search button.")
+NORMAL (L"The fastest way to find what you want is usually the #Search button.")
 ENTRY (L"Search")
 NORMAL (L"In the text field after the Search button, you can type strings, separated by spaces. "
 	"When you press the #Return (or #Enter) key, or click the #Search button, "
@@ -57,7 +53,7 @@ ENTRY (L"Your own manual pages")
 NORMAL (L"To create your own manual pages, create @ManPages text files.")
 MAN_END
 
-MAN_BEGIN (L"ManPages", L"ppgb", 20070225)
+MAN_BEGIN (L"ManPages", L"ppgb", 20110129)
 INTRO (L"You can create a documentation or education system with files that you and others "
 	"can read into Praat (with the @@Read from file...@ command). "
 	"Your files will become a hypertext system very similar to the usual @Manual.")
@@ -173,11 +169,9 @@ NORMAL (L"You can use relative path names, e.g., \\bsFIsounds/o.aifc refers to t
 	"the directory name(s) from the file name, as in this example "
 	"(i.e. you avoid the backslash (\\bs) that is usual on Windows computers).")
 ENTRY (L"Pictures as embedded scripts")
-NORMAL (L"Your text may contain Praat scripts. They typically draw a picture in your manual page. "
-	"The format is:")
+NORMAL (L"Your text may contain Praat scripts. They typically draw a picture in your manual page, "
+	"with the font and font size of the manual until you specify otherwise in the script. The format is:")
 CODE (L"<script> 4.5 4 \"")
-CODE1 (L"Times")
-CODE1 (L"12")
 CODE1 (L"Draw inner box")
 CODE1 (L"Axes... 0 100 0 100")
 CODE1 (L"Text... 50 Centre 50 Half Hello!!")
@@ -200,12 +194,32 @@ NORMAL (L"Note that unlike the previous script, this script does not set the fon
 	"This means that the drawing will use the font and font size of the manual page, "
 	"which is usually what you want.")
 NORMAL (L"For obvious safety reasons, embedded scripts cannot contain commands that change the contents of any disk "
-	"or send messages. Thus, commands like ##Write to WAV file...#, ##filedelete out.txt#, ##string\\$  >> out.txt#, "
-	"#system, or #sendpraat are forbidden. Several other commands, such as #pause, #editor, and ##Set outer viewport...# "
+	"or send messages. Thus, commands like ##Save as WAV file...#, ##filedelete out.txt#, ##string\\$  >> out.txt#, "
+	"#system, or #sendpraat are forbidden. Several other commands, such as #pause and #editor, "
 	"are irrelevant inside pictures and are therefore forbidden as well. "
 	"Note that commands like #echo, ##Read from file...#, and #execute are still available "
 	"(with the last two, you can use relative paths; "
 	"with #execute, you can only run scripts that do not contain any of the forbidden commands).")
+NORMAL (L"The commands ##Set outer viewport...# and ##Set inner viewport...# are available; "
+	"they count in inches (if the font size of the manual is 12). The (0, 0) point is in the upper left corner, "
+	"as in the Picture window, so that you can test your picture with a normal Praat script; "
+	"for instance, the following script draw a cross in the bottom half of the picture and a rectangle in the upper half:")
+CODE (L"<script> 4.5 4 \"")
+CODE1 (L"Axes... 0 100 0 100")
+CODE1 (L"Select inner viewport... 0 4.5 0 2")
+CODE1 (L"Draw line... 0 0 100 100")
+CODE1 (L"Draw line... 0 100 100 0")
+CODE1 (L"Select inner viewport... 0 4.5 2 4")
+CODE1 (L"Draw rectangle... 0 100 0 100")
+CODE (L"\\\"r")
+SCRIPT (4.5, 4, L""
+	"Axes... 0 100 0 100\n"
+	"Select inner viewport... 0 4.5 0 2\n"
+	"Draw line... 0 0 100 100\n"
+	"Draw line... 0 100 100 0\n"
+	"Select inner viewport... 0 4.5 2 4\n"
+	"Draw rectangle... 0 100 0 100\n"
+)
 ENTRY (L"Script links")
 NORMAL (L"Your text may contain links to Praat scripts. They are drawn in blue. "
 	"The format is:")
@@ -240,6 +254,8 @@ NORMAL (L"3. The ##Copy last played to list# button copies the latest sound to t
 	"a sound that you played with the #Play button, "
 	"or a sound that you played by clicking on a sound link, "
 	"whichever occurred most recently.")
+ENTRY (L"And beyond")
+NORMAL (L"If you need even more flexibility than ManPages offer you, consider using the @@Demo window@ instead.")
 MAN_END
 
 }

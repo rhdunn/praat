@@ -44,10 +44,10 @@
 #define wdy(y)  ((y) * my scaleY + my deltaY)
 
 static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
-	long ix1, long ix2, short x1DC, short x2DC,
-	long iy1, long iy2, short y1DC, short y2DC,
+	long ix1, long ix2, long x1DC, long x2DC,
+	long iy1, long iy2, long y1DC, long y2DC,
 	double minimum, double maximum,
-	short clipx1, short clipx2, short clipy1, short clipy2, int interpolate)
+	long clipx1, long clipx2, long clipy1, long clipy2, int interpolate)
 {
 	iam (GraphicsScreen);
 	/*long t=clock();*/
@@ -55,18 +55,12 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 	long ny = iy2 - iy1 + 1;   /* The number of cells along the vertical axis. */
 	double dx = (double) (x2DC - x1DC) / (double) nx;   /* Horizontal pixels per cell. Positive. */
 	double dy = (double) (y2DC - y1DC) / (double) ny;   /* Vertical pixels per cell. Negative. */
-	#if cairo
-		double scale = 255.0 / (maximum - minimum), offset = 255.0 + minimum * scale;
-	#elif xwin
-		double scale = 100.0 / (maximum - minimum), offset = 100.0 + minimum * scale;
-	#elif win || mac
-		double scale = 255.0 / (maximum - minimum), offset = 255.0 + minimum * scale;
-	#endif
+	double scale = 255.0 / (maximum - minimum), offset = 255.0 + minimum * scale;
 	if (x2DC <= x1DC || y1DC <= y2DC) return;
 	if (Melder_debug == 36)
 		Melder_casual ("scale %f", scale);
 	/* Clip by the intersection of the world window and the outline of the cells. */
-	//Melder_casual ("clipy1 %d clipy2 %d", clipy1, clipy2);
+	//Melder_casual ("clipy1 %ld clipy2 %ld", clipy1, clipy2);
 	if (clipx1 < x1DC) clipx1 = x1DC;
 	if (clipx2 > x2DC) clipx2 = x2DC;
 	if (clipy1 > y1DC) clipy1 = y1DC;
@@ -84,7 +78,7 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 		/*unsigned int cellWidth = (unsigned int) dx + 1;*/
 		unsigned int cellHeight = (unsigned int) (- (int) dy) + 1;
 		long ix, iy;
-		short *lefts = NUMsvector (ix1, ix2 + 1);
+		long *lefts = NUMlvector (ix1, ix2 + 1);
 		#if cairo
 			cairo_pattern_t *grey[256];
 			int igrey;
@@ -112,9 +106,9 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 		#endif
 		if (! lefts) return;
 		for (ix = ix1; ix <= ix2 + 1; ix ++)
-			lefts [ix] = x1DC + (short) ((ix - ix1) * dx);
+			lefts [ix] = x1DC + (long) ((ix - ix1) * dx);
 		for (iy = iy1; iy <= iy2; iy ++) {
-			short bottom = y1DC + (short) ((iy - iy1) * dy), top = bottom - cellHeight;
+			long bottom = y1DC + (long) ((iy - iy1) * dy), top = bottom - cellHeight;
 			if (top > clipy1 || bottom < clipy2) continue;
 			if (top < clipy2) top = clipy2;
 			if (bottom > clipy1) bottom = clipy1;
@@ -122,7 +116,7 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 				rect. bottom = bottom; rect. top = top;
 			#endif
 			for (ix = ix1; ix <= ix2; ix ++) {
-				short left = lefts [ix], right = lefts [ix + 1];
+				long left = lefts [ix], right = lefts [ix + 1];
 				long value = offset - scale * ( z_float ? z_float [iy] [ix] : z_byte [iy] [ix] );
 				if (right < clipx1 || left > clipx2) continue;
 				if (left < clipx1) left = clipx1;
@@ -131,10 +125,6 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 					cairo_set_source(my cr, grey[value <= 0 ? 0 : value >= sizeof(grey)/sizeof(*grey) ? sizeof(grey)/sizeof(*grey) : value]);
 					cairo_rectangle(my cr, left, top, right - left, bottom - top);
 					cairo_fill(my cr);
-				#elif xwin
-					XSetForeground (my display, my gc, xwinGreys [value <= 0 ? 0 : value >= 100 ? 100 : value]);
-					XFillRectangle (my display, my window, my gc, left, top,
-						right - left + 1, bottom - top + 1);
 				#elif win
 					rect. left = left; rect. right = right;
 					FillRect (my dc, & rect, greyBrush [value <= 0 ? 0 : value >= 255 ? 255 : value]);
@@ -150,7 +140,7 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 				#endif
 			}
 		}
-		NUMsvector_free (lefts, ix1);
+		NUMlvector_free (lefts, ix1);
 		
 		#if cairo
 			for (igrey=0; igrey<sizeof(grey)/sizeof(*grey); igrey++)
@@ -158,14 +148,14 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 			cairo_paint(my cr);
 		#endif
 	} else {
-		short xDC, yDC;
+		long xDC, yDC;
 		long undersampling = 1;
 		/*
 		 * Prepare for off-screen bitmap drawing.
 		 */
 		#if cairo
-			short arrayWidth = clipx2 - clipx1;
-			short arrayHeight = clipy1 - clipy2;
+			long arrayWidth = clipx2 - clipx1;
+			long arrayHeight = clipy1 - clipy2;
 			if (Melder_debug == 36)
 				Melder_casual ("arrayWidth %f, arrayHeight %f", (double) arrayWidth, (double) arrayHeight);
 			// We're creating an alpha-only surface here (size is 1/4 compared to RGB24 and ARGB)
@@ -178,28 +168,8 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 				Melder_casual ("image surface address %ld, bits address %ld, scanLineLength %d, numberOfGreys %d", sfc, bits, scanLineLength, sizeof(grey)/sizeof(*grey));
 			for (int igrey = 0; igrey < sizeof (grey) / sizeof (*grey); igrey++)
 				grey [igrey] = 255 - (unsigned char) (igrey * 255.0 / (sizeof (grey) / sizeof (*grey) - 1));
-		#elif xwin
-			int mayOptimize;
-			short arrayWidth = clipx2 - clipx1;
-			short arrayHeight = clipy1 - clipy2;
-			long numberOfPads = (arrayWidth * my bitsPerPixel - 1) / my pad + 1;
-			long rowBytes = numberOfPads * (my pad / 8);
-			char *data = malloc (rowBytes * arrayHeight);
-			XImage *image = XCreateImage (my display, my visual, my depth,
-				ZPixmap, 0, data, arrayWidth, arrayHeight, my pad, rowBytes);
-			if (! data || ! image) goto end;
-			mayOptimize =
-				#if defined (sgi) || defined (HPUX)   /* Optimization. */
-					/* Check if server's characteristics are the same as the Iris's, */
-					/* and whether we have 8-bit colour. */
-					/* If we stand the following test, we may be sitting at a usual SGI server. */
-					image -> bits_per_pixel == 8 && image -> depth == 8 &&
-						image -> byte_order == MSBFirst && image -> bitmap_bit_order == MSBFirst;
-				#else
-					FALSE;
-				#endif
 		#elif win
-			short bitmapWidth = clipx2 - clipx1, bitmapHeight = clipy1 - clipy2;
+			long bitmapWidth = clipx2 - clipx1, bitmapHeight = clipy1 - clipy2;
 			int igrey;
 			/*
 			 * Create a device-independent bitmap, 8 pixels deep, for 256 greys.
@@ -250,8 +220,7 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 				Melder_assert (bytesPerRow > 0);
 				numberOfRows = clipy1 - clipy2;
 				Melder_assert (numberOfRows > 0);
-				imageData = Melder_malloc (unsigned char, bytesPerRow * numberOfRows);
-				Melder_assert (imageData != NULL);
+				imageData = Melder_malloc_f (unsigned char, bytesPerRow * numberOfRows);
 			} else {
 				GetGWorld (& savePort, & saveDevice);
 				if (my resolution > 150) undersampling = 4;
@@ -278,7 +247,7 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 					goto cleanUp;
 				}
 				offscreenRowBytes = (*offscreenPixMap) -> rowBytes & 0x3FFF;
-				//Melder_fatal ("%d %d %d",clipx1,clipx2,offscreenRowBytes);   // 45 393 352
+				//Melder_fatal ("%ld %ld %ld",clipx1,clipx2,offscreenRowBytes);   // 45 393 352
 				offscreenPixels = (unsigned char *) GetPixBaseAddr (offscreenPixMap);
 				EraseRect (& rect);
 				for (igrey = 0; igrey <= 255; igrey ++) {
@@ -303,12 +272,6 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 					*pixelAddress ++ = kar; \
 					*pixelAddress ++ = 0; \
 				}
-		#elif xwin
-			#define ROW_START_ADDRESS  ((unsigned char *) image -> data + (yDC - clipy2) * image -> bytes_per_line)
-			#define PUT_PIXEL \
-				if (mayOptimize) *pixelAddress ++ = xwinGreys [value <= 0 ? 0 : value >= 100 ? 100 : (int) value]; \
-				else XPutPixel (image, xDC - clipx1, yDC - clipy2, \
-					xwinGreys [value <= 0 ? 0 : value >= 100 ? 100 : (int) value]);
 		#elif win
 			#define ROW_START_ADDRESS  (bits + (clipy1 - 1 - yDC) * scanLineLength)
 			#define PUT_PIXEL  *pixelAddress ++ = value <= 0 ? 0 : value >= 255 ? 255 : (int) value;
@@ -419,8 +382,6 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 			cairo_paint(my cr);
 			cairo_restore(my cr);
 			cairo_pattern_destroy(bitmap_pattern);
-		#elif xwin
-			XPutImage (my display, my window, my gc, image, 0, 0, clipx1, clipy2, arrayWidth, arrayHeight);
 		#elif win
 			SetDIBitsToDevice (my dc, clipx1, clipy2, bitmapWidth, bitmapHeight, 0, 0, 0, bitmapHeight,
 				bits, (CONST BITMAPINFO *) & bitmapInfo, DIB_RGB_COLORS);
@@ -479,10 +440,6 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 		 */
 		#if cairo
 			cairo_surface_destroy(sfc);
-		#elif xwin
-			end:
-			if (data) free (data);
-			if (image) { image -> data = NULL; XDestroyImage (image); }
 		#elif win
 			DeleteBitmap (bitmap);
 		#elif mac
@@ -512,9 +469,9 @@ static void screenCellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 #define INTERPOLATE_IN_POSTSCRIPT  TRUE
 
 static void _cellArrayOrImage (I, double **z_float, unsigned char **z_byte,
-	long ix1, long ix2, short x1DC, short x2DC,
-	long iy1, long iy2, short y1DC, short y2DC, double minimum, double maximum,
-	short clipx1, short clipx2, short clipy1, short clipy2, int interpolate)
+	long ix1, long ix2, long x1DC, long x2DC,
+	long iy1, long iy2, long y1DC, long y2DC, double minimum, double maximum,
+	long clipx1, long clipx2, long clipy1, long clipy2, int interpolate)
 {
 	iam (Graphics);
 	if (my screen) {
@@ -534,9 +491,9 @@ static void _cellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 		double scale = ( my photocopyable ? 200.1f : 255.1f ) / (maximum - minimum);
 		double offset = 255.1f + minimum * scale;
 		int minimalGrey = my photocopyable ? 55 : 0;
-		my printf (my file, "gsave N %d %d M %d %d L %d %d L %d %d L closepath clip\n",
-			clipx1, clipy1, clipx2 - clipx1, 0, 0, clipy2 - clipy1, clipx1 - clipx2, 0);
-		my printf (my file, "%d %d translate %d %d scale\n",
+		my printf (my file, "gsave N %ld %ld M %ld %ld L %ld %ld L %ld %ld L closepath clip\n",
+			clipx1, clipy1, clipx2 - clipx1, 0L, 0L, clipy2 - clipy1, clipx1 - clipx2, 0L);
+		my printf (my file, "%ld %ld translate %ld %ld scale\n",
 			x1DC, y1DC, x2DC - x1DC, y2DC - y1DC);
 		if (interpolate) {
 			/* Base largest spot size on 106 dpi. */
@@ -547,7 +504,7 @@ static void _cellArrayOrImage (I, double **z_float, unsigned char **z_byte,
 			interpolateX = ceil (colSize_mm / LARGEST_SPOT_MM);
 			interpolateY = ceil (rowSize_mm / LARGEST_SPOT_MM);
 			#else
-			short xDC, yDC;
+			long xDC, yDC;
 			long *ileft, *iright;
 			double *rightWeight, *leftWeight;
 			if (x2DC <= x1DC || y2DC <= y1DC) return;   /* Different from the screen test! */
@@ -811,8 +768,8 @@ void Graphics_image8 (I, unsigned char **z, long ix1, long ix2, double x1WC, dou
 
 void Graphics_imageFromFile (I, const wchar_t *relativeFileName, double x1, double x2, double y1, double y2) {
 	iam (Graphics);
-	short x1DC = wdx (x1), x2DC = wdx (x2), y1DC = wdy (y1), y2DC = wdy (y2);
-	short width = x2DC - x1DC, height = my yIsZeroAtTheTop ? y1DC - y2DC : y2DC - y1DC;
+	long x1DC = wdx (x1), x2DC = wdx (x2), y1DC = wdy (y1), y2DC = wdy (y2);
+	long width = x2DC - x1DC, height = my yIsZeroAtTheTop ? y1DC - y2DC : y2DC - y1DC;
 	if (my screen) {
 		iam (GraphicsScreen);
 		#if mac

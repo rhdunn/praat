@@ -2,7 +2,7 @@
 #define _Ui_h_
 /* Ui.h
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  */
 
 /*
- * pb 2009/12/24
+ * pb 2011/02/01
  */
 
 #ifndef _Graphics_h_
@@ -32,6 +32,10 @@
 	#include "Interpreter.h"
 #endif
 
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
 /* Forms for getting arguments from the user. */
 
 /* Example of usage:
@@ -40,7 +44,7 @@
 	if (dia == NULL) {
 		Any radio;
 		dia = UiForm_create
-		  (topShell,   // The parent Widget of the dialog window.
+		  (topShell,   // The parent GuiObject of the dialog window.
 			L"Create a new person",   // The window title.
 			DO_Person_create,   // The routine to call when the user clicks OK.
 			NULL,   // The last argument to the OK routine (also for the other buttons). Could be a ScriptEditor, or an EditorCommand, or an Interpreter, or NULL.
@@ -64,11 +68,15 @@
 }
 	Real, Positive, Integer, Natural, Word, and Sentence
 		show a label (name) and an editable text field (value).
-	Radio shows a label (name) and has RadioButton children.
+	Radio shows a label (name) and has Button children.
+	OptionMenu shows a label (name) and has Button children in a menu.
 	Label only shows its value.
 	Text only shows an editable text field (value).
 	Boolean shows a labeled toggle button which is on (1) or off (0).
-	RadioButton does the same inside a radio box.
+	Button does the same inside a radio box or option menu.
+	List shows a scrollable list.
+	Colour shows a label (name) and an editable text field for a grey value between 0 and 1, a colour name, ar {r,g,b}.
+	Channel shows a label (name) and an editable text field for a natural number or the text Left or Right.
 	As shown in the example, Real, Positive, Integer, Natural, and Word may contain extra text;
 	this text is considered as comments and is erased as soon as you click OK.
 	When you click "Standards", the standard values (including comments)
@@ -76,7 +84,7 @@
 */
 
 /* The following routines work on the screen and from batch. */
-Any UiForm_create (Widget parent, const wchar_t *title,
+Any UiForm_create (GuiObject parent, const wchar_t *title,
 	int (*okCallback) (UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter, const wchar_t *invokingButtonTitle, bool modified, void *closure), void *buttonClosure,
 	const wchar_t *invokingButtonTitle, const wchar_t *helpTitle);
 Any UiForm_addReal (I, const wchar_t *label, const wchar_t *defaultValue);
@@ -95,10 +103,11 @@ Any UiForm_addOptionMenu (I, const wchar_t *label, int defaultValue);
 	Any UiOptionMenu_addButton (I, const wchar_t *label);
 Any UiForm_addList (I, const wchar_t *label, long numberOfStrings, const wchar_t **strings, long defaultValue);
 Any UiForm_addColour (I, const wchar_t *label, const wchar_t *defaultValue);
+Any UiForm_addChannel (I, const wchar_t *label, const wchar_t *defaultValue);
 void UiForm_finish (I);
 void UiForm_destroyWhenUnmanaged (I);
 void UiForm_setPauseForm (I,
-	int numberOfContinueButtons, int defaultContinueButton,
+	int numberOfContinueButtons, int defaultContinueButton, int cancelContinueButton,
 	const wchar_t *continue1, const wchar_t *continue2, const wchar_t *continue3,
 	const wchar_t *continue4, const wchar_t *continue5, const wchar_t *continue6,
 	const wchar_t *continue7, const wchar_t *continue8, const wchar_t *continue9,
@@ -162,11 +171,11 @@ Graphics_Colour UiForm_getColour_check (I, const wchar_t *fieldName);
 
 int UiForm_parseString (I, const wchar_t *arguments, Interpreter interpreter);
 
-Any UiInfile_create (Widget parent, const wchar_t *title,
+Any UiInfile_create (GuiObject parent, const wchar_t *title,
   int (*okCallback) (UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter, const wchar_t *invokingButtonTitle, bool modified, void *closure), void *okClosure,
   const wchar_t *invokingButtonTitle, const wchar_t *helpTitle, bool allowMultipleFiles);
 
-Any UiOutfile_create (Widget parent, const wchar_t *title,
+Any UiOutfile_create (GuiObject parent, const wchar_t *title,
   int (*okCallback) (UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter, const wchar_t *invokingButtonTitle, bool modified, void *closure), void *okClosure,
   const wchar_t *invokingButtonTitle, const wchar_t *helpTitle);
 
@@ -196,6 +205,10 @@ void Ui_setAllowExecutionHook (int (*allowExecutionHook) (void *closure), void *
 int UiForm_widgetsToValues (I);
 int UiForm_Interpreter_addVariables (I, Interpreter interpreter);
 int UiForm_getClickedContinueButton (UiForm me);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif
 /* End of file Ui.h */

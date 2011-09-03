@@ -2,7 +2,7 @@
 #define _melder_h_
 /* melder.h
  *
- * Copyright (C) 1992-2010 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  */
 
 /*
- * pb 2010/10/16
+ * pb 2011/03/02
  */
 
 #include <stdio.h>
@@ -39,7 +39,13 @@
 #include <wchar.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
 bool Melder_wcsequ_firstCharacterCaseInsensitive (const wchar_t *string1, const wchar_t *string2);
+
 #include "enums.h"
 
 #include "melder_enums.h"
@@ -70,7 +76,7 @@ const wchar_t * Melder_fixed (double value, int precision);   // "--undefined--"
 const wchar_t * Melder_fixedExponent (double value, int exponent, int precision);
 	/* if exponent is -2 and precision is 2:   67E-2, 0.00024E-2 */
 const wchar_t * Melder_percent (double value, int precision);
-	/* "--undefined--" or, if precision is 3: "0" or "34.400%" of "0.014%" or "0.001%" or "0.0000007%" */
+	/* "--undefined--" or, if precision is 3: "0" or "34.400%" or "0.014%" or "0.001%" or "0.0000007%" */
 const wchar_t * Melder_float (const wchar_t *number);
 	/* turns 1e+4 into 10^^4, or -1.23456e-78 into -1.23456\.c10^^-78 */
 const wchar_t * Melder_naturalLogarithm (double lnNumber);   // turns -10000 into "1.135483865315339e-4343"
@@ -240,16 +246,24 @@ int _Melder_assert (const char *condition, const char *fileName, int lineNumber)
 /********** MEMORY ALLOCATION ROUTINES **********/
 
 /* These routines call malloc, free, realloc, and calloc. */
-/* If out of memory, they queue an error message (like "Out of memory") and return NULL. */
+/* If out of memory, they return NULL; the _e versions also queue an error message (like "Out of memory"). */
 /* These routines also maintain a count of the total number of blocks allocated. */
 
-void * _Melder_malloc (unsigned long size);
-#define Melder_malloc(type,size)  (type *) _Melder_malloc ((size) * sizeof (type))
-void * Melder_realloc (void *pointer, long size);
-void * _Melder_calloc (long numberOfElements, long elementSize);
-#define Melder_calloc(type,size)  (type *) _Melder_calloc (size, sizeof (type))
-char * Melder_strdup (const char *string);
-wchar_t * Melder_wcsdup (const wchar_t *string);
+void Melder_alloc_init (void);   // to be called around program start-up
+void * _Melder_malloc_e (unsigned long size);
+#define Melder_malloc_e(type,size)  (type *) _Melder_malloc_e ((size) * sizeof (type))
+void * _Melder_malloc_f (unsigned long size);
+#define Melder_malloc_f(type,size)  (type *) _Melder_malloc_f ((size) * sizeof (type))
+void * Melder_realloc_e (void *pointer, long size);
+void * Melder_realloc_f (void *pointer, long size);
+void * _Melder_calloc_e (long numberOfElements, long elementSize);
+#define Melder_calloc_e(type,size)  (type *) _Melder_calloc_e (size, sizeof (type))
+void * _Melder_calloc_f (long numberOfElements, long elementSize);
+#define Melder_calloc_f(type,size)  (type *) _Melder_calloc_f (size, sizeof (type))
+char * Melder_strdup_e (const char *string);
+char * Melder_strdup_f (const char *string);
+wchar_t * Melder_wcsdup_e (const wchar_t *string);
+wchar_t * Melder_wcsdup_f (const wchar_t *string);
 int Melder_strcmp (const char *string1, const char *string2);   // regards null string as empty string
 int Melder_wcscmp (const wchar_t *string1, const wchar_t *string2);   // regards null string as empty string
 int Melder_strncmp (const char *string1, const char *string2, unsigned long n);
@@ -295,14 +309,16 @@ unsigned long wcslen_utf8 (const wchar_t *wcs, bool expandNewlines);
 unsigned long wcslen_utf16 (const wchar_t *wcs, bool expandNewlines);
 unsigned long wcslen_utf32 (const wchar_t *wcs, bool expandNewlines);
 
-int Melder_8bitToWcs_inline (const char *string, wchar_t *wcs, int inputEncoding);
-wchar_t * Melder_8bitToWcs (const char *string, int inputEncoding);
-wchar_t * Melder_utf8ToWcs (const char *string);
-int Melder_wcsTo8bit_inline (const wchar_t *wcs, char *string, int outputEncoding);
-char * Melder_wcsTo8bit (const wchar_t *string, int outputEncoding);
+void Melder_8bitToWcs_inline_e (const char *string, wchar_t *wcs, int inputEncoding);
+	// errors: Text is not valid UTF-8.
+wchar_t * Melder_8bitToWcs_e (const char *string, int inputEncoding);
+	// errors: Out of memory; Text is not valid UTF-8.
+wchar_t * Melder_utf8ToWcs_e (const char *string);
+	// errors: Out of memory; Text is not valid UTF-8.
 
-char * Melder_wcsToUtf8 (const wchar_t *string);
 void Melder_wcsToUtf8_inline (const wchar_t *wcs, char *utf8);
+char * Melder_wcsToUtf8_e (const wchar_t *string);
+	// errors: Out of memory.
 void Melder_wcsTo8bitFileRepresentation_inline (const wchar_t *wcs, char *utf8);
 void Melder_8bitFileRepresentationToWcs_inline (const char *utf8, wchar_t *wcs);
 wchar_t * Melder_peekUtf8ToWcs (const char *string);
@@ -674,7 +690,7 @@ extern char Melder_buffer1 [30001], Melder_buffer2 [30001];
 
 /* Procedures to enforce interactive behaviour of the Melder_XXXXXX routines. */
 
-void MelderGui_create (/* XtAppContext* */ void *appContext, /* Widget */ void *parent);
+void MelderGui_create (/* XtAppContext* */ void *appContext, /* GuiObject */ void *parent);
 /*
 	'appContext' is the XtAppContext* output from Xt(Va)AppInitialize;
 		if you used Xt(Va)Initialize it should be NULL.
@@ -686,7 +702,7 @@ extern int Melder_backgrounding;   /* True if running a script. */
 extern bool Melder_consoleIsAnsi;
 #ifndef CONTROL_APPLICATION
 	extern void *Melder_appContext;   /* XtAppContext* */
-	extern void *Melder_topShell;   /* Widget */
+	extern void *Melder_topShell;   /* GuiObject */
 #endif
 
 /********** OVERRIDE DEFAULT BEHAVIOUR **********/
@@ -815,18 +831,20 @@ long Melder_killReturns_inline (char *text);
 
 /********** AUDIO **********/
 
-#if defined (macintosh) || defined (_WIN32)
+#if defined (macintosh) || defined (_WIN32) || defined (linux)
 	#define kMelderAudio_inputUsesPortAudio_DEFAULT  true
 		// Mac: in order to have CoreAudio (so that rogue applications cannot attack our sample rate anymore)
 		// Win: in order to allow recording for over 64 megabytes (paMME)
+		// Linux: in order to use ALSA and therefore be compatible with Ubuntu 10.10 and later
 #else
 	#define kMelderAudio_inputUsesPortAudio_DEFAULT  false
 #endif
 void MelderAudio_setInputUsesPortAudio (bool inputUsesPortAudio);
 bool MelderAudio_getInputUsesPortAudio (void);
-#if defined (macintosh)
+#if defined (macintosh) || defined (linux)
 	#define kMelderAudio_outputUsesPortAudio_DEFAULT  true
 		// Mac: in order to have CoreAudio (so that rogue applications cannot attack our sample rate anymore)
+		// Linux: in order to use ALSA and therefore be compatible with Ubuntu 10.10 and later
 #else
 	#define kMelderAudio_outputUsesPortAudio_DEFAULT  false
 		// Win: in order to reduce the long latencies of paMME and to avoid the incomplete implementation of paDirectSound
@@ -860,7 +878,7 @@ long MelderAudio_getOutputBestSampleRate (long fsamp);
 extern int MelderAudio_isPlaying;
 int MelderAudio_play16 (const short *buffer, long sampleRate, long numberOfSamples, int numberOfChannels,
 	int (*playCallback) (void *playClosure, long numberOfSamplesPlayed), void *playClosure);
-int MelderAudio_stopPlaying (bool explicit);   /* Returns 1 if sound was playing. */
+int MelderAudio_stopPlaying (bool isExplicit);   /* Returns 1 if sound was playing. */
 #define MelderAudio_IMPLICIT  false
 #define MelderAudio_EXPLICIT  true
 long MelderAudio_getSamplesPlayed (void);
@@ -901,7 +919,7 @@ wchar_t * Melder_winAudioFileExtension (int audioFileType);   /* ".aiff", ".aifc
 #define Melder_FLAC_COMPRESSION 15
 #define Melder_MPEG_COMPRESSION 16
 int Melder_defaultAudioFileEncoding16 (int audioFileType);   /* BIG_ENDIAN, BIG_ENDIAN, LITTLE_ENDIAN, BIG_ENDIAN, LITTLE_ENDIAN, BIG_ENDIAN */
-int MelderFile_writeAudioFileHeader16 (MelderFile file, int audioFileType, long sampleRate, long numberOfSamples, int numberOfChannels);
+void MelderFile_writeAudioFileHeader16_e (MelderFile file, int audioFileType, long sampleRate, long numberOfSamples, int numberOfChannels);
 int MelderFile_writeAudioFile16 (MelderFile file, int audioFileType, const short *buffer, long sampleRate, long numberOfSamples, int numberOfChannels);
 
 int MelderFile_checkSoundFile (MelderFile file, int *numberOfChannels, int *encoding,
@@ -911,17 +929,14 @@ int MelderFile_checkSoundFile (MelderFile file, int *numberOfChannels, int *enco
  * The data start at 'startOfData' bytes from the start of the file.
  */
 int Melder_bytesPerSamplePoint (int encoding);
-int Melder_readAudioToFloat (FILE *f, int numberOfChannels, int encoding,
-	double *leftBuffer, double *rightBuffer, long numberOfSamples);
-/* If rightBuffer is NULL, reads mono data or averaged stereo data into leftBuffer.
- * If rightBuffer exists, read mono data into leftBuffer or stereo data into leftBuffer and rightBuffer.
- * Buffers are base-1.
+int Melder_readAudioToFloat (FILE *f, int numberOfChannels, int encoding, double **buffer, long numberOfSamples);
+/* Reads channels into buffer [ichannel], which are base-1.
  */
 int Melder_readAudioToShort (FILE *f, int numberOfChannels, int encoding, short *buffer, long numberOfSamples);
 /* If stereo, buffer will contain alternating left and right values.
  * Buffer is base-0.
  */
-int MelderFile_writeFloatToAudio (MelderFile file, int encoding, const double *left, long nleft, const double *right, long nright, int warnIfClipped);
+int MelderFile_writeFloatToAudio (MelderFile file, int numberOfChannels, int encoding, double **buffer, long numberOfSamples, int warnIfClipped);
 int MelderFile_writeShortToAudio (MelderFile file, int numberOfChannels, int encoding, const short *buffer, long numberOfSamples);
 
 void Melder_audioTrigger (void);
@@ -944,6 +959,10 @@ const wchar_t * MelderQuantity_getShortUnitText (int quantity);   // e.g. "s"
 wchar_t * Melder_getenv (const wchar_t *variableName);
 int Melder_system (const wchar_t *command);   // spawn a system command; return 0 if error
 double Melder_clock (void);   // seconds since 1969
+
+#ifdef __cplusplus
+	}
+#endif
 
 /* End of file melder.h */
 #endif

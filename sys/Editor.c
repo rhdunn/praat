@@ -36,7 +36,6 @@
 
 #include <time.h>
 #include "ScriptEditor.h"
-#include "ButtonEditor.h"
 #include "machine.h"
 #include "EditorM.h"
 #include "praat_script.h"
@@ -81,7 +80,7 @@ class_methods (EditorCommand, Thing) {
 #define EditorMenu_members Thing_members \
 	Any editor; \
 	const wchar_t *menuTitle; \
-	Widget menuWidget; \
+	GuiObject menuWidget; \
 	Ordered commands;
 #define EditorMenu_methods Thing_methods
 class_create_opaque (EditorMenu, Thing);
@@ -114,13 +113,13 @@ static void commonCallback (GUI_ARGS) {
 	if (! my commandCallback (my editor, me, NULL, NULL, NULL)) Melder_flushError (NULL);
 }
 
-Widget EditorMenu_addCommand (EditorMenu menu, const wchar_t *itemTitle, long flags,
+GuiObject EditorMenu_addCommand (EditorMenu menu, const wchar_t *itemTitle, long flags,
 	int (*commandCallback) (Any editor_me, EditorCommand cmd, UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter))
 {
 	EditorCommand me = new (EditorCommand);
 	my editor = menu -> editor;
 	my menu = menu;
-	if ((my itemTitle = Melder_wcsdup (itemTitle)) == NULL) { forget (me); return NULL; }
+	if ((my itemTitle = Melder_wcsdup_e (itemTitle)) == NULL) { forget (me); return NULL; }
 	my itemWidget =
 		commandCallback == NULL ? GuiMenu_addSeparator (menu -> menuWidget) :
 		flags & Editor_HIDDEN ? NULL :
@@ -130,21 +129,21 @@ Widget EditorMenu_addCommand (EditorMenu menu, const wchar_t *itemTitle, long fl
 	return my itemWidget;
 }
 
-/*Widget EditorCommand_getItemWidget (EditorCommand me) { return my itemWidget; }*/
+/*GuiObject EditorCommand_getItemWidget (EditorCommand me) { return my itemWidget; }*/
 
 EditorMenu Editor_addMenu (Any editor, const wchar_t *menuTitle, long flags) {
 	EditorMenu me = new (EditorMenu);
 	my editor = editor;
-	if (! (my menuTitle = Melder_wcsdup (menuTitle))) { forget (me); return NULL; }
+	if (! (my menuTitle = Melder_wcsdup_e (menuTitle))) { forget (me); return NULL; }
 	my menuWidget = GuiMenuBar_addMenu (((Editor) editor) -> menuBar, menuTitle, flags);
 	Collection_addItem (((Editor) editor) -> menus, me);
 	my commands = Ordered_create ();
 	return me;
 }
 
-/*Widget EditorMenu_getMenuWidget (EditorMenu me) { return my menuWidget; }*/
+/*GuiObject EditorMenu_getMenuWidget (EditorMenu me) { return my menuWidget; }*/
 
-Widget Editor_addCommand (Any editor, const wchar_t *menuTitle, const wchar_t *itemTitle, long flags,
+GuiObject Editor_addCommand (Any editor, const wchar_t *menuTitle, const wchar_t *itemTitle, long flags,
 	int (*commandCallback) (Any editor_me, EditorCommand cmd, UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter))
 {
 	Editor me = (Editor) editor;
@@ -166,7 +165,7 @@ static int Editor_scriptCallback (I, EditorCommand cmd, UiForm sendingForm, cons
 	return DO_RunTheScriptFromAnyAddedEditorCommand (me, cmd -> script);
 }
 
-Widget Editor_addCommandScript (Any editor, const wchar_t *menuTitle, const wchar_t *itemTitle, long flags,
+GuiObject Editor_addCommandScript (Any editor, const wchar_t *menuTitle, const wchar_t *itemTitle, long flags,
 	const wchar_t *script)
 {
 	Editor me = (Editor) editor;
@@ -177,17 +176,17 @@ Widget Editor_addCommandScript (Any editor, const wchar_t *menuTitle, const wcha
 			EditorCommand cmd = new (EditorCommand);
 			cmd -> editor = me;
 			cmd -> menu = menu;
-			cmd -> itemTitle = Melder_wcsdup (itemTitle);
+			cmd -> itemTitle = Melder_wcsdup_f (itemTitle);
 			cmd -> itemWidget = script == NULL ? GuiMenu_addSeparator (menu -> menuWidget) :
 				GuiMenu_addItem (menu -> menuWidget, itemTitle, flags, commonCallback, cmd);
 			Collection_addItem (menu -> commands, cmd);
 			cmd -> commandCallback = Editor_scriptCallback;
 			if (wcslen (script) == 0) {
-				cmd -> script = Melder_wcsdup (L"");
+				cmd -> script = Melder_wcsdup_f (L"");
 			} else {
 				structMelderFile file = { 0 };
 				Melder_relativePathToFile (script, & file);
-				cmd -> script = Melder_wcsdup (Melder_fileToPath (& file));
+				cmd -> script = Melder_wcsdup_f (Melder_fileToPath (& file));
 			}
 			return cmd -> itemWidget;
 		}
@@ -256,13 +255,6 @@ static void classEditor_destroy (I) {
 		#if gtk
 			Melder_assert (GTK_IS_WIDGET (my shell));
 			gtk_widget_destroy (my shell);
-		#elif motif
-			#if defined (UNIX)
-				XtUnrealizeWidget (my shell);   // LEAK BUG: should also destroy; but then, Praat will often crash on a destroy (OpenMotif 2.2 and 2.3)
-				//XtDestroyWidget (my shell);
-			#else
-				XtDestroyWidget (my shell);
-			#endif
 		#else
 			XtDestroyWidget (my shell);
 		#endif
@@ -488,11 +480,11 @@ static void gui_window_cb_goAway (I) {
 }
 
 extern void praat_addCommandsToEditor (Editor me);
-int Editor_init (Editor me, Widget parent, int x, int y, int width, int height, const wchar_t *title, Any data) {
+int Editor_init (Editor me, GuiObject parent, int x, int y, int width, int height, const wchar_t *title, Any data) {
 	#if gtk
 		GdkScreen *screen = gdk_screen_get_default ();
 		if (parent != NULL) {
-			Widget parent_win = gtk_widget_get_ancestor (parent, GTK_TYPE_WINDOW);
+			GuiObject parent_win = gtk_widget_get_ancestor (parent, GTK_TYPE_WINDOW);
 			if (parent_win != NULL) {
 				screen = gtk_window_get_screen (GTK_WINDOW (parent_win));
 			}

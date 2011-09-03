@@ -21,7 +21,7 @@
 
 /*
  djmw 20020815 GPL header
- djmw 20100223 Latest modification.
+ djmw 20101209 Latest modification.
 */
 
 #ifndef _NUM_h_
@@ -36,7 +36,6 @@
 #define NUMeps 2.2e-16
 
 int NUMstrcmp (const char *s1, const char *s2);
-int NUMwcscmp (const wchar_t *s1, const wchar_t *s2);
 /*
 	Compares strings, accepts NUL-strings (NULL < 'a')
 	return s1 == NULL ? (s2 == NULL ? 0 : - 1) :
@@ -96,8 +95,8 @@ wchar_t *str_replace_literal (wchar_t *string, const wchar_t *search,
 	The maximum number of replaces is limited by 'maximumNumberOfReplaces'.
 */
 
-char *str_replace_regexp (char *string, regexp *search_compiled,
-	const char *replace_regexp, long maximumNumberOfReplaces, long *nmatches);
+wchar_t *str_replace_regexp (wchar_t *string, regexp *search_compiled,
+	const wchar_t *replace_regexp, long maximumNumberOfReplaces, long *nmatches);
 /*
 	Searches and replaces 'maximumNumberOfReplaces' times in 'string' on
 	the basis of regular expressions (RE).
@@ -427,11 +426,11 @@ int NUMdeterminant_cholesky (double **a, long n, double *lnd);
 	ln(determinant) of a symmetric p.s.d. matrix
 */
 
-double NUMmahalanobisDistance_chi (double **l, double *v, double *m, long n);
+double NUMmahalanobisDistance_chi (double **l, double *v, double *m, long nr, long nc);
 /*
 	Calculates squared Mahalanobis distance: (v-m)'S^-1(v-m).
 	Input matrix (li) is the inverse L^-1 of the Cholesky decomposition S = L.L'
-	as calculated by NUMlowerCholeskyInverse
+	as calculated by NUMlowerCholeskyInverse or 1-row for a diagonal matrix (nr =1)
 	Mahalanobis distance calculation. S = L.L' -> S**-1 = L**-1' . L**-1
 		(x-m)'S**-1 (x-m) = (x-m)'L**-1' . L**-1. (x-m) =
 			(L**-1.(x-m))' . (L**-1.(x-m))
@@ -1123,5 +1122,7 @@ int NUMreverseRealFastFourierTransform (double  *data, long n);
 */
 int NUMrealft_f (float  *data, long n, int direction);    /* Please stop using. */
 int NUMrealft (double *data, long n, int direction);
+
+long NUMgetIndexFromProbability (double *probs, long nprobs, double p);
 
 #endif /* _NUM2_h_ */

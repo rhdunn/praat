@@ -120,6 +120,7 @@ static void gui_drawingarea_cb_expose (I, GuiDrawingAreaExposeEvent event) {
 static void gui_drawingarea_cb_click (I, GuiDrawingAreaClickEvent event) {
 	iam (ArtwordEditor);
 	if (my graphics == NULL) return;
+if (gtk && event -> type != BUTTON_PRESS) return;
 	Artword artword = my data;
 	Graphics_setWindow (my graphics, 0, artword -> totalTime, -1.0, 1.0);
 	Graphics_setInner (my graphics);
@@ -178,7 +179,7 @@ class_methods (ArtwordEditor, Editor) {
 	class_methods_end
 }
 
-ArtwordEditor ArtwordEditor_create (Widget parent, const wchar_t *title, Artword data) {
+ArtwordEditor ArtwordEditor_create (GuiObject parent, const wchar_t *title, Artword data) {
 	ArtwordEditor me = new (ArtwordEditor);
 	if (! me || ! Editor_init (ArtwordEditor_as_parent (me), parent, 20, 40, 650, 600, title, data))
 		return NULL;

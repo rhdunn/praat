@@ -1,6 +1,6 @@
 /* Sound_files.c
  *
- * Copyright (C) 1992-2009 Paul Boersma & David Weenink
+ * Copyright (C) 1992-2010 Paul Boersma & David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,21 +35,20 @@
  * pb 2007/10/05 made Sound_readFromMacSoundFile compatible with sample rates between 32768 and 65535 Hertz
  * pb 2008/01/19 double
  * pb 2009/09/21 made stereo movies readable
+ * pb 2010/12/27 support for multiple channels (i.e. more than two)
  */
 
 /*
 static void Sound_ulawDecode (Sound me) {
 	double mu = 100, lnu1 = log (1 + mu);
-	long i;
-	for (i = 1; i <= my nx; i ++) {
+	for (long i = 1; i <= my nx; i ++) {
 		double zabs = (exp (fabs (my z [1] [i]) * lnu1) - 1.0) / mu;
 		my z [1] [i] = my z [1] [i] < 0 ? -zabs : zabs;
 	} 
 }
 static void Sound_alawDecode (Sound me) {
 	double a = 87.6, lna1 = 1.0 + log (a);
-	long i;
-	for (i = 1; i <= my nx; i ++) {
+	for (long i = 1; i <= my nx; i ++) {
 		double zabs = fabs (my z [1] [i]);
 		if (zabs <= 1.0 / lna1) {
 			my z [1] [i] *= lna1 / a;
@@ -156,10 +155,11 @@ static void Sound_alawDecode (Sound me) {
 
 Sound Sound_readFromSoundFile (MelderFile file) {
 	Sound me = NULL;
+	FILE *f = NULL;
+//start:
 	int numberOfChannels, encoding, fileType;
 	double sampleRate;
 	long startOfData, numberOfSamples;
-	FILE *f = NULL;
 	MelderFile_open (file); cherror
 	f = file -> filePointer;
 	fileType = MelderFile_checkSoundFile (file, & numberOfChannels, & encoding, & sampleRate, & startOfData, & numberOfSamples); cherror
@@ -176,51 +176,21 @@ Sound Sound_readFromSoundFile (MelderFile file) {
 		}
 		return me;
 	}
-	Melder_readAudioToFloat (f, numberOfChannels, encoding, my z [1], numberOfChannels == 1 ? NULL : my z [2], numberOfSamples); cherror
+	Melder_readAudioToFloat (f, numberOfChannels, encoding, my z, numberOfSamples); cherror
 end:
 	if (f) fclose (f);
 	iferror { Melder_error3 (L"(Sound_readFromSoundFile:) File ", MelderFile_messageName (file), L" not read."); forget (me); }
 	return me;
 }
 
-int Sound_read2FromSoundFile (MelderFile file, Sound *return_left, Sound *return_right) {
-	Sound left = NULL, right = NULL;
-	int numberOfChannels, encoding, fileType;
-	double sampleRate;
-	long startOfData, numberOfSamples;
-	FILE *f = NULL;
-	MelderFile_open (file); cherror
-	f = file -> filePointer;
-	fileType = MelderFile_checkSoundFile (file, & numberOfChannels, & encoding, & sampleRate, & startOfData, & numberOfSamples); cherror
-	if (fileType == 0)
-		error1 (L"Can only read AIFF/C, WAV, NeXT/Sun, and NIST files.")
-	if (encoding == Melder_SHORTEN || encoding == Melder_POLYPHONE) {
-		fclose (f);
-		return Melder_error1 (L"(Sound_read2FromSoundFile:) Cannot unshorten two channels.");
-	}
-	if (fseek (f, startOfData, SEEK_SET) == EOF)   /* Start from beginning of sample data. */
-		error1 (L"No data in audio file.")
-	left = Sound_createSimple (1, numberOfSamples / sampleRate, sampleRate); cherror
-	if (numberOfChannels == 2) {
-		right = Sound_createSimple (1, numberOfSamples / sampleRate, sampleRate); cherror
-	}
-	Melder_readAudioToFloat (f, numberOfChannels, encoding, left -> z [1], right ? right -> z [1] : NULL, numberOfSamples); cherror
-end:
-	if (f) fclose (f);
-	iferror { Melder_error3 (L"(Sound_read2FromSoundFile:) File ", MelderFile_messageName (file), L" not read."); forget (left); forget (right); }
-	*return_left = left;
-	*return_right = right;
-	return 1;
-}
-
-Sound Sound_readFromSesamFile (MelderFile fs) {
+Sound Sound_readFromSesamFile (MelderFile file) {
 	Sound me = NULL;
-	FILE *f = Melder_fopen (fs, "rb");
+	FILE *f = Melder_fopen (file, "rb");
 	long header [1 + 128];
 	double samplingFrequency;
-	long numberOfSamples, i;
+	long numberOfSamples;
 	if (! f) return 0;
-	for (i = 1; i <= 128; i ++) header [i] = bingeti4LE (f);
+	for (long i = 1; i <= 128; i ++) header [i] = bingeti4LE (f);
 	/* Try SESAM header. */
 	samplingFrequency = header [126];
 	numberOfSamples = header [127];
@@ -233,12 +203,12 @@ Sound Sound_readFromSesamFile (MelderFile fs) {
 			samplingFrequency < 10.0 || samplingFrequency > 100000000.0) {
 		fclose (f);
 		return Melder_errorp3 (L"(Sound_readFromSesamFile:) "
-			"File ", MelderFile_messageName (fs), L" is not a correct SESAM or LVS file.");
+			"File ", MelderFile_messageName (file), L" is not a correct SESAM or LVS file.");
 	}
 	me = Sound_createSimple (1, numberOfSamples / samplingFrequency, samplingFrequency);
 	if (! me) return NULL;
-	for (i = 1; i <= numberOfSamples; i ++) my z [1] [i] = bingeti2LE (f) * (1.0 / 2048);   /* 12 bits. */
-	if (fclose (f) == EOF) return Melder_errorp3 (L"Error reading file ", MelderFile_messageName (fs), L".");
+	for (long i = 1; i <= numberOfSamples; i ++) my z [1] [i] = bingeti2LE (f) * (1.0 / 2048);   /* 12 bits. */
+	if (fclose (f) == EOF) return Melder_errorp3 (L"Error reading file ", MelderFile_messageName (file), L".");
 	return me;
 }
 
@@ -246,52 +216,42 @@ Sound Sound_readFromSesamFile (MelderFile fs) {
 Sound Sound_readFromMacSoundFile (MelderFile file) {
 	Sound me = NULL;
 	FSRef fsRef;
-	int path;
-	Handle han;
-	long numberOfSamples;
-	double samplingFrequency;
-	SoundHeader *header;
-	unsigned const char *from;
-	double *to;
-	long i;
 	Melder_fileToMach (file, & fsRef);
-	path = FSOpenResFile (& fsRef, fsRdPerm);   /* Open resource fork; there are the sounds. */
+	int path = FSOpenResFile (& fsRef, fsRdPerm);   /* Open resource fork; there are the sounds. */
 	if (path == -1)
 		return Melder_errorp ("(Sound_readFromMacSoundFile:) Error opening resource fork.");
 	if (Count1Resources ('snd ') == 0) {   /* Are there really any sounds in this file? */
 		CloseResFile (path);
 		return Melder_errorp ("(Sound_readFromMacSoundFile:) No sound resources found.");
 	}
-	han = Get1IndResource ('snd ', 1);   /* Take the first sound from this file. */
+	Handle han = Get1IndResource ('snd ', 1);   /* Take the first sound from this file. */
 	if (! han) {
 		CloseResFile (path);
 		return Melder_errorp ("(Sound_readFromMacSoundFile:) Sound too large.");
 	}
 	DetachResource (han);   /* Release the sound's binding with the Resource Map. */
 	CloseResFile (path);   /* Remove the Resource Map; the sound is ours now. */
+	SndResourcePtr p = (SndResourcePtr) *han;
+	if (p -> formatType != 1 ||
+		 p -> numberOfSynthesizers != 1 ||
+		 p -> resourceIDOfSynthesizer != sampledSynth ||
+		 p -> numberOfSoundCommands != 1 ||
+		 p -> itsSndCommand. cmd != bufferCmd + dataOffsetFlag ||
+		 p -> itsSndCommand. param2 != 20 ||
+		 p -> itsSndHeader. samplePtr != NULL)
 	{
-		SndResourcePtr p = (SndResourcePtr) *han;
-		if (p -> formatType != 1 ||
-			 p -> numberOfSynthesizers != 1 ||
-			 p -> resourceIDOfSynthesizer != sampledSynth ||
-			 p -> numberOfSoundCommands != 1 ||
-			 p -> itsSndCommand. cmd != bufferCmd + dataOffsetFlag ||
-			 p -> itsSndCommand. param2 != 20 ||
-			 p -> itsSndHeader. samplePtr != NULL)
-		{
-			DisposeHandle (han);
-			return Melder_errorp ("(Sound_readFromMacSoundFile:) Sound has an unknown format.");
-		}
+		DisposeHandle (han);
+		return Melder_errorp ("(Sound_readFromMacSoundFile:) Sound has an unknown format.");
 	}
-	header = & (**(SndResourceHandle) han).itsSndHeader;
-	numberOfSamples = header -> length;
-	samplingFrequency = (unsigned long) header -> sampleRate / 65536.0;
+	SoundHeader *header = & (**(SndResourceHandle) han).itsSndHeader;
+	long numberOfSamples = header -> length;
+	double samplingFrequency = (unsigned long) header -> sampleRate / 65536.0;
 	me = Sound_createSimple (1, numberOfSamples / samplingFrequency, samplingFrequency);
 	if (me == NULL) return NULL;
 	header = & (**(SndResourceHandle) han).itsSndHeader;   /* Do not move memory. */
-	from = (unsigned const char *) & header -> sampleArea - 1;
-	to = my z [1];
-	for (i = 1; i <= numberOfSamples; i ++)
+	unsigned const char *from = (unsigned const char *) & header -> sampleArea - 1;
+	double *to = my z [1];
+	for (long i = 1; i <= numberOfSamples; i ++)
 		to [i] = (from [i] - 128) * (1.0 / 128);
 	DisposeHandle (han);
 	return me;
@@ -456,17 +416,17 @@ end:
 	return me;
 }
 
-Sound Sound_readFromBellLabsFile (MelderFile fs) {
+Sound Sound_readFromBellLabsFile (MelderFile file) {
 	Sound me = NULL;
 	FILE *f = NULL;
 	char tag [200], *endOfTag, *lines = NULL, *psamples, *pfrequency;
-	long numberOfSamples = 0, tagLength, headerLength, i;
+	unsigned long numberOfSamples = 0, tagLength, headerLength, i;
 	double samplingFrequency = 0.0;
 
 	/*
 	 * Check existence and permissions of file.
 	 */
-	if ((f = Melder_fopen (fs, "rb")) == NULL) goto error;
+	if ((f = Melder_fopen (file, "rb")) == NULL) goto error;
 
 	/*
 	 * Check identity of file: first line is "SIG", second line contains a number.
@@ -483,7 +443,7 @@ Sound Sound_readFromBellLabsFile (MelderFile fs) {
 	 * Read data from header.
 	 * Use defaults if necessary.
 	 */
-	if ((lines = Melder_calloc (char, headerLength + 1)) == NULL) goto error;
+	if ((lines = Melder_calloc_e (char, headerLength + 1)) == NULL) goto error;
 	if (fread (lines, 1, headerLength, f) < headerLength)
 		{ Melder_error1 (L"Header too short."); goto error; }
 	psamples = lines - 1;
@@ -511,7 +471,8 @@ Sound Sound_readFromBellLabsFile (MelderFile fs) {
 	 * Read samples.
 	 */
 	fseek (f, tagLength + headerLength, SEEK_SET);
-	for (i = 1; i <= numberOfSamples; i ++) my z [1] [i] = bingeti2 (f) * (1.0 / 32768); /* 16 bits Big-Endian. */
+	for (i = 1; i <= numberOfSamples; i ++)
+		my z [1] [i] = bingeti2 (f) * (1.0 / 32768); /* 16-bits Big-Endian. */
 
 	if (fclose (f) != 0)
 		{ Melder_error1 (L"Error reading file."); goto error; }
@@ -520,72 +481,70 @@ Sound Sound_readFromBellLabsFile (MelderFile fs) {
 error:
 	if (f) fclose (f);
 	Melder_free (lines);
-	return Melder_errorp3 (L"(Sound_readFromBellLabsFile:) File ", MelderFile_messageName (fs), L" not read.");
+	return Melder_errorp3 (L"(Sound_readFromBellLabsFile:) File ", MelderFile_messageName (file), L" not read.");
 }
 
 static Sound readError (MelderFile file) {
 	return Melder_errorp3 (L"(Sound_readFrom...File:) Cannot read file ", MelderFile_messageName (file), L".");
 }
 
-Sound Sound_readFromKayFile (MelderFile fs) {
+Sound Sound_readFromKayFile (MelderFile file) {
 	Sound me = NULL;
-	long i;
 	char data [100];
 	double samplingFrequency;
-	long chunkSize, numberOfSamples;
+	unsigned long chunkSize, numberOfSamples;
 	FILE *f;
 
-	if ((f = Melder_fopen (fs, "rb")) == NULL) return 0;
+	if ((f = Melder_fopen (file, "rb")) == NULL) return 0;
 
 	/* Read header of KAY file: 12 bytes. */
 
-	if (fread (data, 1, 12, f) < 12) return readError (fs);
+	if (fread (data, 1, 12, f) < 12) return readError (file);
 	if (! strnequ (data, "FORMDS16", 8)) {
 		fclose (f);
-		return Melder_errorp3 (L"(Sound_readFromKayFile:) File ", MelderFile_messageName (fs), L" is not a KAY DS-16 file.");
+		return Melder_errorp3 (L"(Sound_readFromKayFile:) File ", MelderFile_messageName (file), L" is not a KAY DS-16 file.");
 	}
 
 	/* HEDR chunk */
 
-	if (fread (data, 1, 4, f) < 4) return readError (fs);
+	if (fread (data, 1, 4, f) < 4) return readError (file);
 	if (! strnequ (data, "HEDR", 4)) {
 		fclose (f);
-		return Melder_errorp3 (L"(Sound_readFromKayFile:) File ", MelderFile_messageName (fs), L" does not contain HEDR chunk.");
+		return Melder_errorp3 (L"(Sound_readFromKayFile:) File ", MelderFile_messageName (file), L" does not contain HEDR chunk.");
 	}
-	chunkSize = bingeti4LE (f);
+	chunkSize = bingetu4LE (f);
 	if (chunkSize & 1) ++ chunkSize;
-	if (fread (data, 1, chunkSize - 12, f) < chunkSize - 12) return readError (fs);
-	samplingFrequency = bingeti4LE (f);
-	numberOfSamples = bingeti4LE (f);
-	if (samplingFrequency <= 0 || samplingFrequency > 1e7 ||
-	    numberOfSamples <= 0 || numberOfSamples >= 1000000000) {
+	if (fread (data, 1, chunkSize - 12, f) < chunkSize - 12) return readError (file);
+	samplingFrequency = bingetu4LE (f);
+	numberOfSamples = bingetu4LE (f);
+	if (samplingFrequency <= 0 || samplingFrequency > 1e7 || numberOfSamples >= 1000000000) {
 		fclose (f);
-		return Melder_errorp3 (L"(Sound_readFromKayFile:) File ", MelderFile_messageName (fs), L" is not a correct Kay file.");
+		return Melder_errorp3 (L"(Sound_readFromKayFile:) File ", MelderFile_messageName (file), L" is not a correct Kay file.");
 	}
-	if (fread (data, 1, 4, f) < 4) return readError (fs);   /* Absolute extrema A/B. */
+	if (fread (data, 1, 4, f) < 4) return readError (file);   /* Absolute extrema A/B. */
 
 	/* SD chunk */
 
-	if (fread (data, 1, 4, f) < 4) return readError (fs);
+	if (fread (data, 1, 4, f) < 4) return readError (file);
 	while (! strnequ (data, "SDA_", 4) && ! strnequ (data, "SD_B", 4)) {
 		if (feof (f)) {
 			fclose (f);
-			return Melder_errorp3 (L"(Sound_readFromKayFile:) File ", MelderFile_messageName (fs), L" does not contain readable SD chunk.");
+			return Melder_errorp3 (L"(Sound_readFromKayFile:) File ", MelderFile_messageName (file), L" does not contain readable SD chunk.");
 		}
-		chunkSize = bingeti4LE (f);
+		chunkSize = bingetu4LE (f);
 		if (chunkSize & 1) ++ chunkSize;
-		if (fread (data, 1, chunkSize, f) < chunkSize) return readError (fs);
-		if (fread (data, 1, 4, f) < 4) return readError (fs);
+		if (fread (data, 1, chunkSize, f) < chunkSize) return readError (file);
+		if (fread (data, 1, 4, f) < 4) return readError (file);
 	}
-	chunkSize = bingeti4LE (f);
+	chunkSize = bingetu4LE (f);
 	if (chunkSize != numberOfSamples * 2) {
 		fclose (f);
-		return Melder_errorp3 (L"(Sound_readFromKayFile:) File ", MelderFile_messageName (fs), L" does not contain readable SD chunk.");
+		return Melder_errorp3 (L"(Sound_readFromKayFile:) File ", MelderFile_messageName (file), L" does not contain readable SD chunk.");
 	}
 
 	me = Sound_createSimple (1, numberOfSamples / samplingFrequency, samplingFrequency);
 	if (! me) return NULL;
-	for (i = 1; i <= numberOfSamples; i ++)
+	for (unsigned long i = 1; i <= numberOfSamples; i ++)
 		my z [1] [i] = bingeti2LE (f) / 32768.0;
 	fclose (f);
 	return me;
@@ -600,7 +559,7 @@ Sound Sound_readFromRawAlawFile (MelderFile file) {
 	numberOfSamples = ftell (f);
 	rewind (f);
 	me = Sound_createSimple (1, numberOfSamples / sampleRate, sampleRate); cherror
-	Melder_readAudioToFloat (f, 1, Melder_ALAW, my z [1], NULL, numberOfSamples); cherror
+	Melder_readAudioToFloat (f, 1, Melder_ALAW, my z, numberOfSamples); cherror
 end:
 	Melder_fclose (file, f);
 	iferror { Melder_error3 (L"(Sound_readFromRawAlawFile:) File ", MelderFile_messageName (file), L" not read."); forget (me); }
@@ -608,14 +567,13 @@ end:
 }
 
 int Sound_writeToAudioFile16 (Sound me, MelderFile file, int audioFileType) {
+//start:
 	MelderFile_create (file, Melder_macAudioFileType (audioFileType), L"PpgB", Melder_winAudioFileExtension (audioFileType));
-	if (file -> filePointer) {
-		MelderFile_writeAudioFileHeader16 (file, audioFileType, floor (1.0 / my dx + 0.5), my nx, my ny);
-		MelderFile_writeFloatToAudio (file, Melder_defaultAudioFileEncoding16 (audioFileType),
-			& my z [1] [1], my nx, my ny > 1 ? & my z [2] [1] : NULL, my ny > 1 ? my nx : 0, TRUE);
-	}
+	MelderFile_writeAudioFileHeader16_e (file, audioFileType, floor (1.0 / my dx + 0.5), my nx, my ny); cherror
+	MelderFile_writeFloatToAudio (file, my ny, Melder_defaultAudioFileEncoding16 (audioFileType), my z, my nx, TRUE);
+end:
 	MelderFile_close (file);
-	iferror return 0;
+	iferror return Melder_error3 (L"16-bit sound file ", MelderFile_messageName (file), L" not written.");
 	return 1;
 }
 
@@ -754,8 +712,7 @@ int Sound_writeToKayFile (Sound me, MelderFile file) {
 	fwrite ("SDA_", 1, 4, f);
 	binputi4LE (my nx * 2, f);   /* Chunk size. */
 
-	MelderFile_writeFloatToAudio (file, Melder_LINEAR_16_LITTLE_ENDIAN,
-		& my z [1] [1], my nx, NULL, 0, TRUE); cherror
+	MelderFile_writeFloatToAudio (file, my ny, Melder_LINEAR_16_LITTLE_ENDIAN, my z, my nx, TRUE); cherror
 end:
 	Melder_fclose (file, f);
 	file -> filePointer = previous;
@@ -769,8 +726,7 @@ int Sound_writeToRawSoundFile (Sound me, MelderFile file, int encoding) {
 	if (! f) return 0;
 	file -> filePointer = f;
 	MelderFile_setMacTypeAndCreator (file, 'BINA', 'PpgB');
-	MelderFile_writeFloatToAudio (file, encoding,
-		& my z [1] [1], my nx, my ny > 1 ? & my z [2] [1] : NULL, my ny > 1 ? my nx : 0, TRUE); cherror
+	MelderFile_writeFloatToAudio (file, my ny, encoding, my z, my nx, TRUE); cherror
 end:
 	Melder_fclose (file, f);
 	file -> filePointer = previous;

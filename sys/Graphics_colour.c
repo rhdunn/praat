@@ -1,6 +1,6 @@
 /* Graphics_colour.c
  *
- * Copyright (C) 1992-2010 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
  * pb 2010/05/12 highlighting in GDK instead of Cairo because of the availability of a XOR mode
  * pb 2010/05/12 xorOn in GDK instead of Cairo because of the availability of a XOR mode
  * pb 2010/06/05 set my colour in setColour
+ * pb 2011/01/15 Windows: inverted the colour in XOR mode
  */
 
 #include "GraphicsP.h"
@@ -77,9 +78,7 @@ const wchar_t * Graphics_Colour_name (Graphics_Colour colour) {
 			Melder_fixed (colour. blue, 6), L"}");
 }
 
-#if xwin
-	unsigned long xwinColour_BLACK, xwinColour_WHITE, xwinColour_PINK, xwinColour_BLUE, xwinColour_MAGENTA, xwinGreys [101];
-#elif mac
+#if mac
 	#include "macport_on.h"
 	#include <LowMem.h>
 #endif
@@ -94,16 +93,6 @@ void _Graphics_setColour (I, Graphics_Colour colour) {
 		#if cairo
 			if (my cr == NULL) return;
 			cairo_set_source_rgb (my cr, colour. red, colour. green, colour. blue);
-		#elif xwin
-			XColor xcolor;
-			xcolor. pixel = 0;
-			xcolor. red = colour. red * 65535.0;
-			xcolor. green = colour. green * 65535.0;
-			xcolor. blue = colour. blue * 65535.0;
-			xcolor. flags = DoRed | DoGreen | DoBlue;
-			xcolor. pad = 0;
-			XAllocColor (my display, my colourMap, & xcolor);
-			XSetForeground (my display, my gc, xcolor. pixel);
 		#elif win
 			my foregroundColour = RGB (colour. red * 255, colour. green * 255, colour. blue * 255);
 			SelectPen (my dc, GetStockPen (BLACK_PEN));
@@ -139,10 +128,6 @@ void _Graphics_setGrey (I, double fgrey) {
 			if (my cr == NULL) return;
 			if (fgrey < 0.0) fgrey = 0.0; else if (fgrey > 1.0) fgrey = 1.0;
 			cairo_set_source_rgb (my cr, fgrey, fgrey, fgrey);
-		#elif xwin
-			int igrey = (int) floor (100 * fgrey + 0.5);
-			if (igrey < 0) igrey = 0; else if (igrey > 100) igrey = 100;
-			XSetForeground (my display, my gc, xwinGreys [igrey]);
 		#elif win
 			int lightness = fgrey <= 0 ? 0 : fgrey >= 1.0 ? 255 : fgrey * 255;
 			my foregroundColour = RGB (lightness, lightness, lightness);
@@ -176,7 +161,7 @@ void Graphics_setGrey (I, double grey) {
 	if (my recording) { op (SET_GREY, 1); put (grey); }
 }
 
-static void highlight (I, short x1DC, short x2DC, short y1DC, short y2DC) {
+static void highlight (I, long x1DC, long x2DC, long y1DC, long y2DC) {
 	iam (Graphics);
 	if (my screen) {
 		iam (GraphicsScreen);
@@ -190,20 +175,13 @@ static void highlight (I, short x1DC, short x2DC, short y1DC, short y2DC) {
 			gdk_draw_rectangle (my window, my gc, TRUE, x1DC, y2DC, width, height);
 			gdk_gc_set_rgb_fg_color (my gc, & black);
 			gdk_gc_set_function (my gc, GDK_COPY);
+			gdk_flush ();   //tryout 20110207
 			//cairo_set_source_rgba (my cr, 1.0, 0.8, 0.8, 0.5);
 			//cairo_set_operator (my cr, CAIRO_OPERATOR_BITXOR);   // this blend mode doesn't exist
 			//cairo_rectangle (my cr, x1DC, y2DC, width, height);
 			//cairo_fill (my cr);
 			//cairo_set_source_rgb (my cr, 0.0, 0.0, 0.0);
 			//cairo_set_operator (my cr, CAIRO_OPERATOR_OVER);
-		#elif xwin
-			int width = x2DC - x1DC, height = y1DC - y2DC;
-			if (width <= 0 || height <= 0) return;
-			XSetForeground (my display, my gc, xwinColour_PINK ^ xwinColour_WHITE);
-			XSetFunction (my display, my gc, GXxor);
-			XFillRectangle (my display, my window, my gc, x1DC, y2DC, width, height);
-			XSetForeground (my display, my gc, xwinColour_BLACK);
-			XSetFunction (my display, my gc, GXcopy);
 		#elif win
 			static HBRUSH highlightBrush;
 			RECT rect;
@@ -243,8 +221,8 @@ void Graphics_unhighlight (I, double x1WC, double x2WC, double y1WC, double y2WC
 		{ op (UNHIGHLIGHT, 4); put (x1WC); put (x2WC); put (y1WC); put (y2WC); }
 }
 
-static void highlight2 (I, short x1DC, short x2DC, short y1DC, short y2DC,
-	short x1DC_inner, short x2DC_inner, short y1DC_inner, short y2DC_inner)
+static void highlight2 (I, long x1DC, long x2DC, long y1DC, long y2DC,
+	long x1DC_inner, long x2DC_inner, long y1DC_inner, long y2DC_inner)
 {
 	iam (Graphics);
 	if (my screen) {
@@ -260,15 +238,6 @@ static void highlight2 (I, short x1DC, short x2DC, short y1DC, short y2DC,
 			cairo_rectangle (my cr, x1DC, y1DC_inner, x2DC - x1DC, y1DC - y1DC_inner); // lower
 			cairo_fill (my cr);
 			cairo_restore (my cr);
-		#elif xwin
-			XSetForeground (my display, my gc, xwinColour_PINK ^ xwinColour_WHITE);
-			XSetFunction (my display, my gc, GXxor);
-			XFillRectangle (my display, my window, my gc, x1DC, y2DC, x2DC - x1DC, y2DC_inner - y2DC); // upper
-			XFillRectangle (my display, my window, my gc, x1DC, y2DC_inner, x1DC_inner - x1DC, y1DC_inner - y2DC_inner); // left part
-			XFillRectangle (my display, my window, my gc, x2DC_inner, y2DC_inner, x2DC - x2DC_inner, y1DC_inner - y2DC_inner); // right part
-			XFillRectangle (my display, my window, my gc, x1DC, y1DC_inner, x2DC - x1DC, y1DC - y1DC_inner); // lower
-			XSetForeground (my display, my gc, xwinColour_BLACK);
-			XSetFunction (my display, my gc, GXcopy);
 		#elif win
 			static HBRUSH highlightBrush;
 			if (! highlightBrush)
@@ -337,11 +306,12 @@ void Graphics_xorOn (I, Graphics_Colour colour) {
 			gdk_gc_set_function (my gc, GDK_XOR);
 			//cairo_set_source_rgba (my cr, 1.0, 0.8, 0.8, 0.5);
 			//cairo_set_operator (my cr, CAIRO_OPERATOR_XOR);
-		#elif xwin
-			XSetForeground (my display, my gc, xwinColour_MAGENTA ^ xwinColour_WHITE);
-			XSetFunction (my display, my gc, GXxor);
+			gdk_flush ();
 		#elif win
 			SetROP2 (my dc, R2_XORPEN);
+			colour. red = ((uint16_t) (colour. red * 65535.0) ^ 0xFFFF) / 65535.0;
+			colour. green = ((uint16_t) (colour. green * 65535.0) ^ 0xFFFF) / 65535.0;
+			colour. blue = ((uint16_t) (colour. blue * 65535.0) ^ 0xFFFF) / 65535.0;
 			_Graphics_setColour (me, colour);
 		#elif mac
 			if (my useQuartz) {
@@ -367,9 +337,7 @@ void Graphics_xorOff (I) {
 			gdk_gc_set_function (my gc, GDK_COPY);
 			//cairo_set_source_rgba (my cr, 0.0, 0.0, 0.0, 1.0);
 			//cairo_set_operator (my cr, CAIRO_OPERATOR_OVER);
-		#elif xwin
-			XSetForeground (my display, my gc, xwinColour_BLACK);
-			XSetFunction (my display, my gc, GXcopy);
+			gdk_flush ();
 		#elif win
 			SetROP2 (my dc, R2_COPYPEN);
 			_Graphics_setColour (me, my colour);
@@ -391,55 +359,5 @@ Graphics_Colour Graphics_inqColour (I) {
 	iam (Graphics);
 	return my colour;
 }
-
-#if xwin
-void _Graphics_colour_init (I) {
-	iam (GraphicsScreen);
-	XGCValues values;
-	static bool inited;
-	if (! inited) {
-		XColor xcolor;
-		xwinColour_BLACK = BlackPixel (my display, my xscreen);
-		xwinColour_WHITE = WhitePixel (my display, my xscreen);
-		xcolor. pixel = 0;
-		xcolor. red = Graphics_PINK. red * 65535.0;
-		xcolor. green = Graphics_PINK. green * 65535.0;
-		xcolor. blue = Graphics_PINK. blue * 65535.0;
-		xcolor. flags = DoRed | DoGreen | DoBlue;
-		xcolor. pad = 0;
-		XAllocColor (my display, my colourMap, & xcolor);
-		xwinColour_PINK = xcolor. pixel;
-		xcolor. pixel = 0;
-		xcolor. red = Graphics_BLUE. red * 65535.0;
-		xcolor. green = Graphics_BLUE. green * 65535.0;
-		xcolor. blue = Graphics_BLUE. blue * 65535.0;
-		xcolor. flags = DoRed | DoGreen | DoBlue;
-		xcolor. pad = 0;
-		XAllocColor (my display, my colourMap, & xcolor);
-		xwinColour_BLUE = xcolor. pixel;
-		xcolor. pixel = 0;
-		xcolor. red = Graphics_MAGENTA. red * 65535.0;
-		xcolor. green = Graphics_MAGENTA. green * 65535.0;
-		xcolor. blue = Graphics_MAGENTA. blue * 65535.0;
-		xcolor. flags = DoRed | DoGreen | DoBlue;
-		xcolor. pad = 0;
-		XAllocColor (my display, my colourMap, & xcolor);
-		xwinColour_MAGENTA = xcolor. pixel;
-		for (int igrey = 0; igrey <= 100; igrey ++) {
-			xcolor. pixel = 0;
-			xcolor. red = xcolor. green = xcolor. blue = igrey * 655.351;
-			xcolor. flags = DoRed | DoGreen | DoBlue;
-			xcolor. pad = 0;
-			XAllocColor (my display, my colourMap, & xcolor);
-			xwinGreys [igrey] = xcolor. pixel;
-		}
-		inited = 1;
-	}
-	XSetWindowBackground (my display, my window, xwinColour_WHITE);
-	values. foreground = xwinColour_BLACK;
-	values. background = xwinColour_WHITE;
-	my text.gc = my gc = XCreateGC (my display, my window, GCForeground | GCBackground, & values);
-}
-#endif
 
 /* End of file Graphics_colour.c */

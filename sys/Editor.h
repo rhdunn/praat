@@ -2,7 +2,7 @@
 #define _Editor_h_
 /* Editor.h
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  */
 
 /*
- * pb 2009/12/22
+ * pb 2011/03/02
  */
 
 #ifndef _Collection_h_
@@ -36,6 +36,10 @@
 	#include "Graphics.h"
 #endif
 
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
 #include "Editor_enums.h"
 
 #define Editor__parents(Klas) Thing_inherit (Klas, Thing)
@@ -44,7 +48,7 @@ Thing_declare1 (Editor);
 #define EditorCommand_members Thing_members \
 	Any editor, menu; \
 	const wchar_t *itemTitle; \
-	Widget itemWidget; \
+	GuiObject itemWidget; \
 	int (*commandCallback) (Any editor_me, EditorCommand cmd, UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter); \
 	const wchar_t *script; \
 	Any dialog;
@@ -53,15 +57,15 @@ class_create (EditorCommand, Thing);
 
 typedef struct structEditorMenu *EditorMenu;
 
-Widget EditorMenu_addCommand (EditorMenu menu, const wchar_t *itemTitle, long flags,
+GuiObject EditorMenu_addCommand (EditorMenu menu, const wchar_t *itemTitle, long flags,
 	int (*commandCallback) (Any editor_me, EditorCommand, UiForm, const wchar_t *, Interpreter));
-Widget EditorCommand_getItemWidget (EditorCommand me);
+GuiObject EditorCommand_getItemWidget (EditorCommand me);
 
 EditorMenu Editor_addMenu (Any editor, const wchar_t *menuTitle, long flags);
-Widget EditorMenu_getMenuWidget (EditorMenu me);
+GuiObject EditorMenu_getMenuWidget (EditorMenu me);
 
 #define Editor__members(Klas) Thing_members \
-	Widget parent, shell, dialog, menuBar, undoButton, searchButton; \
+	GuiObject parent, shell, dialog, menuBar, undoButton, searchButton; \
 	Ordered menus; \
 	Any data, previousData;   /* The data that can be displayed and edited. */ \
 	wchar_t undoText [100]; \
@@ -96,10 +100,10 @@ Widget EditorMenu_getMenuWidget (EditorMenu me);
 	void (*do_pictureMargins) (Klas me, EditorCommand cmd);
 Thing_declare2 (Editor, Thing);
 
-#define Editor_HIDDEN  (1 << 13)
-Widget Editor_addCommand (Any editor, const wchar_t *menuTitle, const wchar_t *itemTitle, long flags,
+#define Editor_HIDDEN  (1 << 14)
+GuiObject Editor_addCommand (Any editor, const wchar_t *menuTitle, const wchar_t *itemTitle, long flags,
 	int (*commandCallback) (Any editor_me, EditorCommand cmd, UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter));
-Widget Editor_addCommandScript (Any editor, const wchar_t *menuTitle, const wchar_t *itemTitle, long flags,
+GuiObject Editor_addCommandScript (Any editor, const wchar_t *menuTitle, const wchar_t *itemTitle, long flags,
 	const wchar_t *script);
 void Editor_setMenuSensitive (Any editor, const wchar_t *menu, int sensitive);
 
@@ -148,7 +152,7 @@ void Editor_setPublish2Callback (Editor me, void (*cb) (I, void *closure, Any pu
 
 /***** For inheritors. *****/
 
-int Editor_init (Editor me, Widget parent, int x, int y , int width, int height,
+int Editor_init (Editor me, GuiObject parent, int x, int y , int width, int height,
 	const wchar_t *title, Any data);
 /*
 	This creates my shell and my dialog,
@@ -200,6 +204,10 @@ void Editor_openPraatPicture (Editor me);
 void Editor_closePraatPicture (Editor me);
 
 void Editor_prefs (void);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif
 /* End of file Editor.h */

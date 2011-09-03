@@ -2,7 +2,7 @@
 #define _DemoEditor_h_
 /* DemoEditor.h
  *
- * Copyright (C) 2009 Paul Boersma
+ * Copyright (C) 2009-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,18 +20,22 @@
  */
 
 /*
- * pb 2009/12/25
+ * pb 2011/03/02
  */
 
 #ifndef _Editor_h_
 	#include "Editor.h"
 #endif
 
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
 #define DemoEditor__parents(Klas) Editor__parents(Klas) Thing_inherit (Klas, Editor)
 Thing_declare1 (DemoEditor);
 
-int DemoEditor_init (DemoEditor me, Widget parent);
-DemoEditor DemoEditor_create (Widget parent);
+int DemoEditor_init (DemoEditor me, GuiObject parent);
+DemoEditor DemoEditor_create (GuiObject parent);
 
 int Demo_open (void);
 void Demo_close (void);
@@ -51,6 +55,10 @@ bool Demo_extraControlKeyPressed (void);
 /* Shortcuts: */
 bool Demo_input (const wchar_t *keys);
 bool Demo_clickedIn (double left, double right, double bottom, double top);
+
+#ifdef __cplusplus
+	}
+#endif
 
 /* End of file DemoEditor.h */
 #endif

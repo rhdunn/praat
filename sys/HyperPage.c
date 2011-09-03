@@ -101,7 +101,7 @@ static void saveHistory (HyperPage me, const wchar_t *title) {
 	/*
 	 * Add the page title to the top of the history list.
 	 */
-	my history [my historyPointer]. page = Melder_wcsdup (title);
+	my history [my historyPointer]. page = Melder_wcsdup_f (title);
 }
 
 /********************************************************************************
@@ -426,27 +426,31 @@ if (! my printing) {
 
 int HyperPage_script (I, double width_inches, double height_inches, const wchar_t *script) {
 	iam (HyperPage);
-	wchar_t *text = Melder_wcsdup (script);
+	wchar_t *text = Melder_wcsdup_f (script);
 	Interpreter interpreter = Interpreter_createFromEnvironment (NULL);
 	double topSpacing = 0.1, bottomSpacing = 0.1, minFooterDistance = 0.0;
 	int font = my font, size = my fontSize;
-	width_inches *= width_inches < 0.0 ? -1.0 : size / 12.0;
-	height_inches *= height_inches < 0.0 ? -1.0 : size / 12.0;
+	double true_width_inches = width_inches * ( width_inches < 0.0 ? -1.0 : size / 12.0 );
+	double true_height_inches = height_inches * ( height_inches < 0.0 ? -1.0 : size / 12.0 );
 if (! my printing) {
 	my y -= ( my previousBottomSpacing > topSpacing ? my previousBottomSpacing : topSpacing ) * size / 12.0;
-	if (my y > PAGE_HEIGHT + height_inches || my y < PAGE_HEIGHT - SCREEN_HEIGHT) {
-		my y -= height_inches;
+	if (my y > PAGE_HEIGHT + true_height_inches || my y < PAGE_HEIGHT - SCREEN_HEIGHT) {
+		my y -= true_height_inches;
 	} else {
-		my y -= height_inches;
+		my y -= true_height_inches;
 		Graphics_setFont (my g, font);
 		Graphics_setFontStyle (my g, 0);
 		Graphics_setFontSize (my g, size);
-		my x = width_inches > my rightMargin ? 0 : 0.5 * (my rightMargin - width_inches);
+		my x = true_width_inches > my rightMargin ? 0 : 0.5 * (my rightMargin - true_width_inches);
 		Graphics_setWrapWidth (my g, 0);
+		long x1DCold, x2DCold, y1DCold, y2DCold;
+		Graphics_inqWsViewport (my g, & x1DCold, & x2DCold, & y1DCold, & y2DCold);
+		double x1NDCold, x2NDCold, y1NDCold, y2NDCold;
+		Graphics_inqWsWindow (my g, & x1NDCold, & x2NDCold, & y1NDCold, & y2NDCold);
 		{
-			if (my praatApplication == NULL) my praatApplication = Melder_calloc (structPraatApplication, 1);
-			if (my praatObjects == NULL) my praatObjects = Melder_calloc (structPraatObjects, 1);
-			if (my praatPicture == NULL) my praatPicture = Melder_calloc (structPraatPicture, 1);
+			if (my praatApplication == NULL) my praatApplication = Melder_calloc_f (structPraatApplication, 1);
+			if (my praatObjects == NULL) my praatObjects = Melder_calloc_f (structPraatObjects, 1);
+			if (my praatPicture == NULL) my praatPicture = Melder_calloc_f (structPraatPicture, 1);
 			theCurrentPraatApplication = my praatApplication;
 			theCurrentPraatApplication -> batch = true;   // prevent creation of editor windows
 			theCurrentPraatApplication -> topShell = theForegroundPraatApplication. topShell;   // needed for UiForm_create () in dialogs
@@ -460,10 +464,23 @@ if (! my printing) {
 			theCurrentPraatPicture -> lineWidth = 1.0;
 			theCurrentPraatPicture -> arrowSize = 1.0;
 			theCurrentPraatPicture -> x1NDC = my x;
-			theCurrentPraatPicture -> x2NDC = my x + width_inches;
+			theCurrentPraatPicture -> x2NDC = my x + true_width_inches;
 			theCurrentPraatPicture -> y1NDC = my y;
-			theCurrentPraatPicture -> y2NDC = my y + height_inches;
+			theCurrentPraatPicture -> y2NDC = my y + true_height_inches;
+
 			Graphics_setViewport (my g, theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC);
+			Graphics_setWindow (my g, 0.0, 1.0, 0.0, 1.0);
+			long x1DC, y1DC, x2DC, y2DC;
+			Graphics_WCtoDC (my g, 0.0, 0.0, & x1DC, & y2DC);
+			Graphics_WCtoDC (my g, 1.0, 1.0, & x2DC, & y1DC);
+			Graphics_resetWsViewport (my g, x1DC, x2DC, y1DC, y2DC);
+			Graphics_setWsWindow (my g, 0, width_inches, 0, height_inches);
+			theCurrentPraatPicture -> x1NDC = 0;
+			theCurrentPraatPicture -> x2NDC = width_inches;
+			theCurrentPraatPicture -> y1NDC = 0;
+			theCurrentPraatPicture -> y2NDC = height_inches;
+			Graphics_setViewport (my g, theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC);			
+
 			Melder_progressOff ();
 			Melder_warningOff ();
 			structMelderDir saveDir = { { 0 } };
@@ -497,6 +514,8 @@ if (! my printing) {
 			theCurrentPraatObjects = & theForegroundPraatObjects;
 			theCurrentPraatPicture = & theForegroundPraatPicture;
 		}
+		Graphics_resetWsViewport (my g, x1DCold, x2DCold, y1DCold, y2DCold);
+		Graphics_setWsWindow (my g, x1NDCold, x2NDCold, y1NDCold, y2NDCold);
 		Graphics_setViewport (my g, 0, 1, 0, 1);
 		Graphics_setWindow (my g, 0, 1, 0, 1);
 		Graphics_setTextAlignment (my g, Graphics_LEFT, Graphics_BOTTOM);
@@ -506,22 +525,26 @@ if (! my printing) {
 	Graphics_setFontStyle (my ps, 0);
 	Graphics_setFontSize (my ps, size);
 	my y -= my y == PAPER_TOP - TOP_MARGIN ? 0 : ( my previousBottomSpacing > topSpacing ? my previousBottomSpacing : topSpacing ) * size / 12.0;
-	my y -= height_inches;
+	my y -= true_height_inches;
 	if (my y < PAPER_BOTTOM + BOTTOM_MARGIN + minFooterDistance) {
 		Graphics_nextSheetOfPaper (my ps);
 		if (my pageNumber) my pageNumber ++;
 		HyperPage_initSheetOfPaper (me);
 		Graphics_setFont (my ps, font);
 		Graphics_setFontSize (my ps, size);
-		my y -= height_inches;
+		my y -= true_height_inches;
 	}
-	my x = 3.7 - 0.5 * width_inches;
+	my x = 3.7 - 0.5 * true_width_inches;
 	if (my x < 0) my x = 0;
 	Graphics_setWrapWidth (my ps, 0);
+	long x1DCold, x2DCold, y1DCold, y2DCold;
+	Graphics_inqWsViewport (my ps, & x1DCold, & x2DCold, & y1DCold, & y2DCold);
+	double x1NDCold, x2NDCold, y1NDCold, y2NDCold;
+	Graphics_inqWsWindow (my ps, & x1NDCold, & x2NDCold, & y1NDCold, & y2NDCold);
 	{
-		if (my praatApplication == NULL) my praatApplication = Melder_calloc (structPraatApplication, 1);
-		if (my praatObjects == NULL) my praatObjects = Melder_calloc (structPraatObjects, 1);
-		if (my praatPicture == NULL) my praatPicture = Melder_calloc (structPraatPicture, 1);
+		if (my praatApplication == NULL) my praatApplication = Melder_calloc_f (structPraatApplication, 1);
+		if (my praatObjects == NULL) my praatObjects = Melder_calloc_f (structPraatObjects, 1);
+		if (my praatPicture == NULL) my praatPicture = Melder_calloc_f (structPraatPicture, 1);
 		theCurrentPraatApplication = my praatApplication;
 		theCurrentPraatApplication -> batch = true;
 		theCurrentPraatObjects = my praatObjects;
@@ -534,10 +557,24 @@ if (! my printing) {
 		theCurrentPraatPicture -> lineWidth = 1.0;
 		theCurrentPraatPicture -> arrowSize = 1.0;
 		theCurrentPraatPicture -> x1NDC = my x;
-		theCurrentPraatPicture -> x2NDC = my x + width_inches;
+		theCurrentPraatPicture -> x2NDC = my x + true_width_inches;
 		theCurrentPraatPicture -> y1NDC = my y;
-		theCurrentPraatPicture -> y2NDC = my y + height_inches;
+		theCurrentPraatPicture -> y2NDC = my y + true_height_inches;
+
 		Graphics_setViewport (my ps, theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC);
+		Graphics_setWindow (my ps, 0.0, 1.0, 0.0, 1.0);
+		long x1DC, y1DC, x2DC, y2DC;
+		Graphics_WCtoDC (my ps, 0.0, 0.0, & x1DC, & y2DC);
+		Graphics_WCtoDC (my ps, 1.0, 1.0, & x2DC, & y1DC);
+		long shift = (long) (Graphics_getResolution (my ps) * true_height_inches) + (y1DCold - y2DCold);
+		Graphics_resetWsViewport (my ps, x1DC, x2DC, y1DC + shift, y2DC + shift);
+		Graphics_setWsWindow (my ps, 0, width_inches, 0, height_inches);
+		theCurrentPraatPicture -> x1NDC = 0;
+		theCurrentPraatPicture -> x2NDC = width_inches;
+		theCurrentPraatPicture -> y1NDC = 0;
+		theCurrentPraatPicture -> y2NDC = height_inches;
+		Graphics_setViewport (my ps, theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC);
+
 		Melder_progressOff ();
 		Melder_warningOff ();
 		structMelderDir saveDir = { { 0 } };
@@ -556,6 +593,8 @@ if (! my printing) {
 		theCurrentPraatObjects = & theForegroundPraatObjects;
 		theCurrentPraatPicture = & theForegroundPraatPicture;
 	}
+	Graphics_resetWsViewport (my ps, x1DCold, x2DCold, y1DCold, y2DCold);
+	Graphics_setWsWindow (my ps, x1NDCold, x2NDCold, y1NDCold, y2NDCold);
 	Graphics_setViewport (my ps, 0, 1, 0, 1);
 	Graphics_setWindow (my ps, 0, 1, 0, 1);
 	Graphics_setTextAlignment (my ps, Graphics_LEFT, Graphics_BOTTOM);
@@ -750,7 +789,7 @@ static int menu_cb_searchForPage (EDITOR_ARGS) {
  * The 'pageIncrement' is sliderSize - 1.
  */
 
-static void createVerticalScrollBar (HyperPage me, Widget parent) {
+static void createVerticalScrollBar (HyperPage me, GuiObject parent) {
 	#if gtk
 		int maximumScrollBarValue = (int) (PAGE_HEIGHT * 5);
 		GtkObject *adj = gtk_adjustment_new (1, 1, maximumScrollBarValue, 1, 1, maximumScrollBarValue - 1);
@@ -876,7 +915,7 @@ static int menu_cb_pageDown (EDITOR_ARGS) {
 
 static int do_back (HyperPage me) {
 	if (my historyPointer <= 0) return 1;
-	wchar_t *page = Melder_wcsdup (my history [-- my historyPointer]. page);   /* Temporary, because pointer will be moved. */
+	wchar_t *page = Melder_wcsdup_f (my history [-- my historyPointer]. page);   /* Temporary, because pointer will be moved. */
 	int top = my history [my historyPointer]. top;
 	if (our goToPage (me, page)) {
 		my top = top;
@@ -906,7 +945,7 @@ static int do_forth (HyperPage me) {
 	wchar_t *page;
 	int top;
 	if (my historyPointer >= 19 || ! my history [my historyPointer + 1]. page) return 1;
-	page = Melder_wcsdup (my history [++ my historyPointer]. page);
+	page = Melder_wcsdup_f (my history [++ my historyPointer]. page);
 	top = my history [my historyPointer]. top;
 	if (our goToPage (me, page)) {
 		my top = top;
@@ -1016,7 +1055,7 @@ static void createChildren (HyperPage me) {
 			L"1 >", gui_button_cb_nextPage, me, 0);
 	}
 	#if gtk
-		Widget scrollBox = gtk_hbox_new (false, 0);
+		GuiObject scrollBox = gtk_hbox_new (false, 0);
 		gtk_box_pack_end (GTK_BOX (my dialog), scrollBox, true, true, 0);
 		my drawingArea = GuiDrawingArea_create (GTK_WIDGET (scrollBox), 0, 600, 0, 800,
 			gui_drawingarea_cb_expose, gui_drawingarea_cb_click, NULL, gui_drawingarea_cb_resize, me, GuiDrawingArea_BORDER);
@@ -1036,7 +1075,7 @@ static void createChildren (HyperPage me) {
 	#endif
 }
 
-int HyperPage_init (HyperPage me, Widget parent, const wchar_t *title, Any data) {
+int HyperPage_init (HyperPage me, GuiObject parent, const wchar_t *title, Any data) {
 	resolution = Gui_getResolution (parent);
 	Editor_init (HyperPage_as_parent (me), parent, 0, 0, 6 * resolution + 30, 800, title, data); cherror
 	#if motif
@@ -1129,7 +1168,7 @@ int HyperPage_goToPage (I, const wchar_t *title) {
 	}
 	saveHistory (me, title);   /* Last chance: HyperPage_clear will destroy "title" !!! */
 	Melder_free (my currentPageTitle);
-	my currentPageTitle = Melder_wcsdup (title);
+	my currentPageTitle = Melder_wcsdup_f (title);
 	my top = 0;
 	HyperPage_clear (me);
 	updateVerticalScrollBar (me);   /* Scroll to the top (my top == 0). */
@@ -1148,7 +1187,7 @@ int HyperPage_goToPage_i (I, long i) {
 void HyperPage_setEntryHint (I, const wchar_t *hint) {
 	iam (HyperPage);
 	Melder_free (my entryHint);
-	my entryHint = Melder_wcsdup (hint);
+	my entryHint = Melder_wcsdup_f (hint);
 }
 
 /* End of file HyperPage.c */

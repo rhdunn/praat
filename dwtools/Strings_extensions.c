@@ -1,6 +1,6 @@
 /* Strings_extensions.c
  *
- * Copyright (C) 1993-2004 David Weenink
+ * Copyright (C) 1993-2010 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
  djmw 20040629 Strings_append  now accepts an Ordered of Strings.
  djmw 20050714 New: Strings_to_Permutation, Strings_and_Permutation_permuteStrings.
  djmw 20050721 Extra argument in Strings_to_Permutation.
+ djmw 20101007 StringsIndex Stringses_to_StringsIndex (Strings me, Strings classes)
 */
 
 #include "Strings_extensions.h"
@@ -48,27 +49,27 @@ Strings Strings_append (Ordered me)
 {
 	long i, j, index = 1, numberOfStrings = 0;
 	Strings thee, s;
-	
+
 	for (i = 1; i <= my size; i++)
 	{
 		s = my item[i];
 		numberOfStrings += s -> numberOfStrings;
 	}
-	
+
 	thee = Strings_createFixedLength (numberOfStrings);
 	if (thee == NULL) return NULL;
-	
+
 	for (i = 1; i <= my size; i++)
 	{
 		s = my item[i];
 		for (j = 1; j <= s -> numberOfStrings; j++, index++)
 		{
 			if (s -> strings[j] == NULL) continue;
-			thy strings [index] = Melder_wcsdup (s -> strings[j]);
+			thy strings [index] = Melder_wcsdup_e (s -> strings[j]);
 			if (thy strings[index] == NULL) goto end;
 		}
 	}
-	
+
 end:
 
 	if (Melder_hasError ()) forget (thee);
@@ -79,7 +80,7 @@ end:
 {
 	long i, k, numberOfStrings = my numberOfStrings + thy numberOfStrings;
 	Strings him = Strings_createFixedLength (numberOfStrings);
-	
+
 	if (him == NULL) return NULL;
 	for (i = 1; i <= my numberOfStrings; i++)
 	{
@@ -96,21 +97,21 @@ end:
 	}
 end:
 	if (Melder_hasError ()) forget (him);
-	return him;	
+	return him;
 }*/
 
-Strings Strings_change (Strings me, wchar_t *search, wchar_t *replace, 
-	int maximumNumberOfReplaces, long *nmatches, long *nstringmatches, 
+Strings Strings_change (Strings me, wchar_t *search, wchar_t *replace,
+	int maximumNumberOfReplaces, long *nmatches, long *nstringmatches,
 	int use_regexp)
 {
 	wchar_t **strings;
 	Strings thee = new (Strings);
 	if (thee == NULL) return NULL;
-	
-	strings = strs_replace (my strings, 1, my numberOfStrings, 
-		search, replace, maximumNumberOfReplaces, nmatches, 
+
+	strings = strs_replace (my strings, 1, my numberOfStrings,
+		search, replace, maximumNumberOfReplaces, nmatches,
 		nstringmatches, use_regexp);
-		
+
 	if (strings == NULL)
 	{
 		forget (thee);
@@ -124,10 +125,10 @@ Strings Strings_change (Strings me, wchar_t *search, wchar_t *replace,
 int Strings_setString (Strings me, wchar_t *new, long index)
 {
 	wchar_t *s;
-	if (index < 1 || index > my numberOfStrings) return Melder_error3 
+	if (index < 1 || index > my numberOfStrings) return Melder_error3
 		(L"Index must be in range [1, ", Melder_integer (my numberOfStrings), L"].");
 
-	s = Melder_wcsdup (new);
+	s = Melder_wcsdup_f (new);
 	if (my strings[index]) Melder_free (my strings[index]);
 	my strings[index] = s;
 	return 1;
@@ -137,14 +138,14 @@ Strings strings_to_Strings (wchar_t **strings, long from, long to)
 {
 	Strings thee;
 	long i, k;
-	
+
 	thee = Strings_createFixedLength (to - from + 1);
 	if (thee == NULL) goto end;
-	
+
 	for (i = from, k = 1; i <= to; i++, k++)
 	{
-		if (strings[i] && 
-			((thy strings[k]  = Melder_wcsdup (strings[i])) == NULL)) goto end;
+		if (strings[i] &&
+			((thy strings[k]  = Melder_wcsdup_e (strings[i])) == NULL)) goto end;
 	}
 end:
 	if (Melder_hasError ()) forget (thee);
@@ -153,7 +154,7 @@ end:
 
 Strings Strings_extractPart (Strings me, long from, long to)
 {
-	if (from < 1 || to > my numberOfStrings || from > to) return Melder_errorp3 
+	if (from < 1 || to > my numberOfStrings || from > to) return Melder_errorp3
 		(L"Strings_extractPart: begin and end must be in interval [1, ", Melder_integer (my numberOfStrings), L"].");
 	return strings_to_Strings (my strings, from, to);
 }
@@ -178,7 +179,7 @@ void _Strings_unlink (Strings me)
 Permutation Strings_to_Permutation (Strings me, int sort)
 {
 	Permutation thee;
-		
+
 	thee = Permutation_create (my numberOfStrings);
 	if (thee != NULL && sort != 0)
 	{
@@ -200,12 +201,43 @@ Strings Strings_and_Permutation_permuteStrings (Strings me, Permutation thee)
 	{
 		long index = thy p[i];
 		if (my strings[index] != NULL &&
-			(his strings[i] = Melder_wcsdup (my strings[index])) == NULL) break;
+			(his strings[i] = Melder_wcsdup_e (my strings[index])) == NULL) break;
 	}
-	
+
 	if (Melder_hasError ()) forget (him);
 	return him;
-	
+
+}
+
+StringsIndex Stringses_to_StringsIndex (Strings me, Strings classes)
+{
+	StringsIndex him = NULL;
+	StringsIndex tmp = Strings_to_StringsIndex (classes);
+	long numberOfClasses = tmp -> classes -> size;
+
+	him = StringsIndex_create (my numberOfStrings);
+	if (him == NULL) goto end;
+	for (long i = 1; i <= numberOfClasses; i++)
+	{
+		SimpleString t = tmp -> classes -> item[i];
+		SimpleString t2 = Data_copy (t);
+		if (t2 == NULL || ! Collection_addItem (his classes, t2)) goto end;
+	}
+	for (long j = 1; j <= my numberOfStrings; j++)
+	{
+		wchar_t *stringsj = my strings[j];
+		long index = 0;
+		for (long i = 1; i <= numberOfClasses; i++)
+		{
+			SimpleString ss = his classes -> item[i];
+			if (Melder_wcscmp (stringsj, ss -> string) == 0) { index = i; break; }
+		}
+		his classIndex[j] = index;
+	}
+end:
+	forget (tmp);
+	if (Melder_hasError ()) forget (him);
+	return him;
 }
 
 StringsIndex Strings_to_StringsIndex (Strings me)
@@ -215,10 +247,10 @@ StringsIndex Strings_to_StringsIndex (Strings me)
 	SimpleString him;
 	wchar_t *strings = NULL;
 	long i, numberOfClasses = 0;
-		
+
 	thee = StringsIndex_create (my numberOfStrings);
 	if (thee == NULL) return NULL;
-	
+
 	sorted = Strings_to_Permutation (me, 1);
 	if (sorted == NULL) goto end;
 
@@ -226,7 +258,7 @@ StringsIndex Strings_to_StringsIndex (Strings me)
 	{
 		long index = sorted -> p[i];
 		wchar_t *stringsi = my strings[index];
-		if (i == 1 || NUMwcscmp (strings, stringsi) != 0)
+		if (i == 1 || Melder_wcscmp (strings, stringsi) != 0)
 		{
 			numberOfClasses++;
 			if ((him = SimpleString_create (stringsi)) == NULL) goto end;
@@ -238,7 +270,7 @@ StringsIndex Strings_to_StringsIndex (Strings me)
 		}
 		thy classIndex[index] = numberOfClasses;
 	}
-	
+
 end:
 	forget (sorted);
 	if (Melder_hasError ()) forget (thee);
@@ -254,7 +286,7 @@ Strings StringsIndex_to_Strings (StringsIndex me)
 	for (i = 1; i <= thy numberOfStrings; i++)
 	{
 		SimpleString s = my classes -> item[my classIndex[i]];
-		thy strings[i] = Melder_wcsdup (s -> string);
+		thy strings[i] = Melder_wcsdup_e (s -> string);
 		if (thy strings[i] == NULL) break;
 	}
 	if (Melder_hasError ()) forget (thee);

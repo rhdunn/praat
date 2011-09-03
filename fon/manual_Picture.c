@@ -1,6 +1,6 @@
 /* manual_Picture.c
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -400,7 +400,7 @@ NORMAL (L"This example would draw the texts \"Dani\\e\"l's Dutch vowel triangle\
 	"and the texts \"u\" and \"\\o/\" at the appropriate positions inside the drawing area.")
 MAN_END
 
-MAN_BEGIN (L"Copy to clipboard", L"ppgb", 20091031)   /* Not Unix. */
+MAN_BEGIN (L"Copy to clipboard", L"ppgb", 20110129)   /* Not Unix. */
 INTRO (L"A command in the File menu of the @@Picture window@.")
 NORMAL (L"It copies the selected part of the picture to the clipboard. "
 	"You can then `Paste' it into any program that knows pictures.")
@@ -411,20 +411,20 @@ NORMAL (L"Though all the picture data will be written to the clipboard, "
 ENTRY (L"Usage")
 NORMAL (L"The picture will be put on the clipboard in two versions: a PDF version and a QuickDraw version. "
 	"The PDF version will be used by programs that know how to handle PDF pictures, such as Microsoft^\\re Word\\tm 2008; "
-	"the quality of the picture will then be exactly as good as when you use @@Write to PDF file...@ and read in the resulting PDF file. "
+	"the quality of the picture will then be exactly as good as when you use @@Save as PDF file...@ and read in the resulting PDF file. "
 	"Please realize that Word will convert the PDF picture to a mediocre 300-dpi bitmap if you save the document as a ##.doc# file; "
 	"therefore, you should save the document as a ##.docx# file instead. "
 	"If you cannot work with ##.docx# files (for instance because your publisher does not accept that file type yet), "
-	"you can consider using @@Write to EPS file...@ instead.")
+	"you can consider using @@Save as EPS file...@ instead.")
 NORMAL (L"Older programs, such as Microsoft^\\re Word\\tm 2004, use the QuickDraw version of the clipboard. "
 	"This will not show international (Czech, Russian, Korean, Arabic) characters, but phonetic symbols will show up correctly. "
-	"Also, the quality of the picture is less; @@Write to EPS file...@ will probably produce better results.")
+	"Also, the quality of the picture is less; @@Save as EPS file...@ will probably produce better results.")
 #endif
 #if defined (_WIN32)
 ENTRY (L"Usage")
-NORMAL (L"If you have a PostScript printer, you will want to use @@Write to EPS file...@ instead. "
+NORMAL (L"If you have a PostScript printer, you will want to use @@Save as EPS file...@ instead. "
 	"If the picture is too large, e.g. a spectrogram that does not seem to fit into the clipboard, "
-	"you can try @@Write to Windows metafile...@ instead.")
+	"you can try @@Save as Windows metafile...@ instead.")
 #endif
 MAN_END
 
@@ -437,9 +437,9 @@ ENTRY (L"Behaviour")
 NORMAL (L"The widths of the margins depend on the current font size.")
 MAN_END
 
-MAN_BEGIN (L"Encapsulated PostScript", L"ppgb", 20001010)
+MAN_BEGIN (L"Encapsulated PostScript", L"ppgb", 20110129)
 INTRO (L"a kind of PostScript file that can easily be imported into word processors and drawing programs. "
-	"In Praat, you can create an Encapsulated PostScript (EPS) file by choosing @@Write to EPS file...@.")
+	"In Praat, you can create an Encapsulated PostScript (EPS) file by choosing @@Save as EPS file...@.")
 MAN_END
 
 MAN_BEGIN (L"Erase all", L"ppgb", 19980825)
@@ -447,34 +447,26 @@ INTRO (L"A command in the #Edit menu of the @@Picture window@.")
 NORMAL (L"It erases all your drawings.")
 MAN_END
 
-MAN_BEGIN (L"Font menu", L"ppgb", 20070815)
+MAN_BEGIN (L"Font menu", L"ppgb", 20101125)
 INTRO (L"One of the menus of the @@Picture window@.")
-NORMAL (L"It allows you to choose the default font of the text "
-	"to be used in subsequent drawing, and its size (character height).")
+NORMAL (L"It allows you to choose the font of the text "
+	"to be used in subsequent drawing, as well as its size (character height).")
 ENTRY (L"Sizes")
 NORMAL (L"You can choose any of the sizes 10, 12, 14, 18, or 24 directly from this menu, "
 	"or fill in any other size in the ##Font size...# form.")
-TAG (L"Unix:")
-DEFINITION (L"the font size will be rounded to the nearest size available on Xwindows, "
-	"which is one from 10, 12, 14, 18, or 24 points; "
-	"PostScript-printing a picture where you specified a font size of 100, however, "
-	"will still give the correct 100-point character height.")
-TAG (L"Macintosh and Windows:")
-DEFINITION (L"all sizes are drawn correctly (what you see on the screen "
-	"is what you get on your printer).")
 NORMAL (L"The widths of the margins depend on the current font size, "
 	"so if you want to change the font size, "
 	"do so before making your drawing.")
 ENTRY (L"Fonts")
-NORMAL (L"With these commands, you set the font in which subsequent text will de drawn: "
+NORMAL (L"With these commands, you set the font in which subsequent text will be drawn: "
 	"Times, Helvetica, Palatino, or Courier.")
 NORMAL (L"You can mix the Symbol and IPA alphabets with the normal Roman alphabets "
 	"and use sequences of backslash + digraph for @@special symbols@ (see also @@phonetic symbols@).")
 NORMAL (L"For instance, you can get an \\e\" by typing \\bse\\\" , or a \\ss by typing \\bsss; "
 	"you can get an \\ep by typing \\bsep, or a \\ct, which is a turned c, by typing \\bsct.")
-NORMAL (L"If you print to a PostScript printer, all fonts will be correct.")
 ENTRY (L"Styles")
-NORMAL (L"You can use all graphical @@text styles@ in the Picture window.")
+NORMAL (L"There are no commands in the menu for text styles (bold, italic), "
+	"but you can still use them in the Picture window: see @@text styles@.")
 MAN_END
 
 MAN_BEGIN (L"Logarithmic marks left/right/top/bottom...", L"ppgb", 19970330)
@@ -538,16 +530,16 @@ INTRO (L"Four of the commands in the #Margins menu of the @@Picture window@.")
 ENTRY (L"Purpose")
 NORMAL (L"To draw any number of equally spaced marks into the @margins around the drawing area.")
 ENTRY (L"Settings")
-TAG (L"%%Number of marks%")
+TAG (L"##Number of marks")
 DEFINITION (L"the number of equally spaced marks (2 or more) that will be drawn; "
 	"there will always be marks at the beginning and end of the domain or range.")
-TAG (L"%%Write numbers")
+TAG (L"##Write numbers")
 DEFINITION (L"if on, real numbers will be written in the margin, "
 	"expressed in the domain or range of your latest drawing "
 	"in the horizontal or vertical direction.")
-TAG (L"%%Draw ticks")
+TAG (L"##Draw ticks")
 DEFINITION (L"if on, short line pieces will be drawn in the margin.")
-TAG (L"%%Draw dotted lines")
+TAG (L"##Draw dotted lines")
 DEFINITION (L"if on, dotted lines will be drawn through your drawing.")
 ENTRY (L"Example")
 NORMAL (L"If you draw a Sound with a domain between 0 and 1 seconds "
@@ -563,22 +555,22 @@ INTRO (L"Four of the commands in the #Margins menu of the @@Picture window@.")
 ENTRY (L"Purpose")
 NORMAL (L"To draw a number of equally spaced marks into the @margins around the drawing area.")
 ENTRY (L"Settings")
-TAG (L"%%Units")
+TAG (L"##Units")
 DEFINITION (L"the units, relative to the standard units, "
 	"for writing the numbers; for example, if you want time in milliseconds "
 	"instead of seconds (which is always the standard), "
-	"%Units should be 0.001.")
-TAG (L"%%Distance")
+	"#Units should be 0.001.")
+TAG (L"##Distance")
 DEFINITION (L"the distance between the equally spaced marks that will be drawn, "
-	"expressed in %Units; for example, if you want marks every 20 milliseconds, "
+	"expressed in #Units; for example, if you want marks every 20 milliseconds, "
 	"and %Units is 0.001, this argument should be 20.")
-TAG (L"%%Write numbers")
+TAG (L"##Write numbers")
 DEFINITION (L"if on, real numbers will be written in the margin, "
 	"expressed in the domain or range of your latest drawing "
 	"in the horizontal or vertical direction.")
-TAG (L"%%Draw ticks")
+TAG (L"##Draw ticks")
 DEFINITION (L"if on, short line pieces will be drawn in the margin.")
-TAG (L"%%Draw dotted lines")
+TAG (L"##Draw dotted lines")
 DEFINITION (L"if on, dotted lines will be drawn through your drawing.")
 MAN_END
 
@@ -588,22 +580,22 @@ ENTRY (L"Purpose")
 NORMAL (L"To draw one mark into one of the four @margins "
 	"around the drawing area, along a logarithmic axis.")
 ENTRY (L"Settings")
-TAG (L"%%Position")
+TAG (L"##Position")
 DEFINITION (L"the %x (for top or bottom) or %y (for left or right) position of the mark, "
 	"expressed in the logarithmic domain or range of your latest drawing "
 	"in the horizontal or vertical direction.")
-TAG (L"%%Write number")
-DEFINITION (L"if on, a real number equal to %Position will be written in the margin, "
-	"at an %x (for top or bottom) or %y (for left or right) position equal to %Position.")
-TAG (L"%%Draw tick")
+TAG (L"##Write number")
+DEFINITION (L"if on, a real number equal to #Position will be written in the margin, "
+	"at an %x (for top or bottom) or %y (for left or right) position equal to #Position.")
+TAG (L"##Draw tick")
 DEFINITION (L"if on, a short line piece will be drawn in the margin, "
-	"at an %x (for top or bottom) or %y (for left or right) position equal to %Position.")
-TAG (L"%%Draw dotted line")
+	"at an %x (for top or bottom) or %y (for left or right) position equal to #Position.")
+TAG (L"##Draw dotted line")
 DEFINITION (L"if on, a dotted line will be drawn through your drawing, "
-	"at an %x (for top or bottom) or %y (for left or right) position equal to %Position.")
-TAG (L"%%Draw text")
+	"at an %x (for top or bottom) or %y (for left or right) position equal to #Position.")
+TAG (L"##Draw text")
 DEFINITION (L"if not empty, this text will be drawn in the margin, "
-	"at an %x (for top or bottom) or %y (for left or right) position equal to %Position.")
+	"at an %x (for top or bottom) or %y (for left or right) position equal to #Position.")
 ENTRY (L"Example")
 NORMAL (L"After you draw a Pitch logarithmically in a range between 100 and 400 Hz, "
 	"choosing ##One logarithmic mark left...# with a position of 200 and %%Draw dotted line% on, "
@@ -616,22 +608,22 @@ INTRO (L"Four of the commands in the #Margins menu of the @@Picture window@.")
 ENTRY (L"Purpose")
 NORMAL (L"To draw one mark into one of the four @margins around the drawing area.")
 ENTRY (L"Settings")
-TAG (L"%%Position")
+TAG (L"##Position")
 DEFINITION (L"the %x (for top or bottom) or %y (for left or right) position of the mark, "
 	"expressed in the domain or range of your latest drawing "
 	"in the horizontal or vertical direction.")
-TAG (L"%%Write number")
+TAG (L"##Write number")
 DEFINITION (L"if on, a real number equal to `Position' will be written in the margin, "
-	"at an %x (for top or bottom) or %y (for left or right) position equal to %Position.")
-TAG (L"%%Draw tick")
+	"at an %x (for top or bottom) or %y (for left or right) position equal to #Position.")
+TAG (L"##Draw tick")
 DEFINITION (L"if on, a short line piece will be drawn in the margin, "
-	"at an %x (for top or bottom) or %y (for left or right) position equal to %Position.")
-TAG (L"%%Draw dotted line")
+	"at an %x (for top or bottom) or %y (for left or right) position equal to #Position.")
+TAG (L"##Draw dotted line")
 DEFINITION (L"if on, a dotted line will be drawn through your drawing, "
-	"at an %x (for top or bottom) or %y (for left or right) position equal to %Position.")
-TAG (L"%%Draw text")
+	"at an %x (for top or bottom) or %y (for left or right) position equal to #Position.")
+TAG (L"##Draw text")
 DEFINITION (L"if not empty, this text will be drawn in the margin, "
-	"at an %x (for top or bottom) or %y (for left or right) position equal to %Position.")
+	"at an %x (for top or bottom) or %y (for left or right) position equal to #Position.")
 ENTRY (L"Example")
 NORMAL (L"If you draw a Sound to an amplitude range between -1 and 1, "
 	"choosing ##One mark left...# with a position of 0.0 and %%Draw dotted line% on, "
@@ -655,28 +647,28 @@ INTRO (L"In windows that pop up when you choose ##Colour...# from the @@Pen menu
 	"or any of the #Paint commands in the ##World menu#, you can see the following field:")
 CODE (L"Colour (0-1, name, or {r,g,b})")
 NORMAL (L"This means that you can specify here a colour in any of three ways:")
-TAG (L"%%a grey value between 0 and 1")
+TAG (L"\\bu a grey value between 0 and 1:")
 DEFINITION (L"a value of 0 means black, 1 means white, 0.5 means grey, 0.75 means silver, and so on.")
-TAG (L"%%a colour name")
+TAG (L"\\bu a colour name:")
 DEFINITION (L"you can choose from Black, White, Red, Green, Blue, Yellow, Cyan, Magenta, Maroon, Lime, Navy, Teal, "
 	"Purple, Olive, Pink, Silver, Grey, i.e. from any of the colours in the Pen menu. "
 	"You can write these either with a capital (Red) or in lowercase (red).")
-TAG (L"%%an RGB colour")
+TAG (L"\\bu an RGB colour:")
 DEFINITION (L"you can specify a red-green-blue value as three values between 0 and 1, enclosed within braces "
 	"and separated by commas, e.g. {0.8,0.1,0.2} is something reddish.")
 MAN_END
 
-MAN_BEGIN (L"Picture window", L"ppgb", 20090913)
+MAN_BEGIN (L"Picture window", L"ppgb", 20110129)
 INTRO (L"One of the two main windows in Praat.")
 TAG (L"File menu")
-LIST_ITEM (L"\\bu @@Read from Praat picture file...@, @@Write to Praat picture file...")
+LIST_ITEM (L"\\bu @@Read from Praat picture file...@, @@Save as Praat picture file...")
 LIST_ITEM (L"\\bu @@PostScript settings...")
 #if defined (macintosh)
-	LIST_ITEM (L"\\bu @@Write to PDF file...")
+	LIST_ITEM (L"\\bu @@Save as PDF file...")
 #endif
-LIST_ITEM (L"\\bu @@Write to EPS file...")
+LIST_ITEM (L"\\bu @@Save as EPS file...")
 #if defined (_WIN32)
-	LIST_ITEM (L"\\bu @@Write to Windows metafile...@")
+	LIST_ITEM (L"\\bu @@Save as Windows metafile...@")
 #endif
 LIST_ITEM (L"\\bu @@Print...")
 TAG (L"Edit menu")
@@ -701,11 +693,11 @@ TAG (L"@@Pen menu")
 TAG (L"@@Font menu")
 MAN_END
 
-MAN_BEGIN (L"PostScript settings...", L"ppgb", 20040925)
+MAN_BEGIN (L"PostScript settings...", L"ppgb", 20110131)
 INTRO (L"One of the commands in the File menus of many windows. "
-	"The PostScript settings influence @Printing and writing to @@Encapsulated PostScript@ files.")
+	"The PostScript settings influence @Printing and saving to @@Encapsulated PostScript@ files.")
 ENTRY (L"Settings")
-TAG (L"%%Allow direct PostScript printing% (Windows and Macintosh only)")
+TAG (L"##Allow direct PostScript printing# (Windows and Macintosh only)")
 DEFINITION (L"this determines whether Praat prints explicit PostScript commands to your printer "
 	"if it is a PostScript printer. This is what you will usually want. However, if you find "
 	"that some of the options that you choose in the printing dialog seem not to be supported "
@@ -713,28 +705,28 @@ DEFINITION (L"this determines whether Praat prints explicit PostScript commands 
 	"Windows or Macintosh drawing commands, which the printer driver will try to translate "
 	"to PostScript. If your printer does not support PostScript, this switch is ignored. "
 	"On Unix, this switch is superfluous, since all printing is done directly in PostScript.")
-TAG (L"%%Grey resolution")
+TAG (L"##Grey resolution")
 DEFINITION (L"you can choose from two image qualities:")
 LIST_ITEM1 (L"\\bu the %finest quality for grey plots (106 spots per inch), "
 	"which gives the best results directly from the printer;")
 LIST_ITEM1 (L"\\bu a %photocopyable quality, which has fewer spots per inch (85) and "
 	"gives the best results after photocopying.")
 DEFINITION (L"Your choice of the grey resolution influences direct PostScript printing "
-	"and writing to @@Encapsulated PostScript@ files.")
-TAG (L"%%Paper size% (Unix only)")
+	"and saving to @@Encapsulated PostScript@ files.")
+TAG (L"##Paper size# (Unix only)")
 DEFINITION (L"you can choose from A4 (210 \\xx 297 mm), A3 (297 \\xx 420 mm) or US Letter (8.5 \\xx 11\\\"p). "
 	"This choice applies to Unix only; on Windows, you choose the paper size in the ##Print...# dialog; "
 	"on Macintosh, you choose the paper size in the ##Page setup...# dialog.")
-TAG (L"%%Orientation% (Unix only)")
+TAG (L"##Orientation# (Unix only)")
 DEFINITION (L"you can choose between %portrait (e.g., 297 mm high and 210 mm wide) "
 	"and %landscape (e.g., 210 mm high and 297 mm wide). "
 	"This choice applies to Unix only; on Windows, you choose the orientation in the ##Print...# dialog; "
 	"on Macintosh, you choose the orientation in the ##Page setup...# dialog.")
-TAG (L"%%Magnification% (Unix only)")
+TAG (L"##Magnification# (Unix only)")
 DEFINITION (L"the relative size with which your picture will be printed; normally 1.0. "
 	"This choice applies to Unix only; on Windows, you choose the scaling in the ##Print...# dialog; "
 	"on Macintosh, you choose the scaling in the ##Page setup...# dialog.")
-TAG (L"%%Print command% (Unix only)")
+TAG (L"##Print command# (Unix only)")
 DEFINITION (L"When printing on Unix, a temporary PostScript^\\re file is created in the \"/tmp\" directory; "
 	"it will have a name like \"picXXXXXX\", and is automatically removed after printing. "
 	"This file is sent to the printer with the print command, which will often look like $$lp -c \\% s$, "
@@ -747,7 +739,7 @@ NORMAL (L"With this command, you send your entire picture immediately to the pri
 	"See the @Printing tutorial for details.")
 MAN_END
 
-MAN_BEGIN (L"Printing", L"ppgb", 20091031)
+MAN_BEGIN (L"Printing", L"ppgb", 20110129)
 NORMAL (L"The best results will be obtained on PostScript printers, since these have built-in "
 	"facilities for images (e.g. spectrograms) and rotated text. "
 	"However, the printed page will look reasonable on colour inkjet printers as well.")
@@ -779,23 +771,23 @@ NORMAL (L"If you are on a Windows computer and a PostScript printer is available
 #if defined (macintosh)
 ENTRY (L"2. Indirect printing with PDF")
 NORMAL (L"If you don't have a PostScript printer, and you still want PostScript quality, "
-	"you can save the picture to a PDF file (@@Write to PDF file...@). "
+	"you can save the picture to a PDF file (@@Save as PDF file...@). "
 	"You can then view this file with the freely available "
 	"Acrobat^\\re Reader^\\tm program, and print from there.")
 #else
 ENTRY (L"2. Indirect printing with GhostView")
 NORMAL (L"If you don't have a PostScript printer, and you still want PostScript quality, "
-	"you can save the picture to an EPS file (@@Write to EPS file...@). "
+	"you can save the picture to an EPS file (@@Save as EPS file...@). "
 	"You can then view this file with the freely available "
 	"GhostView^\\tm program, which you can download from ##http://pages.cs.wisc.edu/~ghost/#.")
 #endif
 ENTRY (L"3. Indirect printing with your word processor")
 #if defined (macintosh)
 NORMAL (L"If you save your picture to a PDF file, you will be able to include it as a picture in your favourite "
-	"word processor (Microsoft^\\re Word^\\tm 2008, LaTeX...). This works on the Mac only. See @@Write to PDF file...@.")
+	"word processor (Microsoft^\\re Word^\\tm 2008, LaTeX...). This works on the Mac only. See @@Save as PDF file...@.")
 #else
 NORMAL (L"If you save your picture to an EPS file, you will be able to include it as a picture in your favourite "
-	"word processor (Microsoft^\\re Word^\\tm, LaTeX...). See @@Write to EPS file...@.")
+	"word processor (Microsoft^\\re Word^\\tm, LaTeX...). See @@Save as EPS file...@.")
 NORMAL (L"If you don't have a PostScript printer, you could again use GhostView^\\tm to print your document "
 	"to any printer, after you printed your document to a PostScript file. You can do the same if you are "
 	"the lucky owner of Adobe^\\re Acrobat^\\tm Distiller^\\tm, which is more reliable than GhostView "
@@ -813,7 +805,7 @@ NORMAL (L"Note: when creating a PDF file on Windows if you have Acrobat, ##do no
 #endif
 #ifdef _WIN32
 ENTRY (L"Indirect printing without PostScript")
-NORMAL (L"On Windows, pictures included in your word processor via @@Copy to clipboard@ or @@Write to Windows metafile...@ "
+NORMAL (L"On Windows, pictures included in your word processor via @@Copy to clipboard@ or @@Save as Windows metafile...@ "
 	"will print fine, though not as nicely as EPS files.")
 #endif
 #ifdef macintosh
@@ -823,11 +815,11 @@ NORMAL (L"Pictures included in your word processor (post-2006 versions) via @@Co
 #endif
 MAN_END
 
-MAN_BEGIN (L"Read from Praat picture file...", L"ppgb", 19960908)
+MAN_BEGIN (L"Read from Praat picture file...", L"ppgb", 20110129)
 INTRO (L"One of the commands in the File menu of the @@Picture window@.")
 ENTRY (L"Purpose")
 NORMAL (L"To read a picture that you saved earlier "
-	"with @@Write to Praat picture file...@.")
+	"with @@Save as Praat picture file...@.")
 ENTRY (L"Behaviour")
 NORMAL (L"The picture will be drawn across whatever is currently visible in the Picture window.")
 ENTRY (L"Usage")
@@ -863,24 +855,26 @@ INTRO (L"A command in the #World menu of the @@Picture window@, on Macintosh onl
 ENTRY (L"Purpose")
 NORMAL (L"To draw a JPEG, TIFF or PNG picture into the Picture window (or into the Demo window).")
 ENTRY (L"Settings")
-TAG (L"%%File name")
+TAG (L"##File name")
 DEFINITION (L"the name of the picture file (JPEG, TIFF or PNG). If you use this command in a script, "
 	"you can use a relative path name such as $$pictures/myface.jpg$ or $$~/Desktop/hello.jpg$.")
-TAG (L"%%From x, To x")
+TAG (L"##From x")
+TAG (L"##To x")
 DEFINITION (L"The horizontal location (in world coordinates) where the picture will appear. "
 	"Use the @@Axes...@ command to set world coordinates if they have not been set implicitly by an earlier #Draw or #Paint command. "
-	"If you set %%From x% and %%To x% to the same value, the picture will be horizontally centred around this %x value "
+	"If you set ##From x# and ##To x# to the same value, the picture will be horizontally centred around this %x value "
 	"and obtain a width that preserves the aspect ratio (width-to-height ratio) of the original picture.")
-TAG (L"%%From y, To y")
+TAG (L"##From y")
+TAG (L"##To y")
 DEFINITION (L"The vertical location (in world coordinates) where the picture will appear. "
 	"Use the @@Axes...@ command to set world coordinates if they have not been set implicitly by an earlier #Draw or #Paint command. "
-	"If you set %%From y% and %%To y% to the same value, the picture will be vertically centred around this %y value "
+	"If you set ##From y# and ##To y# to the same value, the picture will be vertically centred around this %y value "
 	"and obtain a height that preserves the aspect ratio (width-to-height ratio) of the original picture.")
 ENTRY (L"Behaviour")
-NORMAL (L"From the description above, you see that if %%From x% is unequal to %%To x% and %%From y% is unequal to %%To y%, "
+NORMAL (L"From the description above, you see that if ##From x# is unequal to ##To x# and ##From y# is unequal to ##To y#, "
 	"the picture will probably obtain an aspect ratio different from the original picture. "
-	"To preserve the aspect ratio, either make %%To x% equal to %%From x% or make %%To y equal to %%From y%.")
-NORMAL (L"To show the picture on the same number of pixels as the original, make %%To x% equal to %%From x% and %%To y% equal to %%From y%. "
+	"To preserve the aspect ratio, either make ##To x# equal to ##From x# or make ##To y# equal to ##From y#.")
+NORMAL (L"To show the picture on the same number of pixels as the original, make ##To x# equal to ##From x# and ##To y# equal to ##From y#. "
 	"Praat will then show the picture with the original width and height (in pixels), centred around the given %x and %y values.")
 ENTRY (L"Usage")
 NORMAL (L"You will usually use this in a script, and often in a script that runs the @@Demo window@.")
@@ -951,17 +945,17 @@ ENTRY (L"Purpose")
 NORMAL (L"To write text inside the viewport, at nine different places, "
 	"with a rotation between 0 to 360 degrees.")
 ENTRY (L"Settings:")
-TAG (L"%%Horizontal alignment")
+TAG (L"##Horizontal alignment")
 DEFINITION (L"determines the horizontal alignment of the text:")
-LIST_ITEM (L"    \\bu %Left means pushed against the left edge of the viewport;")
-LIST_ITEM (L"    \\bu %Right means pushed against the right edge of the viewport;")
-LIST_ITEM (L"    \\bu %Centre means horizontally centred in the viewport.")
-TAG (L"%%Vertical alignment")
+LIST_ITEM (L"    \\bu #Left means pushed against the left edge of the viewport;")
+LIST_ITEM (L"    \\bu #Right means pushed against the right edge of the viewport;")
+LIST_ITEM (L"    \\bu #Centre means horizontally centred in the viewport.")
+TAG (L"##Vertical alignment")
 DEFINITION (L"determines the vertical alignment of the text:")
-LIST_ITEM (L"    \\bu %Top means pushed against the top of the viewport;")
-LIST_ITEM (L"    \\bu %Bottom means pushed against the bottom of the viewport;")
-LIST_ITEM (L"    \\bu %Half means vertically centred in the viewport.")
-TAG (L"%%Text")
+LIST_ITEM (L"    \\bu #Top means pushed against the top of the viewport;")
+LIST_ITEM (L"    \\bu #Bottom means pushed against the bottom of the viewport;")
+LIST_ITEM (L"    \\bu #Half means vertically centred in the viewport.")
+TAG (L"##Text")
 DEFINITION (L"will be drawn in the current font and font size "
 	"that you set with the @@Font menu@.")
 ENTRY (L"Behaviour")
@@ -975,7 +969,7 @@ ENTRY (L"Usage")
 NORMAL (L"You can use all @@special symbols@ and @@text styles@.")
 MAN_END
 
-MAN_BEGIN (L"Write to EPS file...", L"ppgb", 20090804)
+MAN_BEGIN (L"Save as EPS file...", L"ppgb", 20110129)
 INTRO (L"A command in the File menu of the @@Picture window@.")
 NORMAL (L"It saves the picture to an @@Encapsulated PostScript@ (EPS) file, "
 	"which can be imported by many other programs, such as Microsoft^\\re Word^\\tm.")
@@ -1009,14 +1003,14 @@ ENTRY (L"Settings")
 NORMAL (L"The EPS picture is saved with the grey resolution and fonts that you specified with @@PostScript settings...@.")
 MAN_END
 
-MAN_BEGIN (L"Write to PDF file...", L"ppgb", 20091031)
+MAN_BEGIN (L"Save as PDF file...", L"ppgb", 20110129)
 INTRO (L"A command in the File menu of the @@Picture window@, on Macintosh only.")
 NORMAL (L"It saves the picture to a PDF file, "
 	"which can be imported by several other programs, such as Microsoft^\\re Word\\tm 2008 on the Mac.")
 ENTRY (L"PDF = PostScript = highest possible quality!")
 NORMAL (L"With PDF pictures you can use high-quality graphics in your word-processor documents. "
 	"The quality is the same as if you use @@Copy to clipboard@.")
-NORMAL (L"On Windows or Linux, use @@Write to EPS file...@ instead.")
+NORMAL (L"On Windows or Linux, use @@Save as EPS file...@ instead.")
 ENTRY (L"Behaviour")
 NORMAL (L"Though all the contents of the Picture window are written to the PDF file, "
 	"only the part that you selected in the Picture window (the %viewport) may become visible in Word (or another program).")
@@ -1026,11 +1020,11 @@ NORMAL (L"To import a PDF file in Word 2008, choose #Insert \\-> #Picture \\-> #
 NORMAL (L"Please note that if you save the Word document as a ##.doc# file, Word will convert the PDF picture into a mediocre 300-dpi bitmap; "
 	"therefore, you should save the document as a ##.docx# file instead. If you cannot use ##.docx# files "
 	"(for instance because your publisher does not support these yet, or because you still use Word 2004), "
-	"you may use @@Write to EPS file...@; "
+	"you may use @@Save as EPS file...@; "
 	"the quality will be the same, but you cannot use Czech, Russian, Korean or Arabic characters in EPS files.")
 MAN_END
 
-MAN_BEGIN (L"Write to Praat picture file...", L"ppgb", 20041130)
+MAN_BEGIN (L"Save as Praat picture file...", L"ppgb", 20110129)
 INTRO (L"A command in the File menu of the @@Picture window@.")
 NORMAL (L"It saves a picture in a format that can be imported into Praat later with @@Read from Praat picture file...@.")
 ENTRY (L"Usage")
@@ -1039,7 +1033,7 @@ NORMAL (L"With the help of this command, you can transfer the contents of the pi
 MAN_END
 
 #ifdef _WIN32
-MAN_BEGIN (L"Write to Windows metafile...", L"ppgb", 20041130)
+MAN_BEGIN (L"Save as Windows metafile...", L"ppgb", 20110129)
 INTRO (L"A command in the File menu of the @@Picture window@.")
 NORMAL (L"It saves the selected part of the picture in an \"enhanced metafile\" (.EMF) format, "
 	"which can be imported by many Windows programs, like Adobe^\\re Illustrator^\\tm or Microsoft^\\re Word^\\tm.")
@@ -1051,7 +1045,7 @@ NORMAL (L"You will not use this command very often, "
 	"because it is usually easier to copy the selection to the clipboard with the @@Copy to clipboard@ command, "
 	"and `Paste' it into the other program. You may use a metafile instead of the clipboard if the clipboard is too large "
 	"for the other program to read, or if you want to transfer the picture to another computer.")
-NORMAL (L"If you have a PostScript printer, you would use @@Write to EPS file...@ instead "
+NORMAL (L"If you have a PostScript printer, you would use @@Save as EPS file...@ instead "
 	"for best printing results.")
 MAN_END
 #endif

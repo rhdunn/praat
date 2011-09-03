@@ -1,6 +1,6 @@
 /* manual_Exp.c
  *
- * Copyright (C) 2001-2009 Paul Boersma
+ * Copyright (C) 2001-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ LIST_ITEM (L"@@ExperimentMFC 6. Responses are sounds")
 LIST_ITEM (L"@@ExperimentMFC 7. Running multiple experiments")
 MAN_END
 
-MAN_BEGIN (L"ExperimentMFC 1. When to use Praat", L"ppgb", 20090821)
+MAN_BEGIN (L"ExperimentMFC 1. When to use Praat", L"ppgb", 20110303)
 NORMAL (L"With Praat's ExperimentMFC, you can do simple experiments on identification and discrimination. "
 	"`Simple' means that for identification, the subject hears a sound and has to click on one of a set of "
 	"labelled rectangles (optionally, you can have the subject give a goodness-of-fit judgment). "
@@ -64,7 +64,7 @@ NORMAL (L"The advantage of using Praat's ExperimentMFC for this is that it is fr
 NORMAL (L"If you require more from your experiment design, you can use Praat's @@Demo window@; "
 	"with that less simple method you could for instance let the stimulus depend on the subject's previous responses. "
 	"Alternatively, you could use a dedicated program like Presentation or E-prime instead of Praat; "
-	"with these programs, you can measure reaction times as well.")
+	"with these programs, you can also measure reaction times more accurately.")
 MAN_END
 
 MAN_BEGIN (L"ExperimentMFC 2. The first example", L"ppgb", 20051205)
@@ -240,7 +240,7 @@ NORMAL (L"Before the experiment begins, the listener will see the %startText in 
 	"As you can see in the example, all these texts can consist of multiple lines.")
 MAN_END
 
-MAN_BEGIN (L"ExperimentMFC 2.7. Response categories", L"ppgb", 20070926)
+MAN_BEGIN (L"ExperimentMFC 2.7. Response categories", L"ppgb", 20110109)
 NORMAL (L"Every trial comes with the same set of response categories. "
 	"The @@ExperimentMFC 2.1. The experiment file|example experiment@ has five of them. "
 	"For each response category, you supply the area of the screen where a rectangle will be drawn. "
@@ -259,6 +259,12 @@ NORMAL (L"The third text that you supply for each rectangle is the response cate
 NORMAL (L"The border of the rectangles will be maroon, the background of the screen will be light grey. "
 	"The colour of clickable rectangles will be yellow, that of non-clickable rectangles (those with "
 	"empty category specifications) light grey.")
+NORMAL (L"You can have a picture instead of a text on a response button, by using \\bsFI:")
+CODE1 (L"0.2 0.3 0.7 0.8 \"\\bsFIpictures/hello.jpg\" 40 \"m\" \"i\"")
+NORMAL (L"In this example, the picture ##hello.jpg# from the subdirectory #pictures "
+	"(i.e. a subdirectory of the directory where your experiment file is) "
+	"will be drawn into the rectangle [0.2, 0.3] \\xx [0.7, 0.8]. "
+	"This currently (January 2011) works only on the Mac.")
 MAN_END
 
 MAN_BEGIN (L"ExperimentMFC 2.8. Goodness judgments", L"ppgb", 20051205)
@@ -271,21 +277,22 @@ NORMAL (L"If %numberOfGoodnessCategories is not 0, some more rectangles will be 
 	"goodness judgment of 5.")
 MAN_END
 
-MAN_BEGIN (L"ExperimentMFC 2.9. How an experiment proceeds", L"ppgb", 20051205)
+MAN_BEGIN (L"ExperimentMFC 2.9. How an experiment proceeds", L"ppgb", 20110303)
 NORMAL (L"A text file with an ExperimentMFC object can be read into Praat with @@Read from file...@ "
 	"(it is not a script but a data file, so do not try to read it with ##Open Praat script...#). "
 	"You can then choose #Run. After the experiment finishes, you can close the experiment window "
 	"and choose ##Extract results#. The resulting ResultsMFC object contains for each trial the stimulus "
 	"name (e.g. \"hood\"), the response category (e.g. \"u\"), and the goodness judgment (e.g. 4). "
-	"You will want to save this ResultsMFC object to a text file with @@Write to text file...@. "
+	"You will want to save this ResultsMFC object to a text file with @@Save as text file...@. "
 	"You may want to call these text files by the names of the subjects, e.g. ##ts.ResultsMFC# "
 	"and ##mj.ResultsMFC#. Once you have collected the results of all your subjects, you can read "
 	"all the results files into Praat with @@Read from file...@, then select all the resulting "
 	"ResultsMFC objects (which will have automatically been named #ts, #mj, and so on), then choose "
 	"##Collect to table#. This will result in a table whose first column contains the names of the subjects, "
-	"while the second column contains the stimulus names and the third column the responses "
-	"(if there are goodness judgments, these will go into a fourth column). The table can be saved "
-	"as a table file (with ##Write to table file...#), which can be read by programs like Excel and SPSS.")
+	"the second column contains the stimulus names, the third column contains the responses, "
+	"and the last column contains the approximate reaction times (measured from the start of the stimulus sound, i.e. after the initial silence duration). "
+	"If there are goodness judgments, these will go into the fourth column. The table can be saved "
+	"as a table file (with ##Save as table file...#), which can be read by programs like Excel and SPSS.")
 MAN_END
 
 MAN_BEGIN (L"ExperimentMFC 3. More examples", L"ppgb", 20051205)

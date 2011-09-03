@@ -58,6 +58,7 @@
  	+NUMcovarianceFromColumnCentredMatrix, +NUMmultivariateKurtosis
  djmw 20100311 +NUMsolveQuadraticEquation
  djmw 20100426 replace wcstok by Melder_wcstok
+ djmw 20101209 removed NUMwcscmp is Melder_wcscmp now
 */
 
 #include "SVD.h"
@@ -125,7 +126,7 @@ double *NUMstring_to_numbers (const wchar_t *s, long *numbers_found)
 
 	*numbers_found = n = 0;
 
-	if (((dup = Melder_wcsdup (s)) == NULL) ||
+	if (((dup = Melder_wcsdup_e (s)) == NULL) ||
 		((numbers = NUMdvector (1, capacity)) == NULL)) goto end;
 	wchar_t *last;
 	token = Melder_wcstok (dup, delimiter, & last);
@@ -135,7 +136,7 @@ double *NUMstring_to_numbers (const wchar_t *s, long *numbers_found)
 		if (n > capacity)
 		{
 			long newsize = 2 * capacity; double *new;
-			if (! (new = Melder_realloc (numbers, newsize))) goto end;
+			if (! (new = Melder_realloc_e (numbers, newsize))) goto end;
 			numbers = new; capacity = newsize;
 		}
 		numbers[++n] = value;
@@ -157,7 +158,7 @@ int NUMstrings_equal (wchar_t **s1, wchar_t **s2, long lo, long hi)
 	long i;
 	for (i=lo; i <= hi; i++)
 	{
-		if (NUMwcscmp (s1[i], s2[i])) return 0;
+		if (Melder_wcscmp (s1[i], s2[i])) return 0;
 	}
 	return 1;
 }
@@ -169,7 +170,7 @@ int NUMstrings_copyElements (wchar_t **from, wchar_t**to, long lo, long hi)
 	for (i = lo; i <= hi; i++)
 	{
 		Melder_free (to[i]);
-		if (from[i] && ((to[i] = Melder_wcsdup (from[i])) == NULL)) return 0;
+		if (from[i] && ((to[i] = Melder_wcsdup_e (from[i])) == NULL)) return 0;
 	}
 	return 1;
 }
@@ -197,7 +198,7 @@ static wchar_t *appendNumberToString (wchar_t *s, long number)
 
 	ncharb = swprintf (buf, 12, L"%ld", number);
 	if (s != NULL) nchars = wcslen (s);
-	new = Melder_calloc (wchar_t, nchars + ncharb + 1);
+	new = Melder_calloc_e (wchar_t, nchars + ncharb + 1);
 	if (new == NULL) return NULL;
 	if (nchars > 0) wcsncpy (new, s, nchars);
 	wcsncpy (new + nchars, buf, ncharb + 1);
@@ -239,15 +240,13 @@ void NUMstring_add (unsigned char *a, unsigned char *b, unsigned char *c, long n
 wchar_t *strstr_regexp (const wchar_t *string, const wchar_t *search_regexp)
 {
 	wchar_t *charp = NULL;
-	char *compileMsg;
-	regexp *compiled_regexp = CompileRE (Melder_peekWcsToUtf8 (search_regexp), &compileMsg, 0);
+	wchar_t *compileMsg;
+	regexp *compiled_regexp = CompileRE (search_regexp, &compileMsg, 0);
 
-	if (compiled_regexp == NULL) return Melder_errorp1 (Melder_peekUtf8ToWcs (compileMsg));
+	if (compiled_regexp == NULL) return Melder_errorp1 (compileMsg);
 
-	if (ExecRE(compiled_regexp, NULL, Melder_peekWcsToUtf8 (string), NULL, 0, '\0', '\0', NULL, NULL, NULL)) {
-		char *charpA = compiled_regexp -> startp[0];
-		charp = Melder_utf8ToWcs (charpA);
-		Melder_free (charpA);
+	if (ExecRE(compiled_regexp, NULL, string, NULL, 0, '\0', '\0', NULL, NULL, NULL)) {
+		charp = compiled_regexp -> startp[0];
 	}
 
 	free (compiled_regexp);
@@ -297,7 +296,7 @@ wchar_t *str_replace_literal (wchar_t *string, const wchar_t *search, const wcha
 
 	len_replace = wcslen (replace);
 	len_result = len_string + *nmatches * (len_replace - len_search);
-	result = Melder_malloc (wchar_t, len_result + 1);
+	result = Melder_malloc_f (wchar_t, (len_result + 1) * sizeof (wchar_t));
 	result[len_result] = '\0';
 	if (result == NULL) return NULL;
 
@@ -342,16 +341,16 @@ wchar_t *str_replace_literal (wchar_t *string, const wchar_t *search, const wcha
 	return result;
 }
 
-static int expand_buffer (char **bufp, int new_size)
+static int expand_buffer (wchar_t **bufp, int new_size)
 {
-	char *tbuf = (char *) Melder_realloc (*bufp, new_size);
+	wchar_t *tbuf = (wchar_t *) Melder_realloc_e (*bufp, new_size * sizeof (wchar_t));
 	if (tbuf == NULL) return 0;
 	*bufp = tbuf;
 	return 1;
 }
 
-char *str_replace_regexp (char *string, regexp *compiledSearchRE,
-	const char *replaceRE, long maximumNumberOfReplaces, long *nmatches)
+wchar_t *str_replace_regexp (wchar_t *string, regexp *compiledSearchRE,
+	const wchar_t *replaceRE, long maximumNumberOfReplaces, long *nmatches)
 {
 	long i;
 	int buf_size; 					/* inclusive nul-byte */
@@ -361,16 +360,16 @@ char *str_replace_regexp (char *string, regexp *compiledSearchRE,
 	int gap_copied = 0;
 	int nchar, reverse = 0;
 	int errorType;
-	char prev_char = '\0';
-	char *pos; 	/* current position in 'string' / start of current match */
-	char *posp; /* end of previous match */
-	char *buf = NULL;
+	wchar_t prev_char = '\0';
+	wchar_t *pos; 	/* current position in 'string' / start of current match */
+	wchar_t *posp; /* end of previous match */
+	wchar_t *buf = NULL;
 
 	*nmatches = 0;
 	if (string == NULL || compiledSearchRE == NULL || replaceRE == NULL) return NULL;
 
-	string_length = strlen (string);
-	replace_length = strlen (replaceRE);
+	string_length = wcslen (string);
+	replace_length = wcslen (replaceRE);
 	if (string_length == 0) maximumNumberOfReplaces = 1;
 
 	i = maximumNumberOfReplaces > 0 ? 0 : - string_length;
@@ -406,7 +405,7 @@ char *str_replace_regexp (char *string, regexp *compiledSearchRE,
 				buf_size *= 2;
 				if (! expand_buffer (& buf, buf_size)) goto end;
 			}
-			strncpy (buf + buf_nchar, posp, nchar);
+			wcsncpy (buf + buf_nchar, posp, nchar);
 			buf_nchar += nchar;
 		}
 
@@ -437,7 +436,7 @@ char *str_replace_regexp (char *string, regexp *compiledSearchRE,
 			Buffer is not full, get number of characters added;
 		*/
 
-		nchar = strlen (buf + buf_nchar);
+		nchar = wcslen (buf + buf_nchar);
 		buf_nchar += nchar;
 
 		/*
@@ -463,7 +462,7 @@ char *str_replace_regexp (char *string, regexp *compiledSearchRE,
 	buf_size = buf_nchar + nchar + 1;
 	if (! expand_buffer (& buf, buf_size)) goto end;
 
-	strncpy (buf + buf_nchar, pos, nchar);
+	wcsncpy (buf + buf_nchar, pos, nchar);
 	buf[buf_size-1] = '\0';
 
 end:
@@ -512,14 +511,14 @@ static wchar_t **strs_replace_regexp (wchar_t **from, long lo, long hi,
 	long *nmatches, long *nstringmatches)
 {
 	regexp *compiledRE;
-	char *compileMsg;
+	wchar_t *compileMsg;
 	wchar_t **result = NULL;
 	long i, nmatches_sub = 0;
 
 	if (searchRE == NULL || replaceRE == NULL) return NULL;
 
-	compiledRE = CompileRE (Melder_peekWcsToUtf8 (searchRE), &compileMsg, 0);
-	if (compiledRE == NULL) return Melder_errorp1 (Melder_peekUtf8ToWcs (compileMsg));
+	compiledRE = CompileRE (searchRE, &compileMsg, 0);
+	if (compiledRE == NULL) return Melder_errorp1 (compileMsg);
 
 	result = (wchar_t **) NUMpvector (lo, hi);
 	if (result == NULL) goto end;
@@ -529,12 +528,9 @@ static wchar_t **strs_replace_regexp (wchar_t **from, long lo, long hi,
 	{
 		/* Treat a NULL as an empty string */
 		wchar_t *string = from[i] == NULL ? L"" : from[i];
-		char *resultA = str_replace_regexp (Melder_peekWcsToUtf8 (string), compiledRE, Melder_peekWcsToUtf8 (replaceRE),
+		result [i] = str_replace_regexp (string, compiledRE, replaceRE,
 			maximumNumberOfReplaces, &nmatches_sub);
-		if (resultA == NULL) goto end;
-		result [i] = Melder_utf8ToWcs (resultA);
-		Melder_free (resultA);
-		if (result[i] == NULL) goto end;
+		if (result [i] == NULL) goto end;
 		if (nmatches_sub > 0)
 		{
 			*nmatches += nmatches_sub;
@@ -956,20 +952,6 @@ int NUMstrcmp (const char *s1, const char *s2)
 	}
 }
 
-int NUMwcscmp (const wchar_t *s1, const wchar_t *s2)
-{
-	if (s1 == NULL || s1[0] == '\0')
-	{
-		if (s2 != NULL && s2[0] != '\0') return -1;
-		else return 0;
-	}
-	else
-	{
-		if (s2 == NULL) return +1;
-		else return wcscmp (s1, s2);
-	}
-}
-
 void NUMlocate_f (float *xx, long n, float x, long *index)
 {
 	long ju = n + 1, jm, jl = 0;
@@ -1196,7 +1178,7 @@ int NUMlowerCholeskyInverse (double **a, long n, double *lnd)
 	(void) NUMlapack_dpotf2 (&uplo, &n, &a[1][1], &n, &info);
 	if (info != 0) return 0;
 
-	/* Determinant from diagonal, restore diagonal */
+	/* Determinant from diagonal, diagonal is now sqrt (a[i][i]) ! */
 
 	if (lnd != NULL)
 	{
@@ -1206,6 +1188,7 @@ int NUMlowerCholeskyInverse (double **a, long n, double *lnd)
 		}
 		*lnd *= 2; /* because A = L . L' */
 	}
+
 	/* Get the inverse */
 
 	(void) NUMlapack_dtrtri (&uplo, &diag, &n, &a[1][1], &n, &info);
@@ -1232,19 +1215,29 @@ double **NUMinverseFromLowerCholesky (double **m, long n)
 	return r;
 }
 
-double NUMmahalanobisDistance_chi (double **linv, double *v, double *m, long n)
+double NUMmahalanobisDistance_chi (double **linv, double *v, double *m, long nr, long n)
 {
 	long i, j;
-	double chisq = 0;
-
-	for (i = n; i > 0; i--)
+	double t, chisq = 0;
+	if (nr == 1) // 1xn matrix
 	{
-		double t = 0;
-		for (j = 1; j <= i; j++)
+		for (j = 1; j <= n; j++)
 		{
-			t += linv[i][j] * (v[j] - m[j]);
+			t = linv[1][j] * (v[j] - m[j]);
+			chisq += t * t;
 		}
-		chisq += t * t;
+	}
+	else // nxn matrix
+	{
+		for (i = n; i > 0; i--)
+		{
+			t = 0;
+			for (j = 1; j <= i; j++)
+			{
+				t += linv[i][j] * (v[j] - m[j]);
+			}
+			chisq += t * t;
+		}
 	}
 	return chisq;
 }
@@ -1362,20 +1355,18 @@ end:
 int NUMpseudoInverse (double **y, long nr, long nc, double **yinv,
 	double tolerance)
 {
-	SVD me; long i, j, k;
-
-	me = SVD_create_d (y, nr, nc);
+	SVD me = SVD_create_d (y, nr, nc);
 	if (me == NULL) return 0;
 
 	(void) SVD_zeroSmallSingularValues (me, tolerance);
-	for (i = 1; i <= nc; i++)
+	for (long i = 1; i <= nc; i++)
 	{
-		for (j = 1; j <= nr; j++)
+		for (long j = 1; j <= nr; j++)
 		{
 			double s = 0;
-			for (k = 1; k <= nc; k++)
+			for (long k = 1; k <= nc; k++)
 			{
-				if (my d[k]) s += my v[i][k] * my u[j][k] / my d[k];
+				if (my d[k] != 0) s += my v[i][k] * my u[j][k] / my d[k];
 			}
 			yinv[i][j] = s;
 		}
@@ -2591,11 +2582,11 @@ double NUMnormalityTest_HenzeZirkler (double **data, long n, long p, double *bet
 		{
 			for (k = 1; k < j; k++)
 			{
-				djk = NUMmahalanobisDistance_chi (covar, x[j], x[k], p);
+				djk = NUMmahalanobisDistance_chi (covar, x[j], x[k], p, p);
 				sumjk += 2 * exp (-b1 * djk); // factor 2 because d[j][k] == d[k][j]
 			}
 			sumjk += 1; // for k == j
-			djj = NUMmahalanobisDistance_chi (covar, x[j], zero, p);
+			djj = NUMmahalanobisDistance_chi (covar, x[j], zero, p, p);
 			sumj += exp (-b2 * djj);
 		}
 		*tnb = (1.0 / n) * sumjk - 2.0 * pow (1.0 + beta2, - p2) * sumj + n * pow (gamma, - p2); // n *
@@ -3451,6 +3442,21 @@ double NUMminimize_brent (double (*f) (double x, void *closure), double a, doubl
 	}
 	Melder_warning3 (L"NUMminimize_brent: maximum number of iterations (", Melder_integer (itermax), L") exceeded.");
 	return x;
+}
+
+/*
+	probs is probability vector, i.e. all 0 <= probs[i] <= 1 and sum(i=1;i=nprobs, probs[i])= 1
+	p is a probability
+*/
+long NUMgetIndexFromProbability (double *probs, long nprobs, double p)
+{
+	long index = 1;
+	double psum = probs[index];
+	while (p > psum && index < nprobs)
+	{
+		psum += probs[++index];
+	}
+	return index;
 }
 
 #undef MAX
