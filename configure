@@ -1,0 +1,10 @@
+#!/bin/sh
+
+case "$1" in
+	freebsd*) DEFFILE=freebsd.dynamic ;;
+	linux*)   DEFFILE=linux.dynamic ;;
+	*)        DEFFILE=$1 ;;
+esac
+
+rm -f makefile.defs
+ln -s makefiles/makefile.defs.${DEFFILE} makefile.defs

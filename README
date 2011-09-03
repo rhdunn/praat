@@ -1,0 +1,17 @@
+A fork of the praat program with the intention to support the espeak modifications and maybe more.
+
+To build, just run:
+
+	./configure ${PLATFROM} && make
+
+e.g.:
+
+	./configure linux && make
+
+This requires the following packages on Ubuntu:
+
+	sudo apt-get install libxt-dev x11proto-print-dev libasound-dev libmotif-dev libmotif3
+
+on newer versions of Ubuntu (e.g. 11.10):
+
+	sudo apt-get install libxt-dev x11proto-print-dev libasound2-dev libmotif-dev libmotif4
