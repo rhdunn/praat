@@ -482,6 +482,7 @@ int Printer_print (void (*draw) (void *boss, Graphics g), void *boss) {
 			MelderInfo_close ();
 		}
 		CFRelease (supportedFormats);
+		isPostScriptDriver = FALSE;   // OVERRIDE, because from 10.4 on we have something better: we'll be sending PDF
 		thePrinter. postScript = thePrinter. allowDirectPostScript && isPostScriptDriver;
 		if (thePrinter. postScript) {
 			CFStringRef strings [1];

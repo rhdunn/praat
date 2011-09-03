@@ -54,6 +54,8 @@
  * pb 2009/02/06 createDirectory
  * pb 2009/05/04 demoShow
  * pb 2009/05/05 demoWaitForInput
+ * pb 2009/08/09 variableExists
+ * pb 2009/08/21 demoWindowTitle
  */
 
 #include <ctype.h>
@@ -161,7 +163,7 @@ enum { GEENSYMBOOL_,
 		PAUSE_FORM_ADD_WORD_, PAUSE_FORM_ADD_SENTENCE_, PAUSE_FORM_ADD_TEXT_, PAUSE_FORM_ADD_BOOLEAN_,
 		PAUSE_FORM_ADD_CHOICE_, PAUSE_FORM_ADD_OPTION_MENU_, PAUSE_FORM_ADD_OPTION_,
 		PAUSE_FORM_ADD_COMMENT_, END_PAUSE_FORM_,
-		DEMO_SHOW_, DEMO_WAIT_FOR_INPUT_, DEMO_INPUT_, DEMO_CLICKED_IN_,
+		DEMO_WINDOW_TITLE_, DEMO_SHOW_, DEMO_WAIT_FOR_INPUT_, DEMO_INPUT_, DEMO_CLICKED_IN_,
 		DEMO_CLICKED_, DEMO_X_, DEMO_Y_, DEMO_KEY_PRESSED_, DEMO_KEY_,
 		DEMO_SHIFT_KEY_PRESSED_, DEMO_COMMAND_KEY_PRESSED_, DEMO_OPTION_KEY_PRESSED_, DEMO_EXTRA_CONTROL_KEY_PRESSED_,
 		ZERO_NUMAR_, LINEAR_NUMAR_, RANDOM_UNIFORM_NUMAR_, RANDOM_INTEGER_NUMAR_, RANDOM_GAUSS_NUMAR_,
@@ -171,8 +173,8 @@ enum { GEENSYMBOOL_,
 	/* String functions. */
 	#define LOW_STRING_FUNCTION  LOW_FUNCTION_STRNUM
 	#define LOW_FUNCTION_STRNUM  LENGTH_
-		LENGTH_, FILE_READABLE_, DELETEFILE_, CREATEDIRECTORY_,
-	#define HIGH_FUNCTION_STRNUM  CREATEDIRECTORY_
+		LENGTH_, FILE_READABLE_, DELETE_FILE_, CREATE_DIRECTORY_, VARIABLE_EXISTS_,
+	#define HIGH_FUNCTION_STRNUM  VARIABLE_EXISTS_
 		DATESTR_,
 		ENVIRONMENTSTR_, INDEX_, RINDEX_,
 		STARTS_WITH_, ENDS_WITH_, REPLACESTR_, INDEX_REGEX_, RINDEX_REGEX_, REPLACE_REGEXSTR_,
@@ -251,13 +253,13 @@ static wchar_t *Formula_instructionNames [1 + hoogsteSymbool] = { L"",
 	L"word", L"sentence", L"text", L"boolean",
 	L"choice", L"optionMenu", L"option",
 	L"comment", L"endPause",
-	L"demoShow", L"demoWaitForInput", L"demoInput", L"demoClickedIn",
+	L"demoWindowTitle", L"demoShow", L"demoWaitForInput", L"demoInput", L"demoClickedIn",
 	L"demoClicked", L"demoX", L"demoY", L"demoKeyPressed", L"demoKey$",
 	L"demoShiftKeyPressed", L"demoCommandKeyPressed", L"demoOptionKeyPressed", L"demoExtraControlKeyPressed",
 	L"zero#", L"linear#", L"randomUniform#", L"randomInteger#", L"randomGauss#",
 	L"numberOfRows", L"numberOfColumns",
 
-	L"length", L"fileReadable",	L"deleteFile", L"createDirectory",
+	L"length", L"fileReadable",	L"deleteFile", L"createDirectory", L"variableExists",
 	L"date$",
 	L"environment$", L"index", L"rindex",
 	L"startsWith", L"endsWith", L"replace$", L"index_regex", L"rindex_regex", L"replace_regex$",
@@ -3078,6 +3080,16 @@ static void do_createDirectory (void) {
 	}
 end: return;
 }
+static void do_variableExists (void) {
+	Stackel f = pop;
+	if (f->which == Stackel_STRING) {
+		bool result = Interpreter_hasVariable (theInterpreter, f->content.string) != NULL;
+		pushNumber (result);
+	} else {
+		error3 (L"The function \"variableExists\" requires a string, not ", Stackel_whichText (f), L".")
+	}
+end: return;
+}
 static void do_beginPauseForm (void) {
 	if (theCurrentPraatObjects != & theForegroundPraatObjects)
 		error1 (L"The function \"beginPauseForm\" is not available inside manuals.")
@@ -3361,20 +3373,20 @@ end: return;
 }
 static void do_endPauseForm (void) {
 	if (theCurrentPraatObjects != & theForegroundPraatObjects)
-		error1 (L"The function \"endPauseForm\" is not available inside manuals.")
+		error1 (L"The function \"endPause\" is not available inside manuals.")
 	Stackel n = pop;
 	if (n->content.number < 2 || n->content.number > 11)
-		error3 (L"The function \"endPauseForm\" requires 2 to 11 arguments, not ", Melder_integer (n->content.number), L".")
+		error3 (L"The function \"endPause\" requires 2 to 11 arguments, not ", Melder_integer (n->content.number), L".")
 	Stackel d = pop;
 	if (d->which != Stackel_NUMBER)
-		error3 (L"The last argument of \"endPauseForm\" has to be a number (the default continue button), not ", Stackel_whichText (d), L".")
+		error3 (L"The last argument of \"endPause\" has to be a number (the default continue button), not ", Stackel_whichText (d), L".")
 	int numberOfContinueButtons = n->content.number - 1;
 	Stackel c [1+10] = { 0 };
 	for (int i = numberOfContinueButtons; i >= 1; i --) {
 		c [i] = pop;
 		if (c[i]->which != Stackel_STRING)
 			error5 (L"Each of the first ", Melder_integer (numberOfContinueButtons),
-				L" argument(s) of \"endPauseForm\" has to be a string (a button text), not ", Stackel_whichText (c[i]), L".")
+				L" argument(s) of \"endPause\" has to be a string (a button text), not ", Stackel_whichText (c[i]), L".")
 	}
 	int buttonClicked = UiPause_end (numberOfContinueButtons, d->content.number,
 		c [1] == NULL ? NULL : c[1]->content.string, c [2] == NULL ? NULL : c[2]->content.string,
@@ -3386,11 +3398,26 @@ static void do_endPauseForm (void) {
 	pushNumber (buttonClicked);
 end: return;
 }
+static void do_demoWindowTitle (void) {
+	Stackel n = pop;
+	if (n->content.number == 1) {
+		Stackel keys = pop;
+		if (keys->which == Stackel_STRING) {
+			Demo_windowTitle (keys->content.string);
+		} else {
+			error3 (L"The argument of \"do_demoWindowTitle\" must be a string (the title), not ", Stackel_whichText (keys), L".")
+		}
+	} else {
+		error3 (L"The function \"do_demoWindowTitle\" requires 1 argument (a title), not ", Melder_integer (n->content.number), L".")
+	}
+	pushNumber (1);
+end: return;
+}
 static void do_demoShow (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoShow\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	Demo_show ();
+	Demo_show (theInterpreter);
 	pushNumber (1);
 end: return;
 }
@@ -3398,7 +3425,7 @@ static void do_demoWaitForInput (void) {
 	Stackel n = pop;
 	if (n->content.number != 0)
 		error3 (L"The function \"demoWaitForInput\" requires 0 arguments, not ", Melder_integer (n->content.number), L".")
-	Demo_waitForInput ();
+	Demo_waitForInput (theInterpreter);
 	pushNumber (1);
 end: return;
 }
@@ -4232,8 +4259,9 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 } break; case NUMBER_OF_SELECTED_: { do_numberOfSelected ();
 } break; case FIXEDSTR_: { do_fixedStr ();
 } break; case PERCENTSTR_: { do_percentStr ();
-} break; case DELETEFILE_: { do_deleteFile ();
-} break; case CREATEDIRECTORY_: { do_createDirectory ();
+} break; case DELETE_FILE_: { do_deleteFile ();
+} break; case CREATE_DIRECTORY_: { do_createDirectory ();
+} break; case VARIABLE_EXISTS_: { do_variableExists ();
 /********** Pause window functions: **********/
 } break; case BEGIN_PAUSE_FORM_: { do_beginPauseForm ();
 } break; case PAUSE_FORM_ADD_REAL_: { do_pauseFormAddReal ();
@@ -4250,6 +4278,7 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 } break; case PAUSE_FORM_ADD_COMMENT_: { do_pauseFormAddComment ();
 } break; case END_PAUSE_FORM_: { do_endPauseForm ();
 /********** Demo window functions: **********/
+} break; case DEMO_WINDOW_TITLE_: { do_demoWindowTitle ();
 } break; case DEMO_SHOW_: { do_demoShow ();
 } break; case DEMO_WAIT_FOR_INPUT_: { do_demoWaitForInput ();
 } break; case DEMO_INPUT_: { do_demoInput ();
@@ -4435,4 +4464,3 @@ end:
 }
 
 /* End of file Formula.c */
-

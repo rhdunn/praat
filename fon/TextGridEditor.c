@@ -670,7 +670,8 @@ static int insertBoundaryOrPoint (TextGridEditor me, int itier, double t1, doubl
 
 	if (intervalTier) {
 		TextInterval rightNewInterval = NULL, midNewInterval = NULL;
-		bool t1IsABoundary = IntervalTier_hasTime (intervalTier, t1), t2IsABoundary = IntervalTier_hasTime (intervalTier, t2);
+		bool t1IsABoundary = IntervalTier_hasTime (intervalTier, t1);
+		bool t2IsABoundary = IntervalTier_hasTime (intervalTier, t2);
 		if (t1 == t2 && t1IsABoundary) {
 			Melder_error3 (L"Cannot add a boundary at ", Melder_fixed (t1, 6), L" seconds, because there is already a boundary there.");
 			Melder_flushError (NULL);
@@ -680,7 +681,8 @@ static int insertBoundaryOrPoint (TextGridEditor me, int itier, double t1, doubl
 			Melder_flushError (NULL);
 			return 0;
 		}
-		long iinterval = IntervalTier_timeToIndex (intervalTier, t1), iinterval2 = t1 == t2 ? iinterval : IntervalTier_timeToIndex (intervalTier, t2);
+		long iinterval = IntervalTier_timeToIndex (intervalTier, t1);
+		long iinterval2 = t1 == t2 ? iinterval : IntervalTier_timeToIndex (intervalTier, t2);
 		if (iinterval == 0 || iinterval2 == 0) {
 			return 0;   // selection is outside time domain of intervals
 		}
@@ -699,9 +701,8 @@ static int insertBoundaryOrPoint (TextGridEditor me, int itier, double t1, doubl
 			/*
 			 * Divide up the label text into left, mid and right, depending on where the text selection is.
 			 */
-			wchar_t *text = GuiText_getString (my text);
 			long left, right;
-			GuiText_getSelectionPosition (my text, & left, & right);
+			wchar_t *text = GuiText_getStringAndSelectionPosition (my text, & left, & right);
 			rightNewInterval = TextInterval_create (t2, interval -> xmax, text + right);
 			text [right] = '\0';
 			midNewInterval = TextInterval_create (t1, t2, text + left);
@@ -744,8 +745,7 @@ static int insertBoundaryOrPoint (TextGridEditor me, int itier, double t1, doubl
 			 * Find the last time before t on another tier.
 			 */
 			double tlast = interval -> xmin, tmin, tmax;
-			int jtier;
-			for (jtier = 1; jtier <= ntiers; jtier ++) if (jtier != itier) {
+			for (int jtier = 1; jtier <= ntiers; jtier ++) if (jtier != itier) {
 				_TextGridEditor_timeToInterval (me, t1, jtier, & tmin, & tmax);
 				if (tmin > tlast) {
 					tlast = tmin;
@@ -972,8 +972,7 @@ static int findInTier (TextGridEditor me) {
 static void do_find (TextGridEditor me) {
 	if (my findString) {
 		long left, right;
-		wchar_t *label = GuiText_getString (my text);
-		GuiText_getSelectionPosition (my text, & left, & right);
+		wchar_t *label = GuiText_getStringAndSelectionPosition (my text, & left, & right);
 		wchar_t *position = wcsstr (label + right, my findString);   /* CRLF BUG? */
 		if (position) {
 			GuiText_setSelection (my text, position - label, position - label + wcslen (my findString));
@@ -1056,12 +1055,10 @@ static int checkSpellingInTier (TextGridEditor me) {
 static int menu_cb_CheckSpelling (EDITOR_ARGS) {
 	EDITOR_IAM (TextGridEditor);
 	if (my spellingChecker) {
-		long left, right, position = 0;
-		wchar_t *label, *notAllowed;
-		GuiText_getSelectionPosition (my text, & left, & right);
-		position = right;
-		label = GuiText_getString (my text);
-		notAllowed = SpellingChecker_nextNotAllowedWord (my spellingChecker, label, & position);
+		long left, right;
+		wchar_t *label = GuiText_getStringAndSelectionPosition (my text, & left, & right);
+		long position = right;
+		wchar_t *notAllowed = SpellingChecker_nextNotAllowedWord (my spellingChecker, label, & position);
 		if (notAllowed) {
 			GuiText_setSelection (my text, position, position + wcslen (notAllowed));
 		} else {
@@ -1075,12 +1072,10 @@ static int menu_cb_CheckSpelling (EDITOR_ARGS) {
 static int menu_cb_CheckSpellingInInterval (EDITOR_ARGS) {
 	EDITOR_IAM (TextGridEditor);
 	if (my spellingChecker) {
-		long left, right, position = 0;
-		wchar_t *label, *notAllowed;
-		GuiText_getSelectionPosition (my text, & left, & right);
-		position = right;
-		label = GuiText_getString (my text);
-		notAllowed = SpellingChecker_nextNotAllowedWord (my spellingChecker, label, & position);
+		long left, right;
+		wchar_t *label = GuiText_getStringAndSelectionPosition (my text, & left, & right);
+		long position = right;
+		wchar_t *notAllowed = SpellingChecker_nextNotAllowedWord (my spellingChecker, label, & position);
 		if (notAllowed) {
 			GuiText_setSelection (my text, position, position + wcslen (notAllowed));
 		}
@@ -1497,11 +1492,7 @@ static void do_drawIntervalTier (TextGridEditor me, IntervalTier tier, int itier
 		}
 		if (! cursorAtBoundary) {
 			double dy = Graphics_dyMMtoWC (my graphics, 1.5);
-			#ifdef macintosh
-			Graphics_setColour (my graphics, Graphics_GREEN);
-			#else
 			Graphics_setGrey (my graphics, 0.8);
-			#endif
 			Graphics_setLineWidth (my graphics, 5.0);
 			Graphics_line (my graphics, my startSelection, 0.0, my startSelection, 1.0);
 			Graphics_setLineWidth (my graphics, 1.0);

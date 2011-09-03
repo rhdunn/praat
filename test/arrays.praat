@@ -33,4 +33,11 @@ printline 'a' 'b' 'c'
 
 ;e# = d# + c#
 
+;speaker$# = empty$# [2]
+;speaker$# [1] = "JM"
+;speaker$# [2] = "PB"
+
+;speaker$ [1] = "JM"
+;speaker$ [2] = "PB"
+
 printline OK

@@ -66,6 +66,7 @@
 
 #if mac
 	#include "macport_on.h"
+	#include <Movies.h>
 #endif
 
 /*
@@ -326,6 +327,7 @@ static int NativeButton_preferredHeight (Widget me) {
 
 Widget _Gui_initializeWidget (int widgetClass, Widget parent, const wchar_t *name) {
 	Widget me = Melder_calloc (struct structWidget, 1);
+	if (Melder_debug == 34) fprintf (stderr, "from _Gui_initializeWidget\t%ld\t%ld\t%ld\n", (long) me, 1L, (long) sizeof (struct structWidget));
 	my magicNumber = 15111959;
 	numberOfWidgets ++;
 	my widgetClass = widgetClass;
@@ -1170,7 +1172,7 @@ static void _GuiNativizeWidget (Widget me) {
 				NativeScrollBar_set (me);
 			#elif mac
 				my nat.control.handle = NewControl (my macWindow, & my rect,
-					"\p", false, 0, 0, 0, scrollBarProc, (long) me);
+					"\000", false, 0, 0, 0, scrollBarProc, (long) me);
 				Melder_assert (my nat.control.handle);
 				my isControl = TRUE;
 			#endif
@@ -1228,9 +1230,11 @@ static void _GuiNativizeWidget (Widget me) {
 				SetWindowLong (my window, GWL_USERDATA, (long) me);
 			#elif mac
 				Rect r = my rect;
+				if (wcsstr (my name, L"fullscreen")) {
+					my motiff.shell.canFullScreen = true;
+				}
 				OffsetRect (& r, 0, 22);
-				CreateNewWindow (kDocumentWindowClass,
-					kWindowCloseBoxAttribute +
+				CreateNewWindow (kDocumentWindowClass, kWindowCloseBoxAttribute +
 					( theDialogHint ? 0 : kWindowCollapseBoxAttribute + kWindowResizableAttribute + kWindowFullZoomAttribute),
 					& r, & my nat.window.ptr);
 				SetWRefCon (my nat.window.ptr, (long) me);   /* So we can find the widget from the event with GetWRefCon (). */
@@ -2324,11 +2328,15 @@ void XtDestroyWidget (Widget me) {
 				DestroyWindow (natWindow);
 			#elif mac
 				DisposeWindow (my nat.window.ptr);
+				if (my motiff.shell.canFullScreen)
+					SetSystemUIMode (kUIModeNormal, 0);   // BUG: assumes there can be only one fullscreenable window
 			#endif
 			_motif_removeShell (me);
 		} break;
 		case xmListWidgetClass: _GuiWinMacList_destroy (me); break;
-		case xmDrawingAreaWidgetClass:
+		case xmDrawingAreaWidgetClass: {
+			_GuiWinMacDrawingArea_destroy (me);
+		} break;
 		case xmRowColumnWidgetClass:
 		case xmFormWidgetClass:
 		case xmBulletinBoardWidgetClass: {
@@ -2501,9 +2509,9 @@ static void mapWidget (Widget me) {
 			 * Set text, sensitivity, submenu. BUGS: should also set toggle state and accelerator text.
 			 */
 			if (my widgetClass == xmSeparatorWidgetClass) {
-				InsertMenuItem (my nat.entry.handle, "\p-", my nat.entry.item - 1);
+				InsertMenuItem (my nat.entry.handle, (unsigned char *) "\001-", my nat.entry.item - 1);
 			} else {
-				InsertMenuItem (my nat.entry.handle, "\p ", my nat.entry.item - 1);
+				InsertMenuItem (my nat.entry.handle, (unsigned char *) "\001 ", my nat.entry.item - 1);
 				SetMenuItemTextWithCFString (my nat.entry.handle, my nat.entry.item, Melder_peekWcsToCfstring (my name));
 				if (my insensitive) DisableMenuItem (my nat.entry.handle, my nat.entry.item);
 				if (mac_text [mac_text [0]] == ':')
@@ -2791,7 +2799,10 @@ void XtUnmanageChildren (WidgetList children, Cardinal num_children) {
 			char *buffer;
 			long actualSize;
 			duringAppleEvent = TRUE;
-			AEInteractWithUser (kNoTimeOut, NULL, NULL);
+			//AEInteractWithUser (kNoTimeOut, NULL, NULL);   // use time out of 0 to execute immediately (without bringing to foreground)
+			ProcessSerialNumber psn;
+			GetCurrentProcess (& psn);
+			SetFrontProcess (& psn);
 			AEGetParamPtr (theAppleEvent, 1, typeChar, NULL, NULL, 0, & actualSize);
 			buffer = malloc (actualSize);
 			AEGetParamPtr (theAppleEvent, 1, typeChar, NULL, & buffer [0], actualSize, NULL);
@@ -2810,7 +2821,10 @@ void XtUnmanageChildren (WidgetList children, Cardinal num_children) {
 			wchar_t *buffer;
 			long actualSize;
 			duringAppleEvent = TRUE;
-			AEInteractWithUser (kNoTimeOut, NULL, NULL);
+			//AEInteractWithUser (kNoTimeOut, NULL, NULL);   // use time out of 0 to execute immediately (without bringing to foreground)
+			ProcessSerialNumber psn;
+			GetCurrentProcess (& psn);
+			SetFrontProcess (& psn);
 			AEGetParamPtr (theAppleEvent, 1, typeUnicodeText, NULL, NULL, 0, & actualSize);
 			buffer = malloc (actualSize);
 			AEGetParamPtr (theAppleEvent, 1, typeUnicodeText, NULL, & buffer [0], actualSize, NULL);
@@ -2843,7 +2857,7 @@ Widget XtInitialize (void *dum1, const char *name,
 		AEInstallEventHandler (kCoreEventClass, kAEOpenDocuments, NewAEEventHandlerUPP (_motif_processOpenDocumentsMessage), 0, false);
 		AEInstallEventHandler (758934755, 0, NewAEEventHandlerUPP (_motif_processSignalA), 0, false);
 		AEInstallEventHandler (758934756, 0, NewAEEventHandlerUPP (_motif_processSignalW), 0, false);
-		USE_QUESTION_MARK_HELP_MENU = 1;
+		//USE_QUESTION_MARK_HELP_MENU = 1;
 		theUserFocusEventTarget = GetUserFocusEventTarget ();
 	#elif win
 	{
@@ -2945,7 +2959,7 @@ void XtVaGetValues (Widget me, ...) {
 	#if mac
 		Str255 ptext;
 	#endif
-	int resource;
+	unsigned int resource;
 	va_list arg;
 	va_start (arg, me);
 	while ((resource = va_arg (arg, int)) != 0) switch (resource) {
@@ -4046,7 +4060,19 @@ static void _motif_processMouseDownEvent (EventRecord *event) {
 			if (shell) {
 				int oldWidth = shell -> width, oldHeight = shell -> height, newWidth, newHeight;
 				Rect bounds;
-				ZoomWindow (macvenster, part, 1);
+				if (shell -> motiff.shell.canFullScreen) {
+					if (part == inZoomOut) {
+						SetSystemUIMode (kUIModeAllSuppressed, 0);
+						Point size = { 3000, 4000 };
+						ZoomWindowIdeal (macvenster, inZoomOut, & size);
+					} else {
+						SetSystemUIMode (kUIModeNormal, 0);
+						Point size = { 900, 1440 };
+						ZoomWindowIdeal (macvenster, inZoomIn, & size);
+					}
+				} else {
+					ZoomWindow (macvenster, part, 1);
+				}
 				GetWindowPortBounds (macvenster, & bounds);
 				newWidth = bounds.right - bounds.left;
 				newHeight = bounds.bottom - bounds.top;

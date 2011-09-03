@@ -18,7 +18,7 @@
  */
 
 /*
- * pb 2009/03/14
+ * pb 2009/09/29
  */
 
 #include "praat.h"
@@ -116,10 +116,12 @@ FORM (Network_addConnection, L"Network: Add connection", 0)
 	NATURAL (L"From node", L"1")
 	NATURAL (L"To node", L"2")
 	REAL (L"Weight", L"0.0")
+	REAL (L"Plasticity", L"1.0")
 	OK
 DO
 	WHERE (SELECTED) {
-		Network_addConnection_e (OBJECT, GET_INTEGER (L"From node"), GET_INTEGER (L"To node"), GET_REAL (L"Weight")); cherror
+		Network_addConnection_e (OBJECT, GET_INTEGER (L"From node"), GET_INTEGER (L"To node"),
+			GET_REAL (L"Weight"), GET_REAL (L"Plasticity")); cherror
 		praat_dataChanged (OBJECT);
 	}
 end:
@@ -155,6 +157,27 @@ DO
 end:
 END
 
+FORM (Network_getWeight, L"Network: Get weight", 0)
+	NATURAL (L"Connection", L"1")
+	OK
+DO
+	double weight = Network_getWeight_e (ONLY_OBJECT, GET_INTEGER (L"Connection")); cherror
+	Melder_information1 (Melder_double (weight));
+end:
+END
+
+FORM (Network_normalizeActivities, L"Network: Normalize activities", 0)
+	INTEGER (L"From node", L"1")
+	INTEGER (L"To node", L"0 (= all)")
+	OK
+DO
+	WHERE (SELECTED) {
+		Network_normalizeActivities (OBJECT, GET_INTEGER (L"From node"), GET_INTEGER (L"To node")); cherror
+		praat_dataChanged (OBJECT);
+	}
+end:
+END
+
 FORM (Network_setActivity, L"Network: Set activity", 0)
 	NATURAL (L"Node", L"1")
 	REAL (L"Activity", L"1.0")
@@ -162,6 +185,18 @@ FORM (Network_setActivity, L"Network: Set activity", 0)
 DO
 	WHERE (SELECTED) {
 		Network_setActivity_e (OBJECT, GET_INTEGER (L"Node"), GET_REAL (L"Activity")); cherror
+		praat_dataChanged (OBJECT);
+	}
+end:
+END
+
+FORM (Network_setWeight, L"Network: Set weight", 0)
+	NATURAL (L"Connection", L"1")
+	REAL (L"Weight", L"1.0")
+	OK
+DO
+	WHERE (SELECTED) {
+		Network_setWeight_e (OBJECT, GET_INTEGER (L"Connection"), GET_REAL (L"Weight")); cherror
 		praat_dataChanged (OBJECT);
 	}
 end:
@@ -194,6 +229,18 @@ DIRECT (Network_updateWeights)
 		Network_updateWeights (OBJECT);
 		praat_dataChanged (OBJECT);
 	}
+END
+
+FORM (Network_zeroActivities, L"Network: Zero activities", 0)
+	INTEGER (L"From node", L"1")
+	INTEGER (L"To node", L"0 (= all)")
+	OK
+DO
+	WHERE (SELECTED) {
+		Network_zeroActivities (OBJECT, GET_INTEGER (L"From node"), GET_INTEGER (L"To node")); cherror
+		praat_dataChanged (OBJECT);
+	}
+end:
 END
 
 
@@ -780,6 +827,20 @@ DO
 	Melder_informationReal (result, NULL);
 END
 
+FORM (OTGrammar_PairDistribution_getMinimumNumberCorrect, L"OTGrammar & PairDistribution: Get minimum number correct...", 0)
+	REAL (L"Evaluation noise", L"2.0")
+	INTEGER (L"Replications per input", L"1000")
+	OK
+DO
+	OTGrammar grammar = ONLY (classOTGrammar);
+	long result;
+	OTGrammar_PairDistribution_getMinimumNumberCorrect (grammar, ONLY (classPairDistribution),
+		GET_REAL (L"Evaluation noise"), GET_INTEGER (L"Replications per input"), & result);
+	praat_dataChanged (grammar);
+	iferror return 0;
+	Melder_information1 (Melder_integer (result));
+END
+
 FORM (OTGrammar_PairDistribution_learn, L"OTGrammar & PairDistribution: Learn", L"OT learning 6. Shortcut to OT learning")
 	REAL (L"Evaluation noise", L"2.0")
 	OPTIONMENU (L"Reranking strategy", 3)
@@ -1127,7 +1188,7 @@ END
 
 void praat_uvafon_gram_init (void);
 void praat_uvafon_gram_init (void) {
-	Thing_recognizeClassesByName (classNetwork, classOTGrammar, classOTMulti, NULL);
+	Thing_recognizeClassesByName (classNetwork, classOTGrammar, classOTHistory, classOTMulti, NULL);
 	Thing_recognizeClassByOtherName (classOTGrammar, L"OTCase");
 
 	praat_addMenuCommand (L"Objects", L"New", L"Constraint grammars", 0, 0, 0);
@@ -1222,6 +1283,7 @@ void praat_uvafon_gram_init (void) {
 	praat_addAction2 (classOTGrammar, 1, classPairDistribution, 1, L"Learn...", 0, 0, DO_OTGrammar_PairDistribution_learn);
 	praat_addAction2 (classOTGrammar, 1, classPairDistribution, 1, L"Find positive weights...", 0, 0, DO_OTGrammar_PairDistribution_findPositiveWeights);
 	praat_addAction2 (classOTGrammar, 1, classPairDistribution, 1, L"Get fraction correct...", 0, 0, DO_OTGrammar_PairDistribution_getFractionCorrect);
+	praat_addAction2 (classOTGrammar, 1, classPairDistribution, 1, L"Get minimum number correct...", 0, 0, DO_OTGrammar_PairDistribution_getMinimumNumberCorrect);
 	praat_addAction2 (classOTGrammar, 1, classPairDistribution, 1, L"List obligatory rankings", 0, 0, DO_OTGrammar_PairDistribution_listObligatoryRankings);
 	praat_addAction2 (classOTGrammar, 1, classStrings, 1, L"Inputs to outputs...", 0, 0, DO_OTGrammar_inputsToOutputs);
 	praat_addAction2 (classOTGrammar, 1, classStrings, 1, L"Learn from partial outputs...", 0, 0, DO_OTGrammar_learnFromPartialOutputs);
@@ -1237,12 +1299,16 @@ void praat_uvafon_gram_init (void) {
 	praat_addAction1 (classNetwork, 0, L"Draw...", 0, 0, DO_Network_draw);
 	praat_addAction1 (classNetwork, 0, L"Query -", 0, 0, 0);
 	praat_addAction1 (classNetwork, 1, L"Get activity...", 0, 0, DO_Network_getActivity);
+	praat_addAction1 (classNetwork, 1, L"Get weight...", 0, 0, DO_Network_getWeight);
 	praat_addAction1 (classNetwork, 0, L"Modify -", 0, 0, 0);
 	praat_addAction1 (classNetwork, 0, L"Add node...", 0, 0, DO_Network_addNode);
 	praat_addAction1 (classNetwork, 0, L"Add connection...", 0, 0, DO_Network_addConnection);
 	praat_addAction1 (classNetwork, 0, L"Set activity...", 0, 0, DO_Network_setActivity);
 	praat_addAction1 (classNetwork, 0, L"Set clamping...", 0, 0, DO_Network_setClamping);
+	praat_addAction1 (classNetwork, 0, L"Zero activities...", 0, 0, DO_Network_zeroActivities);
+	praat_addAction1 (classNetwork, 0, L"Normalize activities...", 0, 0, DO_Network_normalizeActivities);
 	praat_addAction1 (classNetwork, 0, L"Spread activities...", 0, 0, DO_Network_spreadActivities);
+	praat_addAction1 (classNetwork, 0, L"Set weight...", 0, 0, DO_Network_setWeight);
 	praat_addAction1 (classNetwork, 0, L"Update weights", 0, 0, DO_Network_updateWeights);
 }
 
