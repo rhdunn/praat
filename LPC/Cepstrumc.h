@@ -2,7 +2,7 @@
 #define _Cepstrumc_h_
 /* Cepstrumc.h
  *
- * Copyright (C) 1994-2007 David Weenink
+ * Copyright (C) 1994-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,19 +22,23 @@
 /*
  djmw 19950822
  djmw 20020812 GPL header
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
 #include "Sampled.h"
 #include "Matrix.h"
 #include "Graphics.h"
 #include "DTW.h"
-#include "Cepstrumc_def.h"
 
-#define Cepstrumc_methods Sampled_methods
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
+#include "Cepstrumc_def.h"
+#define Cepstrumc__methods(klas) Sampled__methods(klas)
 oo_CLASS_CREATE (Cepstrumc, Sampled);
 
-int Cepstrumc_init (Cepstrumc me, double tmin, double tmax, long nt, double dt, double t1,
+void Cepstrumc_init (Cepstrumc me, double tmin, double tmax, long nt, double dt, double t1,
 	int nCoefficients, double samplingFrequency);
 	
 Cepstrumc Cepstrumc_create (double tmin, double tmax, long nt, double dt, double t1,
@@ -42,7 +46,7 @@ Cepstrumc Cepstrumc_create (double tmin, double tmax, long nt, double dt, double
 
 /******************* Frames ************************************************/
 
-int Cepstrumc_Frame_init (Cepstrumc_Frame me, int nCoefficients);
+void Cepstrumc_Frame_init (Cepstrumc_Frame me, int nCoefficients);
 	
 DTW Cepstrumc_to_DTW ( Cepstrumc me, Cepstrumc thee, double wc, double wle,
 	double wr, double wer, double dtr, int matchStart, int matchEnd, int constraint);
@@ -66,5 +70,9 @@ DTW Cepstrumc_to_DTW ( Cepstrumc me, Cepstrumc thee, double wc, double wle,
 */
 
 Matrix Cepstrumc_to_Matrix (Cepstrumc me);
- 	
+
+#ifdef __cplusplus
+	}
+#endif
+
 #endif /* _Cepstrumc_h_ */

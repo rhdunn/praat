@@ -2,7 +2,7 @@
 #define _SpectrumTier_h_
 /* SpectrumTier.h
  *
- * Copyright (C) 2007-2010 Paul Boersma
+ * Copyright (C) 2007-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,25 +19,17 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2010/10/19
- */
-
-#ifndef _RealTier_h_
-	#include "RealTier.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-#ifndef _Spectrum_h_
-	#include "Spectrum.h"
-#endif
+#include "RealTier.h"
+#include "Graphics.h"
+#include "Spectrum.h"
 
 /********** class SpectrumTier **********/
 
-#define SpectrumTier_members RealTier_members
-#define SpectrumTier_methods RealTier_methods
-class_create (SpectrumTier, RealTier);
+Thing_declare1cpp (SpectrumTier);
+struct structSpectrumTier : public structRealTier {
+};
+#define SpectrumTier__methods(klas) RealTier__methods(klas)
+Thing_declare2cpp (SpectrumTier, RealTier);
 
 SpectrumTier SpectrumTier_create (double fmin, double fmax);
 /*
@@ -48,7 +40,7 @@ SpectrumTier SpectrumTier_create (double fmin, double fmax);
 */
 
 void SpectrumTier_draw (SpectrumTier me, Graphics g, double fmin, double fmax,
-	double pmin, double pmax, int garnish, const wchar_t *method);
+	double pmin, double pmax, int garnish, const wchar *method);
 
 void SpectrumTier_list (SpectrumTier me, bool includeIndexes, bool includeFrequency, bool includePowerDensity);
 

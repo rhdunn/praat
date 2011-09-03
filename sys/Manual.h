@@ -19,44 +19,40 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
+#include "HyperPage.h"
+#include "ManPages.h"
 
-#ifndef _HyperPage_h_
-	#include "HyperPage.h"
-#endif
-#ifndef _ManPages_h_
-	#include "ManPages.h"
-#endif
+Thing_define (Manual, HyperPage) {
+	// data:
+		long path, numberOfParagraphs;
+		struct structManPage_Paragraph *paragraphs;
+		GuiObject searchText;
+		GuiObject homeButton, recordButton, playButton, publishButton;
+		int numberOfMatches;
+		long matches [1 + 20], fromPage, toPage;
+		int suppressLinksHither;
+		wchar *printPagesStartingWith;
+	// overridden methods:
+		virtual void v_destroy ();
+		virtual bool v_scriptable () { return false; }
+		virtual void v_createChildren ();
+		virtual void v_createMenus ();
+		virtual bool v_hasQueryMenu () { return false; }
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_draw ();
+		virtual void v_defaultHeaders (EditorCommand cmd);
+		virtual long v_getNumberOfPages ();
+		virtual long v_getCurrentPageNumber ();
+		virtual int v_goToPage (const wchar *title);
+		virtual void v_goToPage_i (long pageNumber);
+		virtual bool v_hasHistory () { return true; }
+		virtual bool v_isOrdered () { return true; }
+};
 
-#ifdef __cplusplus
-	extern "C" {
-#endif
+void Manual_init (Manual me, GuiObject parent, const wchar *title, Data data);
+Manual Manual_create (GuiObject parent, const wchar *title, Data data);
 
-#define Manual__parents(Klas) HyperPage__parents(Klas) Thing_inherit (Klas, HyperPage)
-Thing_declare1 (Manual);
-
-#define Manual__members(Klas) HyperPage__members(Klas) \
-	long path, numberOfParagraphs; \
-	struct structManPage_Paragraph *paragraphs; \
-	GuiObject searchText; \
-	GuiObject homeButton, recordButton, playButton, publishButton; \
-	int numberOfMatches; \
-	long matches [1 + 20], fromPage, toPage; \
-	int suppressLinksHither; \
-	wchar_t *printPagesStartingWith;
-#define Manual__methods(Klas) HyperPage__methods(Klas)
-Thing_declare2 (Manual, HyperPage);
-
-int Manual_init (Manual me, GuiObject parent, const wchar_t *title, Any data);
-Manual Manual_create (GuiObject parent, const wchar_t *title, Any data);
-
-void Manual_search (Manual me, const wchar_t *query);
-
-#ifdef __cplusplus
-	}
-#endif
+void Manual_search (Manual me, const wchar *query);
 
 /* End of file Manual.h */
 #endif

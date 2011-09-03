@@ -2,7 +2,7 @@
 #define _LPC_h_
 /* LPC.h
  *
- * Copyright (C) 1994-2007 David Weenink
+ * Copyright (C) 1994-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,18 +21,18 @@
 
 /*
  djmw 20030526 GPL header
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _Matrix_h_
-	#include "Matrix.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
+#include "Matrix.h"
+#include "Graphics.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 #include "LPC_def.h"
-#define LPC_methods Sampled_methods
+#define LPC__methods(klas) Sampled__methods(klas)
 oo_CLASS_CREATE (LPC, Sampled);
 
 /*
@@ -43,10 +43,10 @@ oo_CLASS_CREATE (LPC, Sampled);
 	nx : number of frames
 */	
 
-int LPC_init (LPC me, double tmin, double tmax, long nt, double dt, double t1,
+void LPC_init (LPC me, double tmin, double tmax, long nt, double dt, double t1,
 	int predictionOrder, double samplingPeriod);
 
-Any LPC_create (double tmin, double tmax, long nt, double dt, double t1,
+LPC LPC_create (double tmin, double tmax, long nt, double dt, double t1,
 	int predictionOrder, double samplingPeriod);
 
 void LPC_drawGain (LPC me, Graphics g, double t1, double t2,
@@ -58,6 +58,10 @@ Matrix LPC_to_Matrix (LPC me);
 
 /******************* Frames ************************************************/
 
-int LPC_Frame_init (LPC_Frame me, int nCoefficients);
+void LPC_Frame_init (LPC_Frame me, int nCoefficients);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _LPC_h_ */

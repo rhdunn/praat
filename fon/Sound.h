@@ -19,23 +19,20 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/02/11
- */
-
 /* Sound inherits from Vector */
 /* A Sound is a sampled signal, not quantized. */
-#ifndef _Vector_h_
-	#include "Vector.h"
-#endif
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
+#include "Vector.h"
+#include "Collection.h"
+
 #include "Sound_enums.h"
 
-#define Sound_members  Vector_members
-#define Sound_methods  Vector_methods
-class_create (Sound, Vector);
+Thing_declare1cpp (Sound);
+struct structSound : public structVector {
+	// overridden methods:
+		void v_info ();
+};
+#define Sound__methods(klas)  Vector__methods(klas)
+Thing_declare2cpp (Sound, Vector);
 
 /* Attributes:
 	xmin              // Start time (seconds).
@@ -168,22 +165,22 @@ Sound Sound_createFromToneComplex (double startingTime, double endTime,
 #define Sound_TONE_COMPLEX_SINE  0
 #define Sound_TONE_COMPLEX_COSINE  1
 
-Sound Sounds_concatenate_e (Ordered me, double overlapTime);
+Sound Sounds_concatenate_e (Collection me, double overlapTime);
 void Sound_multiplyByWindow (Sound me, enum kSound_windowShape windowShape);
 void Sound_scaleIntensity (Sound me, double newAverageIntensity);
 void Sound_overrideSamplingFrequency (Sound me, double newSamplingFrequency);
 Sound Sound_extractPart (Sound me, double t1, double t2, enum kSound_windowShape windowShape, double relativeWidth, bool preserveTimes);
-int Sound_filterWithFormants (Sound me, double tmin, double tmax,
+void Sound_filterWithFormants (Sound me, double tmin, double tmax,
 	int numberOfFormants, double formant [], double bandwidth []);
 Sound Sound_filter_oneFormant (Sound me, double frequency, double bandwidth);
-int Sound_filterWithOneFormantInline (Sound me, double frequency, double bandwidth);
+void Sound_filterWithOneFormantInline (Sound me, double frequency, double bandwidth);
 Sound Sound_filter_preemphasis (Sound me, double frequency);
 Sound Sound_filter_deemphasis (Sound me, double frequency);
 
 void Sound_reverse (Sound me, double tmin, double tmax);
 
 void Sound_draw (Sound me, Graphics g,
-	double tmin, double tmax, double minimum, double maximum, bool garnish, const wchar_t *method);
+	double tmin, double tmax, double minimum, double maximum, bool garnish, const wchar *method);
 /* For method, see Vector_draw. */
 
 Matrix Sound_to_Matrix (Sound me);
@@ -252,7 +249,7 @@ Sound Sound_recordFixedTime (int inputSource,
 			and wait for the publishCallback.
 	*/
 
-int Sound_playPart (Sound me, double tmin, double tmax,
+void Sound_playPart (Sound me, double tmin, double tmax,
 	int (*playCallback) (void *playClosure, int phase, double tmin, double tmax, double t), void *playClosure);
 /*
  * Play a sound. The playing can be interrupted with the Escape key (also Command-period on the Mac).
@@ -287,7 +284,7 @@ int Sound_playPart (Sound me, double tmin, double tmax,
  *
  * Sound_playPart () usually runs asynchronously, and kills an already playing sound.
  */
-int Sound_play (Sound me,
+void Sound_play (Sound me,
 	int (*playCallback) (void *playClosure, int phase, double tmin, double tmax, double t), void *playClosure);
 	/* The same as Sound_playPart (me, my xmin, my xmax, playCallback, playClosure); */
 
@@ -295,14 +292,14 @@ int Sound_play (Sound me,
 
 /* To avoid clipping, keep the absolute amplitude below 1.000. */
 /* All are mono or stereo PCM. */
-int Sound_writeToAudioFile16 (Sound me, MelderFile file, int audioFileType);
+void Sound_writeToAudioFile16 (Sound me, MelderFile file, int audioFileType);
 #ifdef macintosh
-	int Sound_writeToMacSoundFile (Sound me, MelderFile file);   /* 8 bit */
+	void Sound_writeToMacSoundFile (Sound me, MelderFile file);   /* 8 bit */
 #endif
-int Sound_writeToRaw8bitSignedFile (Sound me, MelderFile file);   /* 8 bit */
-int Sound_writeToRaw8bitUnsignedFile (Sound me, MelderFile file);   /* 8 bit */
-int Sound_writeToKayFile (Sound me, MelderFile file);   /* 16 bit */
-int Sound_writeToSesamFile (Sound me, MelderFile file);   /* 12-bit SESAM/LVS */
+void Sound_writeToRaw8bitSignedFile (Sound me, MelderFile file);   /* 8 bit */
+void Sound_writeToRaw8bitUnsignedFile (Sound me, MelderFile file);   /* 8 bit */
+void Sound_writeToKayFile (Sound me, MelderFile file);   /* 16 bit */
+void Sound_writeToSesamFile (Sound me, MelderFile file);   /* 12-bit SESAM/LVS */
 
 Sound Sound_readFromSoundFile (MelderFile file);   /* AIFF, WAV, NeXT/Sun, or NIST */
 #ifdef macintosh
@@ -324,9 +321,9 @@ Sound Sound_readFromRawSoundFile (MelderFile file, int encoding, int numberOfCha
 		Melder_MULAW
 		Melder_ALAW
 	'numberOfChannels' is 1 (mono) or 2 (stereo)
-	'sampleRate' is in Hertz
+	'sampleRate' is in hertz
 */
-int Sound_writeToRawSoundFile (Sound me, MelderFile file, int encoding);
+void Sound_writeToRawSoundFile (Sound me, MelderFile file, int encoding);
 /*
 	'encoding' is any of the following:
 		Melder_LINEAR_8_SIGNED

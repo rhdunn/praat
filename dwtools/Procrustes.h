@@ -2,7 +2,7 @@
 #define _Procrustes_h_
 /* Procrustes.h
  *
- * Copyright (C) 1993-2007 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,19 +22,23 @@
 /*
  djmw 20010926
  djmw 20020813 GPL header
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _AffineTransform_h_
-	#include "AffineTransform.h"
+#include "AffineTransform.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
-#define Procrustes_members AffineTransform_members \
-	double s;
-
-#define Procrustes_methods AffineTransform_methods
-class_create (Procrustes, AffineTransform);
+#include "Procrustes_def.h"
+#define Procrustes__methods(klas) AffineTransform__methods(klas)
+oo_CLASS_CREATE (Procrustes, AffineTransform);
 
 Procrustes Procrustes_create (long n);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Procrustes_h_ */

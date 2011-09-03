@@ -2,7 +2,7 @@
 #define _AmplitudeTier_h_
 /* AmplitudeTier.h
  *
- * Copyright (C) 2003-2010 Paul Boersma
+ * Copyright (C) 2003-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,30 +19,22 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2010/10/19
- */
-
-#ifndef _IntensityTier_h_
-	#include "IntensityTier.h"
-#endif
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
+#include "IntensityTier.h"
+#include "TableOfReal.h"
+#include "Sound.h"
 
 /********** class AmplitudeTier **********/
 
-#define AmplitudeTier_members RealTier_members
-#define AmplitudeTier_methods RealTier_methods
-class_create (AmplitudeTier, RealTier);
+Thing_declare1cpp (AmplitudeTier);
+struct structAmplitudeTier : public structRealTier {
+};
+#define AmplitudeTier__methods(klas) RealTier__methods(klas)
+Thing_declare2cpp (AmplitudeTier, RealTier);
 
 AmplitudeTier AmplitudeTier_create (double tmin, double tmax);
 
 void AmplitudeTier_draw (AmplitudeTier me, Graphics g, double tmin, double tmax,
-	double ymin, double ymax, const wchar_t *method, int garnish);
+	double ymin, double ymax, const wchar *method, int garnish);
 
 AmplitudeTier PointProcess_upto_AmplitudeTier (PointProcess me, double soundPressure);
 AmplitudeTier IntensityTier_to_AmplitudeTier (IntensityTier me);

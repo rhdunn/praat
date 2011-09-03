@@ -19,22 +19,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2002/03/07 GPL
- * pb 2002/03/11 nativize & genericize are each other's inverse and their second application is identity
- * pb 2004/12/02 differentiate between X11 and Windows encodings
- * pb 2005/03/08 added "PostScript" encodings (mostly Mac and Praat-IPA)
- * pb 2006/11/17 Unicode
- * pb 2006/12/05 first wchar support
- * pb 2007/08/08 more wchar_t support
- * pb 2007/08/16 removed New Century Schoolbook
- * pb 2008/04/23 updated info
- */
 #include <wchar.h>
-
-#ifdef __cplusplus
-	extern "C" {
-#endif
 
 /********** NON-ASCII CHARACTERS **********/
 
@@ -78,7 +63,7 @@ wchar_t *Longchar_genericizeW (const wchar_t *native, wchar_t *generic);
 		translating user input into a generic string.
 */
 
-typedef struct Longchar_Info {
+typedef struct structLongchar_Info {
 	unsigned char first, second;   /* First and second character of two-byte encoding. */
 		/* For ASCII characters, 'second' is a space. */
 	unsigned char alphabet;   /* Roman, Symbol, Phonetic, or Dingbats. */
@@ -123,10 +108,6 @@ Longchar_Info Longchar_getInfoFromNative (wchar_t kar);
 	Thus, the string typed as "`hallo'" will give you left and right quotes,
 	even on Macintosh. (Reading this note in Xwindows may feel somewhat funny.)
 */
-
-#ifdef __cplusplus
-	}
-#endif
 
 /* End of file longchar.h */
 #endif

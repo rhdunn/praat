@@ -2,7 +2,7 @@
 #define _SoundEditor_h_
 /* SoundEditor.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,24 +19,29 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/09/08
- */
+#include "TimeSoundAnalysisEditor.h"
 
-#ifndef _TimeSoundAnalysisEditor_h_
-	#include "TimeSoundAnalysisEditor.h"
-#endif
+Thing_define (SoundEditor, TimeSoundAnalysisEditor) {
+	// new data
+		GuiObject cutButton, copyButton, pasteButton, zeroButton, reverseButton;
+		double maxBuffer;
+	// overridden methods:
+		virtual void v_createMenus ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_dataChanged ();
+		virtual void v_prepareDraw ();
+		virtual void v_draw ();
+		virtual void v_play (double tmin, double tmax);
+		virtual int v_click (double xWC, double yWC, bool shiftKeyPressed);
+		virtual void v_highlightSelection (double left, double right, double bottom, double top);
+		virtual void v_unhighlightSelection (double left, double right, double bottom, double top);
+};
 
-#define SoundEditor__parents(Klas) TimeSoundAnalysisEditor__parents(Klas) Thing_inherit (Klas, TimeSoundAnalysisEditor)
-Thing_declare1 (SoundEditor);
-
-#define SoundEditor__members(Klas) TimeSoundAnalysisEditor__members(Klas) \
-	GuiObject cutButton, copyButton, pasteButton, zeroButton, reverseButton; \
-	double maxBuffer;
-#define SoundEditor__methods(Klas) TimeSoundAnalysisEditor__methods(Klas)
-Thing_declare2 (SoundEditor, TimeSoundAnalysisEditor);
-
-SoundEditor SoundEditor_create (GuiObject parent, const wchar_t *title, Any data);
+SoundEditor SoundEditor_create (
+	GuiObject parent,
+	const wchar *title,
+	Function data   // either a Sound or a LongSound
+);
 
 /* End of file SoundEditor.h */
 #endif

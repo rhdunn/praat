@@ -2,7 +2,7 @@
 #define _Activation_h_
 /* Activation.h
  * 
- * Copyright (C) 1993-2007 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  * 
  * This program is free oftware; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,14 +21,20 @@
 
 /*
  djmw 20020315 GPL header.
- djmw 20070620 Latest modification.
+ djmw 20110505 Latest modification.
  */
 
 #include "Matrix.h"
 
-#define Activation_members Matrix_members
-#define Activation_methods Matrix_methods
-class_create (Activation, Matrix);
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
+Thing_declare1cpp (Activation);
+struct structActivation : public structMatrix {
+};
+#define Activation__methods(klas) Matrix__methods(klas)
+oo_CLASS_CREATE (Activation, Matrix);
 
 /* Attributes:
    xmin				:1
@@ -44,16 +50,20 @@ class_create (Activation, Matrix);
    z[iy][ix]		:the activities
 */
 
-int Activation_init (I, long ny, long nx);
+void Activation_init (I, long ny, long nx);
 
-Any Activation_create (long ny, long nx);
+Activation Activation_create (long ny, long nx);
 
-Any Matrix_to_Activation (I);
+Activation Matrix_to_Activation (I);
 
-Any Activation_to_Matrix (I);
+Matrix Activation_to_Matrix (I);
 
 
 int _Activation_checkElements (Activation me);
 /* Return 1 if all elements are in interval [0,1] else 0. */
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Activation_h_ */

@@ -2,7 +2,7 @@
 #define _PitchTier_h_
 /* PitchTier.h
  *
- * Copyright (C) 1992-2010 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,24 +20,22 @@
  */
 
 /*
- * pb 2010/10/19
+ * pb 2011/07/14
  */
 
-#ifndef _RealTier_h_
-	#include "RealTier.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
+#include "RealTier.h"
+#include "Graphics.h"
+#include "Sound.h"
 
 /********** class PitchTier **********/
 
-#define PitchTier_members RealTier_members
-#define PitchTier_methods RealTier_methods
-class_create (PitchTier, RealTier);
+Thing_declare1cpp (PitchTier);
+struct structPitchTier : public structRealTier {
+	// overridden methods:
+		void v_info ();
+};
+#define PitchTier__methods(klas) RealTier__methods(klas)
+Thing_declare2cpp (PitchTier, RealTier);
 
 PitchTier PitchTier_create (double tmin, double tmax);
 /*
@@ -47,17 +45,17 @@ PitchTier PitchTier_create (double tmin, double tmax);
 		result -> points -> size == 0;
 */
 
-int PitchTier_shiftFrequencies (PitchTier me, double tmin, double tmax, double shift, int units);
+void PitchTier_shiftFrequencies (PitchTier me, double tmin, double tmax, double shift, int units);
 void PitchTier_multiplyFrequencies (PitchTier me, double tmin, double tmax, double factor);
 
 void PitchTier_draw (PitchTier me, Graphics g, double tmin, double tmax,
-	double fmin, double fmax, int garnish, const wchar_t *method);
+	double fmin, double fmax, int garnish, const wchar *method);
 
 PitchTier PointProcess_upto_PitchTier (PointProcess me, double frequency);
 void PitchTier_stylize (PitchTier me, double frequencyResolution, int useSemitones);
 
-int PitchTier_writeToPitchTierSpreadsheetFile (PitchTier me, MelderFile file);
-int PitchTier_writeToHeaderlessSpreadsheetFile (PitchTier me, MelderFile file);
+void PitchTier_writeToPitchTierSpreadsheetFile (PitchTier me, MelderFile file);
+void PitchTier_writeToHeaderlessSpreadsheetFile (PitchTier me, MelderFile file);
 
 /* End of file PitchTier.h */
 #endif

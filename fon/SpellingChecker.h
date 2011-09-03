@@ -2,7 +2,7 @@
 #define _SpellingChecker_h_
 /* SpellingChecker.h
  *
- * Copyright (C) 1999-2007 Paul Boersma
+ * Copyright (C) 1999-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,31 +19,23 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/12/23
- */
-
-#ifndef _WordList_h_
-	#include "WordList.h"
-#endif
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
+#include "WordList.h"
+#include "Collection.h"
 
 #include "SpellingChecker_def.h"
-
-#define SpellingChecker_methods Data_methods
+#define SpellingChecker__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (SpellingChecker, Data);
 
 SpellingChecker WordList_upto_SpellingChecker (WordList me);
 WordList SpellingChecker_extractWordList (SpellingChecker me);
-int SpellingChecker_replaceWordList (SpellingChecker me, WordList list);
+void SpellingChecker_replaceWordList (SpellingChecker me, WordList list);
 SortedSetOfString SpellingChecker_extractUserDictionary (SpellingChecker me);
-int SpellingChecker_replaceUserDictionary (SpellingChecker me, SortedSetOfString userDictionary);
+void SpellingChecker_replaceUserDictionary (SpellingChecker me, SortedSetOfString userDictionary);
 
-int SpellingChecker_isWordAllowed (SpellingChecker me, const wchar_t *word);
-wchar_t * SpellingChecker_nextNotAllowedWord (SpellingChecker me, const wchar_t *sentence, long *start);
+bool SpellingChecker_isWordAllowed (SpellingChecker me, const wchar *word);
+wchar * SpellingChecker_nextNotAllowedWord (SpellingChecker me, const wchar *sentence, long *start);
 
-int SpellingChecker_addNewWord (SpellingChecker me, const wchar_t *word);
+void SpellingChecker_addNewWord (SpellingChecker me, const wchar *word);
 
+/* End of file SpellingChecker.h */
 #endif

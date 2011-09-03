@@ -1,6 +1,6 @@
 /* Spectrum_and_Spectrogram.h
  *
- * Copyright (C) 1992-2002 David Weenink & Paul Boersma
+ * Copyright (C) 1992-2011 David Weenink & Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +17,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 1995/03/17
- * pb 2002/07/16 GPL
- */
-
-#ifndef _Spectrum_h_
-	#include "Spectrum.h"
-#endif
-#ifndef _Spectrogram_h_
-	#include "Spectrogram.h"
-#endif
+#include "Spectrum.h"
+#include "Spectrogram.h"
 
 Spectrum Spectrogram_to_Spectrum (I, double time);
 /*

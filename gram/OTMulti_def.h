@@ -18,13 +18,13 @@
  */
 
 /*
- * pb 2011/03/02
+ * pb 2011/07/14
  */
 
 #define ooSTRUCT OTConstraint
 oo_DEFINE_STRUCT (OTConstraint)
 
-	oo_STRINGW (name)
+	oo_STRING (name)
 	oo_DOUBLE (ranking)
 	oo_DOUBLE (disharmony)
 	oo_FROM (2)
@@ -47,7 +47,7 @@ oo_END_STRUCT (OTConstraint)
 #define ooSTRUCT OTCandidate
 oo_DEFINE_STRUCT (OTCandidate)
 
-	oo_STRINGW (string)
+	oo_STRING (string)
 	oo_LONG (numberOfConstraints)
 	oo_INT_VECTOR (marks, my numberOfConstraints)
 	#if !oo_READING && !oo_WRITING
@@ -75,6 +75,11 @@ oo_DEFINE_CLASS (OTMulti, Data)
 	oo_STRUCT_VECTOR (OTCandidate, candidates, my numberOfCandidates)
 	#if oo_READING
 		OTMulti_sort (me);
+	#endif
+
+	#if oo_DECLARING
+		// overridden methods:
+			void v_info ();
 	#endif
 
 oo_END_CLASS (OTMulti)

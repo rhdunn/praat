@@ -19,44 +19,40 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
+#include "Script.h"
+#include "TextEditor.h"
+#include "Interpreter.h"
 
-#ifndef _Script_h_
-	#include "Script.h"
-#endif
-#ifndef _TextEditor_h_
-	#include "TextEditor.h"
-#endif
-#ifndef _Interpreter_h_
-	#include "Interpreter.h"
-#endif
+Thing_define (ScriptEditor, TextEditor) {
+	// data:
+		wchar *environmentName;
+		Editor_Table editorClass;
+		Interpreter interpreter;
+		Any argsDialog;
+	// functions:
+		void init (GuiObject parent, Editor editor, const wchar_t *initialText);
+	// overridden methods:
+		virtual void v_destroy ();
+		virtual void v_nameChanged ();
+		virtual void v_goAway ();
+		virtual bool v_scriptable () { return false; }
+		virtual void v_createMenus ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+};
 
-#ifdef __cplusplus
-	extern "C" {
-#endif
+ScriptEditor ScriptEditor_createFromText (
+	GuiObject parent,
+	Editor editor,   // the scripting environment; if NULL, the scripting environment consists of the global windows
+	const wchar *initialText   // may be NULL
+);
 
-#define ScriptEditor__parents(Klas) TextEditor__parents(Klas) Thing_inherit (Klas, TextEditor)
-Thing_declare1 (ScriptEditor);
+ScriptEditor ScriptEditor_createFromScript (
+	GuiObject parent,
+	Editor editor,
+	Script script
+);
 
-#define ScriptEditor__members(Klas) TextEditor__members(Klas) \
-	wchar_t *environmentName; \
-	Editor_Table editorClass; \
-	Interpreter interpreter; \
-	Any argsDialog;
-#define ScriptEditor__methods(Klas) TextEditor__methods(Klas)
-Thing_declare2 (ScriptEditor, TextEditor);
-
-ScriptEditor ScriptEditor_createFromText (GuiObject parent, Any editor, const wchar_t *initialText);
-	/* 'initalText' may be NULL. */
-ScriptEditor ScriptEditor_createFromScript (GuiObject parent, Any voidEditor, Script script);
-
-int ScriptEditors_dirty (void);   /* Are there any modified and unsaved scripts? Ask before quitting the program. */
-
-#ifdef __cplusplus
-	}
-#endif
+int ScriptEditors_dirty (void);   // are there any modified and unsaved scripts? Ask before quitting the program.
 
 /* End of file ScriptEditor.h */
 #endif

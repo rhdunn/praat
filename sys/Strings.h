@@ -19,39 +19,25 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
-
-#ifndef _Data_h_
-	#include "Data.h"
-#endif
+#include "Data.h"
 #include "Strings_def.h"
 
-#ifdef __cplusplus
-	extern "C" {
-#endif
-
-#define Strings_methods Data_methods
+#define Strings__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (Strings, Data);
 
-Strings Strings_createAsFileList (const wchar_t *path);
-Strings Strings_createAsDirectoryList (const wchar_t *path);
+Strings Strings_createAsFileList (const wchar *path);
+Strings Strings_createAsDirectoryList (const wchar *path);
 Strings Strings_readFromRawTextFile (MelderFile file);
-int Strings_writeToRawTextFile (Strings me, MelderFile file);
+void Strings_writeToRawTextFile (Strings me, MelderFile file);
 
 void Strings_randomize (Strings me);
-int Strings_genericize (Strings me);
-int Strings_nativize (Strings me);
+void Strings_genericize (Strings me);
+void Strings_nativize (Strings me);
 void Strings_sort (Strings me);
 
 void Strings_remove (Strings me, long position);
-int Strings_replace (Strings me, long position, const wchar_t *text);
-int Strings_insert (Strings me, long position, const wchar_t *text);
-
-#ifdef __cplusplus
-	}
-#endif
+void Strings_replace (Strings me, long position, const wchar *text);
+void Strings_insert (Strings me, long position, const wchar *text);
 
 /* End of file Strings.h */
 #endif

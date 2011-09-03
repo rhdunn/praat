@@ -2,7 +2,7 @@
 #define _TableOfReal_h_
 /* TableOfReal.h
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,38 +19,22 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2009/01/18
- */
-
 /* TableOfReal inherits from Data */
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
-#ifndef _Strings_h_
-	#include "Strings.h"
-#endif
-#ifndef _Table_h_
-	#include "Table.h"
-#endif
-#ifndef _Interpreter_decl_h_
-	#include "Interpreter_decl.h"
-#endif
+#include "Collection.h"
+#include "Strings.h"
+#include "Table.h"
+#include "Interpreter_decl.h"
 
-/* For the inheritors. */
-#define TableOfReal_members Data_members \
-	long numberOfRows, numberOfColumns; \
-	wchar_t **rowLabels, **columnLabels; \
-	double **data;
-#define TableOfReal_methods Data_methods
-class_create (TableOfReal, Data);
+#include "TableOfReal_def.h"
+#define TableOfReal__methods(klas) Data__methods(klas)
+oo_CLASS_CREATE (TableOfReal, Data);
 
-int TableOfReal_init (I, long numberOfRows, long numberOfColumns);
+void TableOfReal_init (I, long numberOfRows, long numberOfColumns);
 TableOfReal TableOfReal_create (long numberOfRows, long numberOfColumns);
-int TableOfReal_removeRow (I, long irow);
-int TableOfReal_removeColumn (I, long icol);
-int TableOfReal_insertRow (I, long irow);
-int TableOfReal_insertColumn (I, long icol);
+void TableOfReal_removeRow (I, long irow);
+void TableOfReal_removeColumn (I, long icol);
+void TableOfReal_insertRow (I, long irow);
+void TableOfReal_insertColumn (I, long icol);
 void TableOfReal_setRowLabel (I, long irow, const wchar_t *label);
 void TableOfReal_setColumnLabel (I, long icol, const wchar_t *label);
 long TableOfReal_rowLabelToIndex (I, const wchar_t *label);
@@ -60,7 +44,7 @@ double TableOfReal_getColumnStdev (I, long icol);
 
 TableOfReal Table_to_TableOfReal (Table me, long labelColumn);
 Table TableOfReal_to_Table (TableOfReal me, const wchar_t *labelOfFirstColumn);
-int TableOfReal_formula (I, const wchar_t *expression, Interpreter interpreter, Any /* TableOfReal */ target);
+void TableOfReal_formula (I, const wchar_t *expression, Interpreter interpreter, Any /* TableOfReal */ target);
 void TableOfReal_drawAsNumbers (I, Graphics g, long rowmin, long rowmax, int iformat, int precision);
 void TableOfReal_drawAsNumbers_if (I, Graphics g, long rowmin, long rowmax, int iformat, int precision,
 	const wchar_t *conditionFormula, Interpreter interpreter);
@@ -76,7 +60,7 @@ Any TablesOfReal_appendMany (Collection me);
 void TableOfReal_sortByLabel (I, long column1, long column2);
 void TableOfReal_sortByColumn (I, long column1, long column2);
 
-int TableOfReal_writeToHeaderlessSpreadsheetFile (TableOfReal me, MelderFile file);
+void TableOfReal_writeToHeaderlessSpreadsheetFile (TableOfReal me, MelderFile file);
 TableOfReal TableOfReal_readFromHeaderlessSpreadsheetFile (MelderFile file);
 
 TableOfReal TableOfReal_extractRowRanges (I, const wchar_t *ranges);
@@ -94,5 +78,5 @@ TableOfReal TableOfReal_extractColumnsWhere (I, const wchar_t *condition, Interp
 Strings TableOfReal_extractRowLabelsAsStrings (I);
 Strings TableOfReal_extractColumnLabelsAsStrings (I);
 
-#endif
 /* End of file TableOfReal.h */
+#endif

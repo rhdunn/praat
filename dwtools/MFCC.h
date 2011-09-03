@@ -4,7 +4,7 @@
  *
  * Mel Frequency Cepstral Coefficients class.
  *
- * Copyright (C) 1993-2008 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,16 +24,20 @@
 /*
  djmw 20010501
  djmw 20020813 GPL header
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _CC_h_
-	#include "CC.h"
+#include "CC.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
-#define MFCC_members CC_members
-#define MFCC_methods CC_methods
-class_create (MFCC, CC);
+Thing_declare1cpp (MFCC);
+struct structMFCC : public structCC {
+};
+#define MFCC__methods(klas) CC__methods(klas)
+oo_CLASS_CREATE (MFCC, CC);
 
 /*
 	Interpretatation:
@@ -44,12 +48,16 @@ class_create (MFCC, CC);
 MFCC MFCC_create (double tmin, double tmax, long nt, double dt, double t1,
 	long maximumNumberOfCoefficients, double fmin_mel, double fmax_mel);
 
-int MFCC_lifter (MFCC me, long lifter);
+void MFCC_lifter (MFCC me, long lifter);
 /*
 	Lifter the cepstral coefficients:
 	
 	c[i] *= (1 + lifter / 2 * sin (NUMpi * i / lifter))
 
 */
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _MFCC_h_ */

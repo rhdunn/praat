@@ -19,17 +19,18 @@
 
 /*
  djmw 20100929 Initial definition.
+ djmw 20110329 oo_STRINGW -> oo_STRING
  */
 
 #define ooSTRUCT HMM_State
 oo_DEFINE_CLASS (HMM_State, Data)
-	oo_STRINGW(label)
+	oo_STRING(label)
 oo_END_CLASS(HMM_State)
 #undef ooSTRUCT
 
 #define ooSTRUCT HMM_Observation
 oo_DEFINE_CLASS (HMM_Observation, Data)
-	oo_STRINGW(label)
+	oo_STRING(label)
 	oo_OBJECT (GaussianMixture, 1, gm)
 oo_END_CLASS(HMM_Observation)
 #undef ooSTRUCT

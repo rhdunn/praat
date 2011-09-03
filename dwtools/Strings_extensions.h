@@ -2,7 +2,7 @@
 #define _Strings_extensions_h_
 /* Strings_extensions.h
  *
- * Copyright (C) 1993-2010 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,33 +25,27 @@
  djmw 20040629 Strings_append now accepts an Ordered of Strings.
  djmw 20050714 Permutations
  djmw 20050724 Index
- djmw 20101007 Latest modification
+ djmw 20110307 Latest modification
 */
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
 
-#ifndef _Strings_h_
-	#include "Strings.h"
-#endif
+#include "Collection.h"
+#include "Strings.h"
+#include "Permutation.h"
+#include "Index.h"
 
-#ifndef _Permutation_h_
-	#include "Permutation.h"
-#endif
-
-#ifndef _Index_h_
-	#include "Index.h"
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 Strings Strings_createFixedLength (long numberOfStrings);
 
-Strings Strings_append (Ordered me);
+Strings Strings_append (Collection me);
 
-Strings Strings_change (Strings me, wchar_t *search, wchar_t *replace,
+Strings Strings_change (Strings me, const wchar_t *search, const wchar_t *replace,
 	int maximumNumberOfReplaces, long *nmatches, long *nstringmatches,
 	int use_regexp);
 
-int Strings_setString (Strings me, wchar_t *new, long index);
+void Strings_setString (Strings me, const wchar_t *newstr, long index);
 
 Strings strings_to_Strings (wchar_t **strings, long from, long to);
 
@@ -72,5 +66,9 @@ Strings StringsIndex_to_Strings (StringsIndex me);
 Permutation Strings_to_Permutation (Strings me, int sort);
 
 Strings Strings_and_Permutation_permuteStrings (Strings me, Permutation thee);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Strings_extensions_h_ */

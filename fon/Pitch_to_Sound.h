@@ -1,6 +1,6 @@
 /* Pitch_to_Sound.h
  *
- * Copyright (C) 1992-2005 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,24 +17,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2005/02/09
- */
-
-#ifndef _Pitch_h_
-	#include "Pitch.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
+#include "Pitch.h"
+#include "Sound.h"
 
 /* These routines convert a Pitch into a PointProcess, */
 /* then this PointProcess into a Sound (pulse train), */
 /* and then optionally filter this with 6 formants. */
 
-Sound Pitch_to_Sound (I, double tmin, double tmax, int hum);
-int Pitch_play (I, double tmin, double tmax);
-int Pitch_hum (I, double tmin, double tmax);
+Sound Pitch_to_Sound (Pitch me, double tmin, double tmax, int hum);
+void Pitch_play (Pitch me, double tmin, double tmax);
+void Pitch_hum (Pitch me, double tmin, double tmax);
 
 /* This one converts a Pitch into a PitchTier, */
 /* then this PitchTier into a Sound (sine wave), */

@@ -2,7 +2,7 @@
 #define _Tube_h_
 /* Tube.h
  *
- * Copyright (C) 1994-2007 David Weenink
+ * Copyright (C) 1994-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,56 +21,56 @@
 
 /*
  djmw 20030617 Creation
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _Sampled_h_
-	#include "Sampled.h"
+#include "Sampled.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 #include "Tube_def.h"
-#define Tube_members Sampled_members \
-	int maxnSegments; \
-	Tube_Frame frame;
-
-#define Tube_methods Sampled_methods
+#define Tube__methods(klas) Sampled__methods(klas)
 oo_CLASS_CREATE (Tube, Sampled);
 
 /*
 	Tube's as a function of time.
 	Tube_frame: c[1] -> mouth
-	            c[nSegments] -> glottis. 	
+	            c[nSegments] -> glottis.
 */
 
-int Tube_Frame_init (Tube_Frame me, long nSegments, double length);
+void Tube_Frame_init (Tube_Frame me, long nSegments, double length);
 
 void Tube_Frame_free (Tube_Frame me);
 
-int Tube_Frames_rc_into_area (Tube_Frame me, Tube_Frame thee);
+void Tube_Frames_rc_into_area (Tube_Frame me, Tube_Frame thee);
 
-int Tube_init (I, double tmin, double tmax, long nt, double dt, double t1, 
+void Tube_init (I, double tmin, double tmax, long nt, double dt, double t1,
 	long maxnSegments, double defaultLength);
 
-
-#define Area_members Tube_members
-#define Area_methods Tube_methods
-class_create (Area, Tube);
+Thing_declare1cpp (Area);
+struct structArea : public structTube {
+};
+#define Area__methods(klas) Tube__methods(klas)
+Thing_declare2cpp (Area, Tube);
 
 /*
 	Areas as a function of time.
-	units in m^2. 
+	units in m^2.
 */
 
-int Area_init (Area me, double tmin, double tmax, long nt, double dt, double t1, 
+void Area_init (Area me, double tmin, double tmax, long nt, double dt, double t1,
 	long maxnSegments, double defaultLength);
-		
+
 Area Area_create (double tmin, double tmax, long nt, double dt, double t1,
 	long maxnSegments, double defaultLength);
 
-
-#define RC_members Tube_members
-#define RC_methods Tube_methods
-class_create (RC, Tube);
+Thing_declare1cpp (RC);
+struct structRC : public structTube {
+};
+#define RC__methods(klas) Tube__methods(klas)
+Thing_declare2cpp (RC, Tube);
 
 /*
 	Reflection Coefficients as a function of time.
@@ -78,10 +78,14 @@ class_create (RC, Tube);
 */
 
 
-int RC_init (RC me, double tmin, double tmax, long nt, double dt, double t1,
+void RC_init (RC me, double tmin, double tmax, long nt, double dt, double t1,
 	long maxnCoefficients, double defaultLength);
-		
+
 RC RC_create (double tmin, double tmax, long nt, double dt, double t1,
 	long maxnCoefficients, double defaultLength);
-		
-#endif /* _Tube_h_ */
+
+#ifdef __cplusplus
+	}
+#endif
+
+#endif // _Tube_h_

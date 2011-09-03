@@ -2,7 +2,7 @@
 #define _Pattern_h_
 /* Pattern.h
  *
- * Copyright (C) 1993-2007 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,16 +21,17 @@
 
 /*
  djmw 20020813 GPL header
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _Matrix_h_
-	#include "Matrix.h"
+
+#include "Matrix.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
-#define Pattern_members Matrix_members
-#define Pattern_methods Matrix_methods
-class_create (Pattern, Matrix);
+Thing_declare1cpp (Pattern);
 
 /* Attributes:
    xmin				:index of first input node.
@@ -45,22 +46,32 @@ class_create (Pattern, Matrix);
    z[iy][ix]		:the inputs. All elements in interval [0,1].
 */
 
-int Pattern_init (I, long ny, long nx);
+void Pattern_init (I, long ny, long nx);
 
-Any Pattern_create (long ny, long nx);
+Pattern Pattern_create (long ny, long nx);
 
 void Pattern_normalize (I, int choice, double pmin, double pmax);
 /* choice == 1: z[i][j] = (z[i][j]-pmin) / (pmax-pmin);
  * choice == 2: z[i][j] *= 1.0 / sum(j=1,j=nx, z[i][j]-pmin)
- */					
+ */
 
 void Pattern_draw (I, Graphics g, long pattern, double xmin, double xmax,
 	double ymin, double ymax, int garnish);
-	
+
 Pattern Matrix_to_Pattern (I, int join);
 Matrix Pattern_to_Matrix (Pattern me);
 
 int _Pattern_checkElements (Pattern me);
 /* Return 1 if all elements are in interval [0,1] else 0. */
+
+#ifdef __cplusplus
+	}
+
+	struct structPattern : public structMatrix {
+	};
+	#define Pattern__methods(klas) Matrix__methods(klas)
+	Thing_declare2cpp (Pattern, Matrix);
+
+#endif
 
 #endif /* _Pattern_h_ */

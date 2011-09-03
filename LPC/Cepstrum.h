@@ -2,7 +2,7 @@
 #define _Cepstrum_h_
 /* Cepstrum.h
  *
- * Copyright (C) 1994-2007 David Weenink
+ * Copyright (C) 1994-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 /*
  djmw 20010111
  djmw 20020812 GPL header
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
 /*
@@ -35,16 +35,17 @@
 
 */
 
-#ifndef _Matrix_h_
-	#include "Matrix.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
+#include "Matrix.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
-#define Cepstrum_members  Matrix_members
-#define Cepstrum_methods  Matrix_methods
-class_create (Cepstrum, Matrix);
+Thing_declare1cpp (Cepstrum);
+struct structCepstrum : public structMatrix {
+};
+#define Cepstrum__methods(klas)  Matrix__methods(klas)
+Thing_declare2cpp (Cepstrum, Matrix);
 
 /*
 	xmin		// Lowest quefrency.
@@ -86,5 +87,9 @@ void Cepstrum_draw (Cepstrum me, Graphics g, double qmin, double qmax,
 
 Matrix Cepstrum_to_Matrix (Cepstrum me);
 Cepstrum Matrix_to_Cepstrum (Matrix me, long row);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Cepstrum_h_ */

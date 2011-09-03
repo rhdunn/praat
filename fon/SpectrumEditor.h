@@ -2,7 +2,7 @@
 #define _SpectrumEditor_h_
 /* SpectrumEditor.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,28 +19,33 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/06/10
- */
+#include "FunctionEditor.h"
+#include "Spectrum.h"
 
-#ifndef _FunctionEditor_h_
-	#include "FunctionEditor.h"
-#endif
-#ifndef _Spectrum_h_
-	#include "Spectrum.h"
-#endif
+Thing_define (SpectrumEditor, FunctionEditor) {
+	// new data:
+		double minimum, maximum, cursorHeight;
+		double bandSmoothing, dynamicRange;
+		GuiObject publishBandButton, publishSoundButton;
+	// overridden methods:
+		virtual void v_createMenus ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_dataChanged ();
+		virtual void v_draw ();
+		virtual int v_click (double xWC, double yWC, bool shiftKeyPressed);
+		virtual void v_play (double tmin, double tmax);
+		virtual void v_createMenuItems_view (EditorMenu menu);
+		virtual const wchar * v_format_domain () { return L"Frequency domain:"; }
+		virtual const wchar * v_format_short () { return L"%.0f"; }
+		virtual const wchar * v_format_long () { return L"%.2f"; }
+		virtual int v_fixedPrecision_long () { return 2; }
+		virtual const wchar * v_format_units () { return L"hertz"; }
+		virtual const wchar * v_format_totalDuration () { return L"Total bandwidth %.2f hertz"; }
+		virtual const wchar * v_format_window () { return L"Visible part %.2f hertz"; }
+		virtual const wchar * v_format_selection () { return L"%.2f Hz"; }
+};
 
-#define SpectrumEditor__parents(Klas) FunctionEditor__parents(Klas) Thing_inherit (Klas, FunctionEditor)
-Thing_declare1 (SpectrumEditor);
-
-#define SpectrumEditor__members(Klas) FunctionEditor__members(Klas) \
-	double minimum, maximum, cursorHeight; \
-	double bandSmoothing, dynamicRange; \
-	GuiObject publishBandButton, publishSoundButton;
-#define SpectrumEditor__methods(Klas) FunctionEditor__methods(Klas)
-Thing_declare2 (SpectrumEditor, FunctionEditor);
-
-SpectrumEditor SpectrumEditor_create (GuiObject parent, const wchar_t *title, Any data);
+SpectrumEditor SpectrumEditor_create (GuiObject parent, const wchar *title, Spectrum data);
 
 void SpectrumEditor_prefs (void);
 

@@ -2,7 +2,7 @@
 #define _KlattGridEditors_h_
 /* KlattGridEditors.h
  *
- * Copyright (C) 2009 David Weenink
+ * Copyright (C) 2009-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,163 +19,263 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
-  djmw 20090123, 20090420, 20090630
-*/
+#include "KlattGrid.h"
+#include "PitchTier.h"
+#include "IntensityTier.h"
+#include "RealTierEditor.h"
+#include "FormantGridEditor.h"
 
-#ifndef _KlattGrid_h_
-	#include "KlattGrid.h"
-#endif
-#ifndef _PitchTier_h_
-	#include "PitchTier.h"
-#endif
-#ifndef _IntensityTier_h_
-	#include "IntensityTier.h"
-#endif
-#ifndef _RealTierEditor_h_
-	#include "RealTierEditor.h"
-#endif
-#ifndef _FormantGridEditor_h_
-	#include "FormantGridEditor.h"
-#endif
 
-#define KlattGrid_realTierEditor__parents(Klas) RealTierEditor__parents(Klas) Thing_inherit (Klas, RealTierEditor)
-Thing_declare1 (KlattGrid_realTierEditor);
-#define KlattGrid_realTierEditor__members(Klas) RealTierEditor__members(Klas) \
-	KlattGrid klattgrid;
-#define KlattGrid_realTierEditor__methods(Klas) RealTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_realTierEditor, RealTierEditor);
+Thing_define (KlattGrid_realTierEditor, RealTierEditor) {
+	// new data:
+		KlattGrid klattgrid;
+	// overridden methods:
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_play (double tmin, double tmax);
+};
 
-int KlattGrid_realTierEditor_init (KlattGrid_realTierEditor me, GuiObject parent, const wchar_t *title, KlattGrid klattgrid, RealTier data);
+void KlattGrid_realTierEditor_init (KlattGrid_realTierEditor me, GuiObject parent, const wchar_t *title, KlattGrid klattgrid, RealTier data);
 
-#define KlattGrid_openPhaseTierEditor__parents(Klas) KlattGrid_realTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_realTierEditor)
-Thing_declare1 (KlattGrid_openPhaseTierEditor);
-#define KlattGrid_openPhaseTierEditor__members(Klas) KlattGrid_realTierEditor__members(Klas)
-#define KlattGrid_openPhaseTierEditor__methods(Klas) KlattGrid_realTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_openPhaseTierEditor, KlattGrid_realTierEditor);
+
+Thing_define (KlattGrid_openPhaseTierEditor, KlattGrid_realTierEditor) {
+	// overridden methods:
+		virtual double v_minimumLegalValue () { return 0.0; }
+		virtual double v_maximumLegalValue () { return 1.0; }
+		virtual const wchar * v_quantityText () { return L"Open phase (0..1)"; }
+		virtual const wchar * v_quantityKey () { return L"Open phase"; }
+		virtual const wchar * v_rightTickUnits () { return L""; }
+		virtual double v_defaultYmin () { return 0.0; }
+		virtual double v_defaultYmax () { return 1.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set open phase range..."; }
+		virtual const wchar * v_defaultYminText () { return L"0.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"1.0"; }
+		virtual const wchar * v_yminText () { return L"Minimum (0..1)"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum (0..1)"; }
+		virtual const wchar * v_yminKey () { return L"Minimum"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum"; }
+};
 
 KlattGrid_openPhaseTierEditor KlattGrid_openPhaseTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_collisionPhaseTierEditor__parents(Klas) KlattGrid_realTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_realTierEditor)
-Thing_declare1 (KlattGrid_collisionPhaseTierEditor);
-#define KlattGrid_collisionPhaseTierEditor__members(Klas) KlattGrid_realTierEditor__members(Klas)
-#define KlattGrid_collisionPhaseTierEditor__methods(Klas) KlattGrid_realTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_collisionPhaseTierEditor, KlattGrid_realTierEditor);
+
+Thing_define (KlattGrid_collisionPhaseTierEditor, KlattGrid_realTierEditor) {
+	// overridden methods:
+		virtual double v_minimumLegalValue () { return 0.0; }
+		virtual double v_maximumLegalValue () { return 1.0; }
+		virtual const wchar * v_quantityText () { return L"Collision phase (0..1)"; }
+		virtual const wchar * v_quantityKey () { return L"Collision phase"; }
+		virtual const wchar * v_rightTickUnits () { return L""; }
+		virtual double v_defaultYmin () { return 0.0; }
+		virtual double v_defaultYmax () { return 0.1; }
+		virtual const wchar * v_setRangeTitle () { return L"Set collision phase range..."; }
+		virtual const wchar * v_defaultYminText () { return L"0.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"0.1"; }
+		virtual const wchar * v_yminText () { return L"Minimum (0..1)"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum (0..1)"; }
+		virtual const wchar * v_yminKey () { return L"Minimum"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum"; }
+};
 
 KlattGrid_collisionPhaseTierEditor KlattGrid_collisionPhaseTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_power1TierEditor__parents(Klas) KlattGrid_realTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_realTierEditor)
-Thing_declare1 (KlattGrid_power1TierEditor);
-#define KlattGrid_power1TierEditor__members(Klas) KlattGrid_realTierEditor__members(Klas)
-#define KlattGrid_power1TierEditor__methods(Klas) KlattGrid_realTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_power1TierEditor, KlattGrid_realTierEditor);
+
+Thing_define (KlattGrid_power1TierEditor, KlattGrid_realTierEditor) {
+	// overridden methods:
+		virtual double v_minimumLegalValue () { return 0.0; }
+		virtual const wchar * v_quantityText () { return L"Power1"; }
+		virtual const wchar * v_quantityKey () { return L"Power1"; }
+		virtual const wchar * v_rightTickUnits () { return L""; }
+		virtual double v_defaultYmin () { return 0.0; }
+		virtual double v_defaultYmax () { return 4.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set power1 range..."; }
+		virtual const wchar * v_defaultYminText () { return L"0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"4"; }
+		virtual const wchar * v_yminText () { return L"Minimum"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum"; }
+		virtual const wchar * v_yminKey () { return L"Minimum"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum"; }
+};
 
 KlattGrid_power1TierEditor KlattGrid_power1TierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_power2TierEditor__parents(Klas) KlattGrid_realTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_realTierEditor)
-Thing_declare1 (KlattGrid_power2TierEditor);
-#define KlattGrid_power2TierEditor__members(Klas) KlattGrid_realTierEditor__members(Klas)
-#define KlattGrid_power2TierEditor__methods(Klas) KlattGrid_realTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_power2TierEditor, KlattGrid_realTierEditor);
+
+Thing_define (KlattGrid_power2TierEditor, KlattGrid_realTierEditor) {
+	// overridden methods:
+		virtual double v_minimumLegalValue () { return 0.0; }
+		virtual const wchar * v_quantityText () { return L"Power2"; }
+		virtual const wchar * v_quantityKey () { return L"Power2"; }
+		virtual const wchar * v_rightTickUnits () { return L""; }
+		virtual double v_defaultYmin () { return 0.0; }
+		virtual double v_defaultYmax () { return 5.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set power2 range..."; }
+		virtual const wchar * v_defaultYminText () { return L"0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"5"; }
+		virtual const wchar * v_yminText () { return L"Minimum"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum"; }
+		virtual const wchar * v_yminKey () { return L"Minimum"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum"; }
+};
 
 KlattGrid_power2TierEditor KlattGrid_power2TierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_doublePulsingTierEditor__parents(Klas) KlattGrid_realTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_realTierEditor)
-Thing_declare1 (KlattGrid_doublePulsingTierEditor);
-#define KlattGrid_doublePulsingTierEditor__members(Klas) KlattGrid_realTierEditor__members(Klas)
-#define KlattGrid_doublePulsingTierEditor__methods(Klas) KlattGrid_realTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_doublePulsingTierEditor, KlattGrid_realTierEditor);
+
+Thing_define (KlattGrid_doublePulsingTierEditor, KlattGrid_realTierEditor) {
+	// overridden methods:
+		virtual double v_minimumLegalValue () { return 0.0; }
+		virtual double v_maximumLegalValue () { return 1.0; }
+		virtual const wchar * v_quantityText () { return L"Double pulsing (0..1)"; }
+		virtual const wchar * v_quantityKey () { return L"Double pulsing"; }
+		virtual const wchar * v_rightTickUnits () { return L""; }
+		virtual double v_defaultYmin () { return 0.0; }
+		virtual double v_defaultYmax () { return 1.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set double pulsing range..."; }
+		virtual const wchar * v_defaultYminText () { return L"0.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"1.0"; }
+		virtual const wchar * v_yminText () { return L"Minimum (0..1)"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum (0..1)"; }
+		virtual const wchar * v_yminKey () { return L"Minimum"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum"; }
+};
 
 KlattGrid_doublePulsingTierEditor KlattGrid_doublePulsingTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_pitchTierEditor__parents(Klas) KlattGrid_realTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_realTierEditor)
-Thing_declare1 (KlattGrid_pitchTierEditor);
-#define KlattGrid_pitchTierEditor__members(Klas) KlattGrid_realTierEditor__members(Klas)
-#define KlattGrid_pitchTierEditor__methods(Klas) KlattGrid_realTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_pitchTierEditor, KlattGrid_realTierEditor);
+
+Thing_define (KlattGrid_pitchTierEditor, KlattGrid_realTierEditor) {
+	// overridden methods:
+		void v_createHelpMenuItems (EditorMenu menu);
+		virtual double v_minimumLegalValue () { return 0.0; }
+		virtual const wchar * v_quantityText () { return L"Frequency (Hz)"; }
+		virtual const wchar * v_quantityKey () { return L"Frequency"; }
+		virtual const wchar * v_rightTickUnits () { return L" Hz"; }
+		virtual double v_defaultYmin () { return 50.0; }
+		virtual double v_defaultYmax () { return 600.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set frequency range..."; }
+		virtual const wchar * v_defaultYminText () { return L"50.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"600.0"; }
+		virtual const wchar * v_yminText () { return L"Minimum frequency (Hz)"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum frequency (Hz)"; }
+		virtual const wchar * v_yminKey () { return L"Minimum frequency"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum frequency"; }
+};
 
 KlattGrid_pitchTierEditor KlattGrid_pitchTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_flutterTierEditor__parents(Klas) KlattGrid_realTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_realTierEditor)
-Thing_declare1 (KlattGrid_flutterTierEditor);
-#define KlattGrid_flutterTierEditor__members(Klas) KlattGrid_realTierEditor__members(Klas)
-#define KlattGrid_flutterTierEditor__methods(Klas) KlattGrid_realTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_flutterTierEditor, KlattGrid_realTierEditor);
+
+Thing_define (KlattGrid_flutterTierEditor, KlattGrid_realTierEditor) {
+	// overridden methods:
+		virtual double v_minimumLegalValue () { return 0.0; }
+		virtual double v_maximumLegalValue () { return 1.0; }
+		virtual const wchar * v_quantityText () { return L"Flutter (0..1)"; }
+		virtual const wchar * v_quantityKey () { return L"Flutter"; }
+		virtual const wchar * v_rightTickUnits () { return L""; }
+		virtual double v_defaultYmin () { return 0.0; }
+		virtual double v_defaultYmax () { return 1.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set flutter range..."; }
+		virtual const wchar * v_defaultYminText () { return L"0.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"1.0"; }
+		virtual const wchar * v_yminText () { return L"Minimum (0..1)"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum (0..1)"; }
+		virtual const wchar * v_yminKey () { return L"Minimum"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum"; }
+};
 
 KlattGrid_flutterTierEditor KlattGrid_flutterTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_intensityTierEditor__parents(Klas) KlattGrid_realTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_realTierEditor)
-Thing_declare1 (KlattGrid_intensityTierEditor);
-#define KlattGrid_intensityTierEditor__members(Klas) KlattGrid_realTierEditor__members(Klas)
-#define KlattGrid_intensityTierEditor__methods(Klas) KlattGrid_realTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_intensityTierEditor, KlattGrid_realTierEditor);
 
-int KlattGrid_intensityTierEditor_init (KlattGrid_intensityTierEditor me, GuiObject parent, const wchar_t *title, KlattGrid klattgrid, RealTier tier);
+Thing_define (KlattGrid_intensityTierEditor, KlattGrid_realTierEditor) {
+	// overridden methods:
+		void v_createHelpMenuItems (EditorMenu menu);
+		virtual const wchar * v_quantityText () { return L"Intensity (dB)"; }
+		virtual const wchar * v_quantityKey () { return L"Intensity"; }
+		virtual const wchar * v_rightTickUnits () { return L" dB"; }
+		virtual double v_defaultYmin () { return 50.0; }
+		virtual double v_defaultYmax () { return 100.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set intensity range..."; }
+		virtual const wchar * v_defaultYminText () { return L"50.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"100.0"; }
+		virtual const wchar * v_yminText () { return L"Minimum intensity (dB)"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum intensity (dB)"; }
+		virtual const wchar * v_yminKey () { return L"Minimum intensity"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum intensity"; }
+};
 
-#define KlattGrid_decibelTierEditor__parents(Klas) KlattGrid_intensityTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_intensityTierEditor)
-Thing_declare1 (KlattGrid_decibelTierEditor);
-#define KlattGrid_decibelTierEditor__members(Klas) KlattGrid_intensityTierEditor__members(Klas)
-#define KlattGrid_decibelTierEditor__methods(Klas) KlattGrid_intensityTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_decibelTierEditor, KlattGrid_intensityTierEditor);
+void KlattGrid_intensityTierEditor_init (KlattGrid_intensityTierEditor me, GuiObject parent, const wchar_t *title, KlattGrid klattgrid, RealTier tier);
+
+
+Thing_define (KlattGrid_decibelTierEditor, KlattGrid_intensityTierEditor) {
+	// overridden methods:
+		virtual const wchar * v_quantityText () { return L"Amplitude (dB)"; }
+		virtual const wchar * v_quantityKey () { return L"Amplitude"; }
+		virtual const wchar * v_rightTickUnits () { return L" dB"; }
+		virtual double v_defaultYmin () { return -30.0; }
+		virtual double v_defaultYmax () { return 30.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set amplitude range..."; }
+		virtual const wchar * v_defaultYminText () { return L"-30.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"30.0"; }
+		virtual const wchar * v_yminText () { return L"Minimum amplitude (dB)"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum amplitude (dB)"; }
+		virtual const wchar * v_yminKey () { return L"Minimum amplitude"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum amplitude"; }
+};
 
 KlattGrid_decibelTierEditor KlattGrid_decibelTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid, RealTier data);
 
-#define KlattGrid_voicingAmplitudeTierEditor__parents(Klas) KlattGrid_intensityTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_intensityTierEditor)
-Thing_declare1 (KlattGrid_voicingAmplitudeTierEditor);
-#define KlattGrid_voicingAmplitudeTierEditor__members(Klas) KlattGrid_intensityTierEditor__members(Klas)
-#define KlattGrid_voicingAmplitudeTierEditor__methods(Klas) KlattGrid_intensityTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_voicingAmplitudeTierEditor, KlattGrid_intensityTierEditor);
+
+Thing_define (KlattGrid_voicingAmplitudeTierEditor, KlattGrid_intensityTierEditor) {
+};
 
 KlattGrid_voicingAmplitudeTierEditor KlattGrid_voicingAmplitudeTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_aspirationAmplitudeTierEditor__parents(Klas) KlattGrid_intensityTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_intensityTierEditor)
-Thing_declare1 (KlattGrid_aspirationAmplitudeTierEditor);
-#define KlattGrid_aspirationAmplitudeTierEditor__members(Klas) KlattGrid_intensityTierEditor__members(Klas)
-#define KlattGrid_aspirationAmplitudeTierEditor__methods(Klas) KlattGrid_intensityTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_aspirationAmplitudeTierEditor, KlattGrid_intensityTierEditor);
+
+Thing_define (KlattGrid_aspirationAmplitudeTierEditor, KlattGrid_intensityTierEditor) {
+};
 
 KlattGrid_aspirationAmplitudeTierEditor KlattGrid_aspirationAmplitudeTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_breathinessAmplitudeTierEditor__parents(Klas) KlattGrid_intensityTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_intensityTierEditor)
-Thing_declare1 (KlattGrid_breathinessAmplitudeTierEditor);
-#define KlattGrid_breathinessAmplitudeTierEditor__members(Klas) KlattGrid_intensityTierEditor__members(Klas)
-#define KlattGrid_breathinessAmplitudeTierEditor__methods(Klas) KlattGrid_intensityTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_breathinessAmplitudeTierEditor, KlattGrid_intensityTierEditor);
+
+Thing_define (KlattGrid_breathinessAmplitudeTierEditor, KlattGrid_intensityTierEditor) {
+};
 
 KlattGrid_breathinessAmplitudeTierEditor KlattGrid_breathinessAmplitudeTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_spectralTiltTierEditor__parents(Klas) KlattGrid_intensityTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_intensityTierEditor)
-Thing_declare1 (KlattGrid_spectralTiltTierEditor);
-#define KlattGrid_spectralTiltTierEditor__members(Klas) KlattGrid_intensityTierEditor__members(Klas)
-#define KlattGrid_spectralTiltTierEditor__methods(Klas) KlattGrid_intensityTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_spectralTiltTierEditor, KlattGrid_intensityTierEditor);
+
+Thing_define (KlattGrid_spectralTiltTierEditor, KlattGrid_intensityTierEditor) {
+	// overridden methods:
+		virtual double v_defaultYmin () { return -50.0; }
+		virtual double v_defaultYmax () { return 10.0; }
+		virtual const wchar * v_defaultYminText () { return L"-50.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"10.0"; }
+};
 
 KlattGrid_spectralTiltTierEditor KlattGrid_spectralTiltTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_fricationBypassTierEditor__parents(Klas) KlattGrid_intensityTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_intensityTierEditor)
-Thing_declare1 (KlattGrid_fricationBypassTierEditor);
-#define KlattGrid_fricationBypassTierEditor__members(Klas) KlattGrid_intensityTierEditor__members(Klas)
-#define KlattGrid_fricationBypassTierEditor__methods(Klas) KlattGrid_intensityTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_fricationBypassTierEditor, KlattGrid_intensityTierEditor);
+
+Thing_define (KlattGrid_fricationBypassTierEditor, KlattGrid_intensityTierEditor) {
+	// overridden methods:
+		virtual double v_defaultYmin () { return -50.0; }
+		virtual double v_defaultYmax () { return 10.0; }
+		virtual const wchar * v_defaultYminText () { return L"-50.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"10.0"; }
+};
 
 KlattGrid_fricationBypassTierEditor KlattGrid_fricationBypassTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_fricationAmplitudeTierEditor__parents(Klas) KlattGrid_intensityTierEditor__parents(Klas) Thing_inherit (Klas, KlattGrid_intensityTierEditor)
-Thing_declare1 (KlattGrid_fricationAmplitudeTierEditor);
-#define KlattGrid_fricationAmplitudeTierEditor__members(Klas) KlattGrid_intensityTierEditor__members(Klas)
-#define KlattGrid_fricationAmplitudeTierEditor__methods(Klas) KlattGrid_intensityTierEditor__methods(Klas)
-Thing_declare2 (KlattGrid_fricationAmplitudeTierEditor, KlattGrid_intensityTierEditor);
+
+Thing_define (KlattGrid_fricationAmplitudeTierEditor, KlattGrid_intensityTierEditor) {
+};
 
 KlattGrid_fricationAmplitudeTierEditor KlattGrid_fricationAmplitudeTierEditor_create (GuiObject parent, const wchar_t *title, KlattGrid klattgrid);
 
-#define KlattGrid_formantGridEditor__parents(Klas) FormantGridEditor__parents(Klas) Thing_inherit (Klas, FormantGridEditor)
-Thing_declare1 (KlattGrid_formantGridEditor);
-#define KlattGrid_formantGridEditor__members(Klas) FormantGridEditor__members(Klas) \
-	KlattGrid klattgrid;
-#define KlattGrid_formantGridEditor__methods(Klas) FormantGridEditor__methods(Klas)
-Thing_declare2 (KlattGrid_formantGridEditor, FormantGridEditor);
+
+Thing_define (KlattGrid_formantGridEditor, FormantGridEditor) {
+	// new data:
+		KlattGrid klattgrid;
+	// overridden methods:
+		virtual void v_play (double tmin, double tmax);
+		virtual bool v_hasSourceMenu () { return false; }
+};
 
 KlattGrid_formantGridEditor KlattGrid_formantGridEditor_create (GuiObject parent, const wchar_t *title, KlattGrid data, int formantType);
 
-#endif /* _KlattGridEditors_h_ */
 
+#endif // _KlattGridEditors_h_

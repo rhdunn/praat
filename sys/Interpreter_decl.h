@@ -2,7 +2,7 @@
 #define _Interpreter_decl_h_
 /* Interpreter_decl.h
  *
- * Copyright (C) 1993-2009 Paul Boersma
+ * Copyright (C) 1993-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,11 +19,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2009/01/18
- */
-
-typedef struct structInterpreter *Interpreter;
+Thing_declare (Interpreter);
 
 /* End of file Interpreter_decl.h */
 #endif

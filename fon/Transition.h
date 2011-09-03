@@ -2,7 +2,7 @@
 #define _Transition_h_
 /* Transition.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,38 +19,25 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/08/12
- */
-
 /* Transition inherits from Data */
-#ifndef _Matrix_h_
-	#include "Matrix.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
+#include "Matrix.h"
+#include "Graphics.h"
 
-/* For the inheritors. */
-#define Transition_members Data_members \
-	long numberOfStates; \
-	wchar_t **stateLabels; \
-	double **data;
-#define Transition_methods Data_methods
-class_create (Transition, Data);
+#include "Transition_def.h"
+#define Transition__methods(klas) Data__methods(klas)
+oo_CLASS_CREATE (Transition, Data);
 
-int Transition_init (I, long numberOfStates);
+void Transition_init (I, long numberOfStates);
 Transition Transition_create (long numberOfStates);
 
-int Transition_formula (I, const wchar_t *formula);
+void Transition_formula (I, const wchar *formula);
 void Transition_drawAsNumbers (I, Graphics g, int iformat, int precision);
 
-int Transition_eigen (Transition me, Matrix *eigenvectors, Matrix *eigenvalues);
+void Transition_eigen (Transition me, Matrix *eigenvectors, Matrix *eigenvalues);
 Transition Transition_power (Transition me, long power);
 
 Matrix Transition_to_Matrix (Transition me);
 Transition Matrix_to_Transition (Matrix me);
 
+/* End of file Transition.h */
 #endif
-
-/* End of file TableOfReal.h */

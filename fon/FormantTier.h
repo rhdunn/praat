@@ -19,27 +19,15 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/01
- */
-
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
-#ifndef _Formant_h_
-	#include "Formant.h"
-#endif
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
+#include "PointProcess.h"
+#include "Formant.h"
+#include "TableOfReal.h"
+#include "Sound.h"
 
 #include "FormantTier_def.h"
-#define FormantPoint_methods Data_methods
+#define FormantPoint__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (FormantPoint, Data);
-#define FormantTier_methods Function_methods
+#define FormantTier__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (FormantTier, Function);
 
 FormantPoint FormantPoint_create (double time);

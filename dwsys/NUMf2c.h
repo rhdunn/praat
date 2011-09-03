@@ -3,7 +3,7 @@
  /* NUMf2c.h  --  Standard Fortran to C header file
  *                Auxiliary f2c routines.
  *
- * Copyright (C) 1994-2002 David Weenink
+ * Copyright (C) 1994-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,29 +22,38 @@
 
 /*
  djmw 20020923 GPL header
+ djmw 20110308 Latest modification
 */
+
+#ifdef __cplusplus
+	extern "C" {
+#endif
 
 double d_sign(double *a, double *b);
 /*
 	returns sign(b)*fabs(a)
 */
 
-long int lsame_(char *ca, char *cb);
+long int lsame_(const char *ca, const char *cb);
 /*
     Returns true if ca[0] is the same letter as cb[0] regardless of case.
 */
 
 double pow_di(double *ap, long *bp);
 
-void s_cat(char *lp, char *rpp[], long rnp[], long *np, long ll);
+void s_cat(char *lp, const char *rpp[], long rnp[], long *np, long ll);
 /* Unless compiled with -DNO_OVERWRITE, this variant of s_cat allows the
  * target of a concatenation to appear on its right-hand side (contrary
  * to the Fortran 77 Standard, but in accordance with Fortran 90).
  */
 
-long s_cmp(char *a0, char *b0, long la, long lb);
+long s_cmp(const char *a0, const char *b0, long la, long lb);
 
 void s_copy(register char *a, register char *b, long la, long lb);
 /* assign strings:  a = b (when no null byte at end of string)*/
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _NUMf2c_h_ */

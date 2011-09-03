@@ -19,26 +19,21 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
+#include "HyperPage.h"
 
-#ifndef _HyperPage_h_
-	#include "HyperPage.h"
-#endif
-
-#ifdef __cplusplus
-	extern "C" {
-#endif
-
-#define ButtonEditor__parents(Klas) HyperPage__parents(Klas) Thing_inherit (Klas, HyperPage)
-Thing_declare1 (ButtonEditor);
+Thing_define (ButtonEditor, HyperPage) {
+	// new data:
+		int show;
+		GuiObject button1, button2, button3, button4, button5;
+	// overridden methods:
+		virtual bool v_scriptable () { return false; }
+		virtual void v_createChildren ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_draw ();
+		virtual int v_goToPage (const wchar *title);
+};
 
 ButtonEditor ButtonEditor_create (GuiObject parent);
-
-#ifdef __cplusplus
-	}
-#endif
 
 /* End of file ButtonEditor.h */
 #endif

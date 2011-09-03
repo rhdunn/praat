@@ -2,7 +2,7 @@
 #define _DTW_h_
 /* DTW.h
  *
- * Copyright (C) 1993-2007 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,30 +21,21 @@
 
 /*
  djmw 20020813 GPL header
- djmw 20071204 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _Spectrogram_h_
-	#include "Spectrogram.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-#ifndef _Polygon_h
-	#include "Polygon.h"
-#endif
-#ifndef _Pitch_h
-	#include "Pitch.h"
-#endif
-#ifndef _DurationTier_h
-	#include "DurationTier.h"
-#endif
-#ifndef _Sound_h
-	#include "Sound.h"
+#include "Spectrogram.h"
+#include "Polygon.h"
+#include "Pitch.h"
+#include "DurationTier.h"
+#include "Sound.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 #include "DTW_def.h"
-#define DTW_methods Matrix_methods
+#define DTW__methods(klas) Matrix__methods(klas)
 oo_CLASS_CREATE (DTW, Matrix);
 
 #define DTW_SAKOECHIBA 1
@@ -57,11 +48,13 @@ oo_CLASS_CREATE (DTW, Matrix);
 #define DTW_X 4
 #define DTW_Y 6
 
-int DTW_Path_Query_init (DTW_Path_Query me, long ny, long nx);
+void DTW_Path_Query_init (DTW_Path_Query me, long ny, long nx);
 
 /* Prototype on y-axis and test on x-axis */
-Any DTW_create (double tminp, double tmaxp, long ntp, double dtp, double t1p,
+DTW DTW_create (double tminp, double tmaxp, long ntp, double dtp, double t1p,
 	double tminc, double tmaxc, long ntc, double dtc, double t1c);
+
+void DTW_setWeights (DTW me, double wx, double wy, double wd);
 	
 DTW DTW_swapAxes (DTW me);
 
@@ -94,8 +87,8 @@ double DTW_getPathY (DTW me, double tx);
 /*
 	Get the time Y-time that corresponds to time t (along X).
 */
-double DTW_getYTime (DTW me, double tx);
-double DTW_getXTime (DTW me, double ty);
+double DTW_getYTimeFromXTime (DTW me, double tx);
+double DTW_getXTimeFromYTime (DTW me, double ty);
 
 long DTW_getMaximumConsecutiveSteps (DTW me, int direction);
 
@@ -116,8 +109,9 @@ void DTW_and_Sounds_draw (DTW me, Sound yy, Sound xx, Graphics g, double xmin, d
 void DTW_and_Sounds_drawWarpX (DTW me, Sound yy, Sound xx, Graphics g, double xmin, double xmax, 
 	double ymin, double ymax, double tx, int garnish);
 	
-Polygon DTW_to_Polygon_band (DTW me, double adjustment_window_duration, int adjustment_window_includes_end);
-Polygon DTW_to_Polygon_slopes (DTW me, long nsteps_xory, long nsteps_xandy);
+Polygon DTW_to_Polygon_globalConstraints (DTW me, double sakoeChibaBand, double itakuraSlope, bool useItakuraSlope);
+Polygon DTW_to_Polygon_band (DTW me, double sakoeChibaBand, int sakoeChibaBand_includes_end);
+Polygon DTW_to_Polygon_localConstraints (DTW me, long nsteps_xory, long nsteps_xandy);
 	
 Matrix DTW_distancesToMatrix (DTW me);
 
@@ -129,5 +123,11 @@ DTW Spectrograms_to_DTW (Spectrogram me, Spectrogram thee, int matchStart,
 DTW Pitches_to_DTW (Pitch me, Pitch thee, double vuv_costs, double time_weight, int matchStart, int matchEnd, int slope);
 
 DurationTier DTW_to_DurationTier (DTW me);
+
+void DTW_and_Matrix_replace (DTW me, Matrix thee);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _DTW_h_ */

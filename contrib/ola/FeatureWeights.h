@@ -1,6 +1,5 @@
 #ifndef _FeatureWeights_h_
 #define _FeatureWeights_h_
-
 /* FeatureWeights.h
  *
  * Copyright (C) 2007-2008 Ola Söder
@@ -22,6 +21,7 @@
 
 /*
  * os 20080529 Initial release
+ * pb 2011/03/08
  */
 
 /////////////////////////////////////////////////////
@@ -34,31 +34,29 @@
 #include "Categories.h"
 
 /////////////////////////////////////////////////////
+// Miscs                                           //
+/////////////////////////////////////////////////////
+
+#include "OlaP.h"
+
+/////////////////////////////////////////////////////
 // Praat specifics                                 //
 /////////////////////////////////////////////////////
 
 #include "FeatureWeights_def.h"
-#define FeatureWeights_methods Data_methods
+#define FeatureWeights__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (FeatureWeights, Data);
-
-/////////////////////////////////////////////////////
-// Miscs                                           //
-/////////////////////////////////////////////////////
-
-#include "KNN.h"
-#include "OlaP.h"
 
 /////////////////////////////////////////////////////
 // Private definitions and macros                  //
 /////////////////////////////////////////////////////
 
-#define FRIENDS(x,y) !SimpleString_compare(x,y)
-#define ENEMIES(x,y) SimpleString_compare(x,y)
+#define FeatureWeights_areFriends(x,y)  ! SimpleString_compare (x,y)
+#define FeatureWeights_areEnemies(x,y)  SimpleString_compare (x,y)
 
 /////////////////////////////////////////////////////
 // Prototypes                                      //
 /////////////////////////////////////////////////////
-
 
 // Create
 FeatureWeights FeatureWeights_create
@@ -82,44 +80,6 @@ FeatureWeights FeatureWeights_compute
     long k                  // k(!)
 );
 
-// Compute feature weights (wrapper), evaluate using folding
-FeatureWeights FeatureWeights_computeWrapperInt
-(
-    KNN me,                 // Classifier
-    long k,                 // k(!)
-    int d,                  // distance weighting
-    long nseeds,            // the number of seeds
-    double alfa,            // shrinkage factor
-    double stop,            // stop at
-    int mode,               // mode (co/serial)
-    int emode               // evaluation mode (10-fold/L1O)
-);
-
-// Compute feature weights (wrapper), evaluate using separate test set
-FeatureWeights FeatureWeights_computeWrapperExt
-(
-    KNN nn,                 // Classifier
-    Pattern pp,             // test pattern
-    Categories c,           // test categories
-    long k,                 // k(!)
-    int d,                  // distance weighting
-    long nseeds,            // the number of seeds
-    double alfa,            // shrinkage factor
-    double stop,            // stop at
-    int mode                // mode (co/serial)
-);
-
-// Evaluate feature weights, wrapper aux.
-double FeatureWeights_evaluate
-(
-    FeatureWeights fws,     // Weights to evaluate
-    KNN nn,                 // Classifier
-    Pattern pp,             // test pattern
-    Categories c,           // test categories
-    long k,                 // k(!)
-    int d                   // distance weighting
-);
-
 // Compute feature weights according to the RELIEF-F algorithm
 FeatureWeights FeatureWeights_computeRELIEF
 (
@@ -128,4 +88,5 @@ FeatureWeights FeatureWeights_computeRELIEF
     long k                  // k(!)
 );
 
-#endif /* _FeatureWeights_h_ */
+/* End of file FeatureWeights.h */
+#endif

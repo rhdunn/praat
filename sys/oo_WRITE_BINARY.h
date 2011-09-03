@@ -17,18 +17,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2002/03/07 GPL
- * pb 2003/02/07 added oo_FILE and oo_DIR (empty)
- * pb 2006/05/29 added version to oo_OBJECT and oo_COLLECTION
- * pb 2007/06/09 wchar_t
- * pb 2008/01/19 NUM##storage
- * pb 2009/03/21 modern enums
- * pb 2011/03/03 removed oo_STRINGx
- */
-
 #include "oo_undef.h"
-
 
 #define oo_SIMPLE(type,storage,x)  \
 	binput##storage (my x, f);
@@ -42,11 +31,12 @@
 		binput##storage (my x [i], f);
 
 #define oo_VECTOR(type,t,storage,x,min,max)  \
-	if (my x && ! NUM##t##vector_writeBinary_##storage (my x, min, max, f)) return 0;
+	if (my x) \
+		NUM##t##vector_writeBinary_##storage (my x, min, max, f);
 
 #define oo_MATRIX(type,t,storage,x,row1,row2,col1,col2)  \
-	if (my x && ! NUM##t##matrix_writeBinary_##storage (my x, row1, row2, col1, col2, f)) return 0;
-
+	if (my x) \
+		NUM##t##matrix_writeBinary_##storage (my x, row1, row2, col1, col2, f);
 
 #define oo_ENUMx(type,storage,Type,x)  \
 	binput##storage (my x, f);
@@ -60,26 +50,24 @@
 		binput##storage (my x [i], f);
 
 #define oo_ENUMx_VECTOR(type,t,storage,Type,x,min,max)  \
-	if (my x && ! NUM##t##vector_writeBinary_##storage (my x, min, max, f)) return 0;
+	if (my x) \
+		NUM##t##vector_writeBinary_##storage (my x, min, max, f);
 
-
-#define oo_STRINGWx(storage,x)  \
+#define oo_STRINGx(storage,x)  \
 	binput##storage (my x, f);
 
-#define oo_STRINGWx_ARRAY(storage,x,cap,n)  \
+#define oo_STRINGx_ARRAY(storage,x,cap,n)  \
 	for (int i = 0; i < n; i ++) \
 		binput##storage (my x [i], f);
 
-#define oo_STRINGWx_SET(storage,x,setType)  \
+#define oo_STRINGx_SET(storage,x,setType)  \
 	for (int i = 0; i <= setType##_MAX; i ++) \
 		binput##storage (my x [i], f);
 
-#define oo_STRINGWx_VECTOR(storage,x,min,max)  \
-	if (max >= min) { \
+#define oo_STRINGx_VECTOR(storage,x,min,max)  \
+	if (max >= min) \
 		for (long i = min; i <= max; i ++) \
-			binput##storage (my x [i], f); \
-	}
-
+			binput##storage (my x [i], f);
 
 #define oo_STRUCT(Type,x)  \
 	Type##_writeBinary (& my x, f);
@@ -93,23 +81,22 @@
 		Type##_writeBinary (& my x [i], f);
 
 #define oo_STRUCT_VECTOR_FROM(Type,x,min,max)  \
-	if (max >= min) { \
+	if (max >= min) \
 		for (long i = min; i <= max; i ++) \
-			Type##_writeBinary (& my x [i], f); \
-	}
-
+			Type##_writeBinary (& my x [i], f);
 
 
 #define oo_OBJECT(Class,version,x)  \
 	binputex (my x != NULL, f); \
-	if (my x && ! Data_writeBinary (my x, f)) return 0;
+	if (my x) \
+		Data_writeBinary (my x, f);
 
 #define oo_COLLECTION(Class,x,ItemClass,version)  \
 	binputi4 (my x ? my x -> size : 0, f); \
 	if (my x) { \
 		for (long i = 1; i <= my x -> size; i ++) { \
-			ItemClass data = my x -> item [i]; \
-			if (! class##ItemClass -> writeBinary (data, f)) return 0; \
+			ItemClass data = (ItemClass) my x -> item [i]; \
+			class##ItemClass -> writeBinary (data, f); \
 		} \
 	}
 
@@ -117,27 +104,19 @@
 
 #define oo_DIR(x)
 
-
-
 #define oo_DEFINE_STRUCT(Type)  \
-	static int Type##_writeBinary (Type me, FILE *f) {
+	static void Type##_writeBinary (Type me, FILE *f) {
 
 #define oo_END_STRUCT(Type)  \
-		return 1; \
 	}
-
-
 
 #define oo_DEFINE_CLASS(Class,Parent)  \
-	static int class##Class##_writeBinary (I, FILE *f) { \
+	static void class##Class##_writeBinary (I, FILE *f) { \
 		iam (Class); \
-		if (! inherited (Class) writeBinary (me, f)) return 0;
+		inherited (Class) writeBinary (me, f);
 
 #define oo_END_CLASS(Class)  \
-		return 1; \
 	}
-
-
 
 #define oo_IF(condition)  \
 	if (condition) {
@@ -145,17 +124,11 @@
 #define oo_ENDIF  \
 	}
 
-
-
 #define oo_FROM(from)
 
 #define oo_ENDFROM
 
-
-
 #define oo_VERSION(version)
-
-
 
 #define oo_DECLARING  0
 #define oo_DESTROYING  0

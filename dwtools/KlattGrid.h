@@ -2,7 +2,7 @@
 #define _KlattGrid_h_
 /* KlattGrid.h
  *
- * Copyright (C) 2008-2009 David Weenink
+ * Copyright (C) 2008-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,73 +21,58 @@
 
 /*
  * djmw 20080917 Initial version
- * djmw 20090112 Latest modification
+ * djmw 20110306 Latest modification
  */
 
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _IntensityTier_h_
-	#include "IntensityTier.h"
-#endif
-#ifndef _PitchTier_h_
-	#include "PitchTier.h"
-#endif
-#ifndef _FormantGrid_h_
-	#include "FormantGrid.h"
-#endif
-#ifndef _KlattTable_h_
-	#include "KlattTable.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-#ifndef _Interpreter_decl_h_
-	#include "Interpreter_decl.h"
+#include "Collection.h"
+#include "PointProcess.h"
+#include "Sound.h"
+#include "IntensityTier.h"
+#include "PitchTier.h"
+#include "FormantGrid.h"
+#include "KlattTable.h"
+#include "Interpreter_decl.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 #include "KlattGrid_def.h"
 
-#define PhonationPoint_methods Data_methods
+#define PhonationPoint__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (PhonationPoint, Data);
 
-#define PhonationTier_methods Function_methods
+#define PhonationTier__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (PhonationTier, Function);
 
-#define PhonationGridPlayOptions_methods Data_methods
+#define PhonationGridPlayOptions__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (PhonationGridPlayOptions, Data);
 
-#define PhonationGrid_methods Function_methods
+#define PhonationGrid__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (PhonationGrid, Function);
 
-#define VocalTractGridPlayOptions_methods Data_methods
+#define VocalTractGridPlayOptions__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (VocalTractGridPlayOptions, Data);
 
-#define VocalTractGrid_methods Function_methods
+#define VocalTractGrid__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (VocalTractGrid, Function);
 
-#define CouplingGridPlayOptions_methods Data_methods
+#define CouplingGridPlayOptions__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (CouplingGridPlayOptions, Data);
 
-#define CouplingGrid_methods Function_methods
+#define CouplingGrid__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (CouplingGrid, Function);
 
-#define FricationGridPlayOptions_methods Data_methods
+#define FricationGridPlayOptions__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (FricationGridPlayOptions, Data);
 
-#define FricationGrid_methods Function_methods
+#define FricationGrid__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (FricationGrid, Function);
 
-#define KlattGridPlayOptions_methods Data_methods
+#define KlattGridPlayOptions__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (KlattGridPlayOptions, Data);
 
-#define KlattGrid_methods Function_methods
+#define KlattGrid__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (KlattGrid, Function);
 
 /******************** PhonationPoint & Tier ************************************/
@@ -130,13 +115,13 @@ double CouplingGrid_getDeltaBandwidthAtTime (CouplingGrid me, long iformant, dou
 
 /********************** FormantGrid & CouplingGrid *************************************/
 
-int FormantGrid_CouplingGrid_updateOpenPhases (FormantGrid me, CouplingGrid thee);
+void FormantGrid_CouplingGrid_updateOpenPhases (FormantGrid me, CouplingGrid thee);
 
 /********************** Sound & FormantGrid (& IntensityTier) *************************************/
 
-int Sound_FormantGrid_filterWithOneFormant_inline (Sound me, FormantGrid thee, long iformant);
-int Sound_FormantGrid_filterWithOneAntiFormant_inline (Sound me, FormantGrid thee, long iformant);
-int Sound_FormantGrid_Intensities_filterWithOneFormant_inline (Sound me, FormantGrid thee, Ordered amplitudes, long iformant);
+void Sound_FormantGrid_filterWithOneFormant_inline (Sound me, FormantGrid thee, long iformant);
+void Sound_FormantGrid_filterWithOneAntiFormant_inline (Sound me, FormantGrid thee, long iformant);
+void Sound_FormantGrid_Intensities_filterWithOneFormant_inline (Sound me, FormantGrid thee, Ordered amplitudes, long iformant);
 Sound Sound_FormantGrid_Intensities_filter (Sound me, FormantGrid thee, Ordered amplitudes, long iformantb, long iformante, int alternatingSign);
 
 /************************ FricationGrid *********************************************/
@@ -184,10 +169,10 @@ void KlattGrid_drawVocalTract (KlattGrid me, Graphics g, int filterModel, int wi
 // Add, Remove, Extract, Replace from PhonationGrid
 #define PhonationGrid_QUERY_ADD_REMOVE_EXTRACT_REPLACE_PROTO(Name,tierType) \
 double KlattGrid_get##Name##AtTime (KlattGrid me, double t); \
-int KlattGrid_add##Name##Point (KlattGrid me, double t, double value); \
+void KlattGrid_add##Name##Point (KlattGrid me, double t, double value); \
 void KlattGrid_remove##Name##Points (KlattGrid me, double t1, double t2); \
 tierType KlattGrid_extract##Name##Tier (KlattGrid me); \
-int KlattGrid_replace##Name##Tier (KlattGrid me, tierType thee);
+void KlattGrid_replace##Name##Tier (KlattGrid me, tierType thee);
 
 // Generate 55 prototypes	
 PhonationGrid_QUERY_ADD_REMOVE_EXTRACT_REPLACE_PROTO (Pitch, PitchTier)
@@ -204,66 +189,66 @@ PhonationGrid_QUERY_ADD_REMOVE_EXTRACT_REPLACE_PROTO (BreathinessAmplitude, Inte
 
 #define KlattGrid_QUERY_ADD_REMOVE_PROTO(Name) \
 double KlattGrid_get##Name##AtTime (KlattGrid me, int formantType, long iformant, double t); \
-int KlattGrid_add##Name##Point (KlattGrid me, int formantType, long iformant, double t, double value); \
+void KlattGrid_add##Name##Point (KlattGrid me, int formantType, long iformant, double t, double value); \
 void KlattGrid_remove##Name##Points (KlattGrid me, int formantType, long iformant, double t1, double t2); \
 double KlattGrid_getDelta##Name##AtTime (KlattGrid me, long iformant, double t); \
-int KlattGrid_addDelta##Name##Point (KlattGrid me, long iformant, double t, double value); \
+void KlattGrid_addDelta##Name##Point (KlattGrid me, long iformant, double t, double value); \
 void KlattGrid_removeDelta##Name##Points (KlattGrid me, long iformant, double t1, double t2);
 
 // 12 prototypes
 KlattGrid_QUERY_ADD_REMOVE_PROTO(Formant)
 KlattGrid_QUERY_ADD_REMOVE_PROTO(Bandwidth)
 
-int KlattGrid_formula_frequencies (KlattGrid me, int formantType, const wchar_t *expression, Interpreter interpreter);
-int KlattGrid_formula_bandwidths (KlattGrid me, int formantType, const wchar_t *expression, Interpreter interpreter);
-int KlattGrid_formula_amplitudes (KlattGrid me, int formantType, const wchar_t *expression, Interpreter interpreter);
+void KlattGrid_formula_frequencies (KlattGrid me, int formantType, const wchar_t *expression, Interpreter interpreter);
+void KlattGrid_formula_bandwidths (KlattGrid me, int formantType, const wchar_t *expression, Interpreter interpreter);
+void KlattGrid_formula_amplitudes (KlattGrid me, int formantType, const wchar_t *expression, Interpreter interpreter);
 
 FormantGrid KlattGrid_extractFormantGrid (KlattGrid me, int formantType);
-int KlattGrid_replaceFormantGrid (KlattGrid me, int formantType, FormantGrid thee);
+void KlattGrid_replaceFormantGrid (KlattGrid me, int formantType, FormantGrid thee);
 
 FormantGrid KlattGrid_extractDeltaFormantGrid (KlattGrid me);
-int KlattGrid_replaceDeltaFormantGrid (KlattGrid me, FormantGrid thee);
+void KlattGrid_replaceDeltaFormantGrid (KlattGrid me, FormantGrid thee);
 
 FormantGrid KlattGrid_to_oralFormantGrid_openPhases (KlattGrid me, double fadeFraction);
 PointProcess KlattGrid_extractPointProcess_glottalClosures (KlattGrid me);
 
 double KlattGrid_getAmplitudeAtTime (KlattGrid me, int formantType, long iformant, double t);
-int KlattGrid_addAmplitudePoint (KlattGrid me, int formantType, long iformant, double t, double value);
+void KlattGrid_addAmplitudePoint (KlattGrid me, int formantType, long iformant, double t, double value);
 void KlattGrid_removeAmplitudePoints (KlattGrid me, int formantType, long iformant, double t1, double t2);
 IntensityTier KlattGrid_extractAmplitudeTier (KlattGrid me, int formantType, long iformant);
-int KlattGrid_replaceAmplitudeTier (KlattGrid me, int formantType, long iformant, IntensityTier thee);
+void KlattGrid_replaceAmplitudeTier (KlattGrid me, int formantType, long iformant, IntensityTier thee);
 
 double KlattGrid_getFricationAmplitudeAtTime (KlattGrid me, double t);
-int KlattGrid_addFricationAmplitudePoint (KlattGrid me, double t, double value);
+void KlattGrid_addFricationAmplitudePoint (KlattGrid me, double t, double value);
 void KlattGrid_removeFricationAmplitudePoints (KlattGrid me, double t1, double t2);
 IntensityTier KlattGrid_extractFricationAmplitudeTier (KlattGrid me);
-int KlattGrid_replaceFricationAmplitudeTier (KlattGrid me, IntensityTier thee);
+void KlattGrid_replaceFricationAmplitudeTier (KlattGrid me, IntensityTier thee);
 
 double KlattGrid_getFricationBypassAtTime (KlattGrid me, double t);
-int KlattGrid_addFricationBypassPoint (KlattGrid me, double t, double value);
+void KlattGrid_addFricationBypassPoint (KlattGrid me, double t, double value);
 void KlattGrid_removeFricationBypassPoints (KlattGrid me, double t1, double t2);
 IntensityTier KlattGrid_extractFricationBypassTier (KlattGrid me);
-int KlattGrid_replaceFricationBypassTier (KlattGrid me, IntensityTier thee);
+void KlattGrid_replaceFricationBypassTier (KlattGrid me, IntensityTier thee);
 
-int KlattGrid_setGlottisCoupling (KlattGrid me);
+void KlattGrid_setGlottisCoupling (KlattGrid me);
 
-Any KlattGrid_getAddressOfFormantGrid (KlattGrid me, int formantType);
-Any KlattGrid_getAddressOfAmplitudes (KlattGrid me, int formantType);
+FormantGrid * KlattGrid_getAddressOfFormantGrid (KlattGrid me, int formantType);
+Ordered * KlattGrid_getAddressOfAmplitudes (KlattGrid me, int formantType);
 
 // add/remove frequency + bandwidth (+amplitude) tiers
-int KlattGrid_addFormant (KlattGrid me,int formantType, long position);
+void KlattGrid_addFormant (KlattGrid me,int formantType, long position);
 void KlattGrid_removeFormant (KlattGrid me,int formantType, long position);
 
 // add/remove frequency + bandwidth tiers
-int KlattGrid_addFormantAndBandwidthTier (KlattGrid me, int formantType, long position);
+void KlattGrid_addFormantAndBandwidthTier (KlattGrid me, int formantType, long position);
 void KlattGrid_removeFormantAndBandwidthTier (KlattGrid me, int formantType, long position);
 
 /***************** KlattGrid & Sound *************************************/
 
 // reset PlayOptions to defaults
-int KlattGrid_play (KlattGrid me);
+void KlattGrid_play (KlattGrid me);
 // use playOptions
-int KlattGrid_playSpecial (KlattGrid me);
+void KlattGrid_playSpecial (KlattGrid me);
 
 void KlattGrid_setDefaultPlayOptions (KlattGrid me);
 
@@ -283,5 +268,9 @@ Sound Sound_KlattGrid_filterByVocalTract (Sound me, KlattGrid thee, int filterMo
 Sound Sound_KlattGrid_filter_frication (Sound me, KlattGrid thee);
 
 KlattGrid Sound_to_KlattGrid_simple (Sound me, double timeStep, long maximumNumberOfFormants, double maximumFormantFrequency, double windowLength, double preEmphasisFrequency, double minimumPitch, double maximumPitch, double minimumPitchIntensity, int subtractMean);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _KlattGrid_h_ */

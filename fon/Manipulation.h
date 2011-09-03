@@ -2,7 +2,7 @@
 #define _Manipulation_h_
 /* Manipulation.h
  *
- * Copyright (C) 1992-2003 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,47 +19,22 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/07/22
- */
+#include "Sound.h"
+#include "PointProcess.h"
+#include "PitchTier.h"
+#include "DurationTier.h"
+#include "LPC.h"
 
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
-#ifndef _PitchTier_h_
-	#include "PitchTier.h"
-#endif
-#ifndef _DurationTier_h_
-	#include "DurationTier.h"
-#endif
-#ifndef _LPC_h_
-	#include "LPC.h"
-#endif
 /* The following have to be included for compatibility. */
-#ifndef _IntensityTier_h_
-	#include "IntensityTier.h"
-#endif
-#ifndef _Intensity_h_
-	#include "Intensity.h"
-#endif
-#ifndef _FormantTier_h_
-	#include "FormantTier.h"
-#endif
-#ifndef _Formant_h_
-	#include "Formant.h"
-#endif
-#ifndef _Pitch_h_
-	#include "Pitch.h"
-#endif
-#ifndef _Image_h_
-	#include "Image.h"
-#endif
+#include "IntensityTier.h"
+#include "Intensity.h"
+#include "FormantTier.h"
+#include "Formant.h"
+#include "Pitch.h"
+#include "Image.h"
 
 #include "Manipulation_def.h"
-#define Manipulation_methods Function_methods
+#define Manipulation__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (Manipulation, Function);
 
 /* How to create an Manipulation. */

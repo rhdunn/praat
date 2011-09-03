@@ -2,7 +2,7 @@
 #define _Image_h_
 /* Image.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,27 +19,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 1995/06/01
- * pb 2002/07/16 GPL
- */
+#include "Sampled.h"
+#include "Graphics.h"
 
-
-/* Image inherits from Sampled */
-#ifndef _Sampled_h_
-	#include "Sampled.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-
-#define Image_members Sampled_members \
-	double ymin, ymax; \
-	long ny; \
-	double dy, y1; \
-	unsigned char **z;
-#define Image_methods Sampled_methods
-class_create (Image, Sampled);
+#include "Image_def.h"
+#define Image__methods(klas) Sampled__methods(klas)
+oo_CLASS_CREATE (Image, Sampled);
 
 /*
 	An object of type Image represents a quantized function z (x, y)

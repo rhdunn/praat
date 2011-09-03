@@ -1,9 +1,11 @@
 # Makefile of the library "LPC"
-# David Weenink, 22 February 2010
+# David Weenink, 20110530
 
 include ../makefile.defs
 
-CFLAGS = -I ../num -I ../dwtools -I ../fon -I ../sys -I ../dwsys -I ../stat
+CFLAGS = $(DEFS) -I ../num -I ../dwtools -I ../fon -I ../sys -I ../dwsys -I ../stat
+
+CPPFLAGS = $(CFLAGS)
 
 OBJECTS = Cepstrum.o Cepstrumc.o Cepstrum_and_Spectrum.o \
 	LPC.o LPC_and_Cepstrumc.o LPC_and_Formant.o LPC_and_LFCC.o \

@@ -2,7 +2,7 @@
 #define _OTGrammarEditor_h_
 /* OTGrammar.h
  *
- * Copyright (C) 1997-2007 Paul Boersma
+ * Copyright (C) 1997-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,21 +19,21 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/06/10
- */
+#include "HyperPage.h"
+#include "OTGrammar.h"
 
-#ifndef _HyperPage_h_
-	#include "HyperPage.h"
-#endif
-#ifndef _OTGrammar_h_
-	#include "OTGrammar.h"
-#endif
+Thing_define (OTGrammarEditor, HyperPage) {
+	// new data:
+		long selected;
+	// overridden methods:
+		virtual bool v_editable () { return true; }
+		virtual void v_createMenus ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_draw ();
+		virtual int v_goToPage (const wchar *title);
+};
 
-#define OTGrammarEditor__parents(Klas) HyperPage__parents(Klas) Thing_inherit (Klas, HyperPage)
-Thing_declare1 (OTGrammarEditor);
-
-OTGrammarEditor OTGrammarEditor_create (GuiObject parent, const wchar_t *title, OTGrammar ot);
+OTGrammarEditor OTGrammarEditor_create (GuiObject parent, const wchar *title, OTGrammar ot);
 
 /* End of file OTGrammarEditor.h */
 #endif

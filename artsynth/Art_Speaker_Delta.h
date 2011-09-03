@@ -1,6 +1,6 @@
 /* Art_Speaker_Delta.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,20 +17,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 1995/09/20
- * pb 2002/07/16 GPL
- */
-
-#ifndef _Articulation_h_
-	#include "Articulation.h"
-#endif
-#ifndef _Speaker_h_
-	#include "Speaker.h"
-#endif
-#ifndef _Delta_h_
-	#include "Delta.h"
-#endif
+#include "Articulation.h"
+#include "Speaker.h"
+#include "Delta.h"
 
 void Art_Speaker_intoDelta (Art art, Speaker speaker, Delta delta);
 

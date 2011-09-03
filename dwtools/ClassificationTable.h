@@ -2,7 +2,7 @@
 #define _ClassificationTable_h_
 /* ClassificationTable.h
  *
- * Copyright (C) 1993-2010 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,25 +24,23 @@
  djmw 20020315 GPL header
  djmw 20040422 Added ClassificationTable_to_Categories_maximumProbability
  djmw 20040623 Added ClassificationTable_to_Strings_maximumProbability
- djmw 20101122 Latest modification.
+ djmw 20110306 Latest modification.
  */
 
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
-#ifndef _SSCP_h_
-	#include "SSCP.h"
-#endif
-#ifndef _Confusion_h_
-	#include "Confusion.h"
-#endif
-#ifndef _Strings_h_
-	#include "Strings.h"
+#include "TableOfReal.h"
+#include "SSCP.h"
+#include "Confusion.h"
+#include "Strings.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
-#define ClassificationTable_members TableOfReal_members
-#define ClassificationTable_methods TableOfReal_methods
-class_create (ClassificationTable, TableOfReal);
+Thing_declare1cpp (ClassificationTable);
+struct structClassificationTable : public structTableOfReal {
+};
+#define ClassificationTable__methods(klas) TableOfReal__methods(klas)
+Thing_declare2cpp (ClassificationTable, TableOfReal);
 
 ClassificationTable ClassificationTable_create (long numberOfRows, long numberOfColumns);
 
@@ -54,6 +52,9 @@ Confusion ClassificationTable_to_Confusion (ClassificationTable me);
 /* Correlations between the classes (columns) */
 Correlation ClassificationTable_to_Correlation_columns (ClassificationTable me);
 
+#ifdef __cplusplus
+	}
+#endif
+
 #endif /* _ClassificationTable_h_ */
 
-/* End of file ClassificationTable.h */

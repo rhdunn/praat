@@ -2,7 +2,7 @@
 #define _FunctionEditor_h_
 /* FunctionEditor.h
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,108 +19,113 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2009/09/21
- */
-
-#ifndef _Editor_h_
-	#include "Editor.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-#ifndef _Function_h_
-	#include "Function.h"
-#endif
+#include "Editor.h"
+#include "Graphics.h"
+#include "Function.h"
 
 struct FunctionEditor_picture {
 	/* KEEP IN SYNC WITH PREFS. */
 	bool garnish;
 };
 
-#define FunctionEditor__parents(Klas) Editor__parents(Klas) Thing_inherit (Klas, Editor)
-Thing_declare1 (FunctionEditor);
+Thing_define (FunctionEditor, Editor) {
+	// new data:
+		/* Subclass may change the following attributes, */
+		/* but has to respect the invariants, */
+		/* and has to call FunctionEditor_marksChanged () */
+		/* immediately after making the changes. */
+		double tmin, tmax, startWindow, endWindow;
+		double startSelection, endSelection;   // markers
+			/* These attributes are all expressed in seconds. Invariants: */
+			/*    tmin <= startWindow < endWindow <= tmax; */
+			/*    tmin <= (startSelection, endSelection) <= tmax; */
+		double arrowScrollStep;
 
-#define FunctionEditor__members(Klas) Editor__members(Klas) \
-	/* Subclass may change the following attributes, */ \
-	/* but has to respect the invariants, */ \
-	/* and has to call FunctionEditor_marksChanged () */ \
-	/* immediately after making the changes. */ \
-	double tmin, tmax, startWindow, endWindow; \
-	double startSelection, endSelection; /* Markers. */ \
-		/* These attributes are all expressed in seconds. Invariants: */ \
-		/*    tmin <= startWindow < endWindow <= tmax; */	 \
-		/*    tmin <= (startSelection, endSelection) <= tmax; */ \
-	double arrowScrollStep; \
-	\
-	Graphics graphics;   /* Used in the 'draw' method. */ \
-	short width, height;   /* Size of drawing area in pixels. */ \
-	GuiObject text;   /* Optional text at top. */ \
-	int shiftKeyPressed;   /* Information for the 'play' method. */ \
-	int playingCursor, playingSelection;   /* Information for end of play. */ \
-	struct FunctionEditor_picture picture; \
-	\
-	/* Private attributes: */ \
-	GuiObject drawingArea, scrollBar, groupButton, bottomArea; \
-	bool group, enableUpdates; \
-	int nrect; \
-	struct { double left, right, bottom, top; } rect [8]; \
-	double marker [1 + 3], playCursor, startZoomHistory, endZoomHistory; \
-	int numberOfMarkers;
-#define FunctionEditor__methods(Klas) Editor__methods(Klas) \
-	void (*draw) (Klas me); \
-	void (*prepareDraw) (Klas me);   /* For less flashing. */ \
-	const wchar_t *format_domain, *format_short, *format_long, *format_units, *format_totalDuration, *format_window, *format_selection; \
-	int fixedPrecision_long; \
-	int hasText; \
-	void (*play) (Klas me, double tmin, double tmax); \
-	int (*click) (Klas me, double xWC, double yWC, int shiftKeyPressed); \
-	int (*clickB) (Klas me, double xWC, double yWC); \
-	int (*clickE) (Klas me, double xWC, double yWC); \
-	void (*key) (Klas me, unsigned char key); \
-	int (*playCallback) (Any me, int phase, double tmin, double tmax, double t); \
-	void (*updateText) (Klas me); \
-	void (*prefs_addFields) (Klas me, EditorCommand cmd); \
-	void (*prefs_setValues) (Klas me, EditorCommand cmd); \
-	void (*prefs_getValues) (Klas me, EditorCommand cmd); \
-	void (*createMenuItems_file_draw) (Klas me, EditorMenu menu); \
-	void (*createMenuItems_file_extract) (Klas me, EditorMenu menu); \
-	void (*createMenuItems_file_write) (Klas me, EditorMenu menu); \
-	void (*createMenuItems_view) (Klas me, EditorMenu menu); \
-	void (*createMenuItems_view_timeDomain) (Klas me, EditorMenu menu); \
-	void (*createMenuItems_view_audio) (Klas me, EditorMenu menu); \
-	void (*highlightSelection) (Klas me, double left, double right, double bottom, double top); \
-	void (*unhighlightSelection) (Klas me, double left, double right, double bottom, double top); \
-	double (*getBottomOfSoundAndAnalysisArea) (Klas me); \
-	void (*form_pictureSelection) (Klas me, EditorCommand cmd); \
-	void (*ok_pictureSelection) (Klas me, EditorCommand cmd); \
-	void (*do_pictureSelection) (Klas me, EditorCommand cmd);
-Thing_declare2 (FunctionEditor, Editor);
+		Graphics graphics;   // used in the 'draw' method
+		short width, height;   // size of drawing area in pixels
+		GuiObject text;   // optional text at top
+		int shiftKeyPressed;   // information for the 'play' method.
+		bool playingCursor, playingSelection;   // information for end of play
+		struct FunctionEditor_picture picture;
+
+		/* Private: */
+		GuiObject drawingArea, scrollBar, groupButton, bottomArea;
+		bool group, enableUpdates;
+		int nrect;
+		struct { double left, right, bottom, top; } rect [8];
+		double marker [1 + 3], playCursor, startZoomHistory, endZoomHistory;
+		int numberOfMarkers;
+	// overridden methods:
+		virtual void v_destroy ();
+		virtual void v_info ();
+		virtual void v_createMenus ();
+		virtual void v_createMenuItems_file (EditorMenu menu);
+		virtual void v_createMenuItems_query (EditorMenu menu);
+		virtual void v_createChildren ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_dataChanged ();
+	// new methods:
+		virtual void v_draw () { }
+			/*
+			 * Message: "draw your part of the data between startWindow and endWindow."
+			 */
+		virtual void v_prepareDraw () { }   // for less flashing
+		virtual const wchar * v_format_domain () { return L"Time domain:"; }
+		virtual const wchar * v_format_short () { return L"%.3f"; }
+		virtual const wchar * v_format_long () { return L"%f"; }
+		virtual const wchar * v_format_units () { return L"seconds"; }
+		virtual const wchar * v_format_totalDuration () { return L"Total duration %f seconds"; }
+		virtual const wchar * v_format_window () { return L"Visible part %f seconds"; }
+		virtual const wchar * v_format_selection () { return L"%f (%.3f / s)"; }
+		virtual int v_fixedPrecision_long () { return 6; }
+		virtual bool v_hasText () { return false; }
+		virtual void v_play (double tmin, double tmax) { (void) tmin; (void) tmax; }
+			/*
+			 * Message: "the user clicked in one of the rectangles above or below the data window."
+			 */
+		virtual int v_click (double xWC, double yWC, bool shiftKeyPressed);
+			/*
+			 * Message: "the user clicked in data window with the left mouse button."
+			 * 'xWC' is the time;
+			 * 'yWC' is a value between 0.0 (bottom) and 1.0 (top);
+			 * 'shiftKeyPressed' flags if the Shift key was held down during the click.
+			 * Constraints:
+			 *    Return FunctionEditor_UPDATE_NEEDED if you want a window update, i.e.,
+			 *    if your 'click' moves the cursor or otherwise changes the appearance of the data.
+			 *    Return FunctionEditor_NO_UPDATE_NEEDED if you do not want a window update, e.g.,
+			 *    if your 'click' method just 'plays' something or puts a dialog on the screen.
+			 *    In the latter case, the 'ok' callback of the dialog should
+			 *    call FunctionEditor_marksChanged if necessary.
+			 * Behaviour of FunctionEditor::click ():
+			 *    moves the cursor to 'xWC', drags to create a selection, or extends the selection.
+			 */
+		virtual int v_clickB (double xWC, double yWC);
+		virtual int v_clickE (double xWC, double yWC);
+		virtual void v_key (unsigned char key) { (void) key; }
+		virtual int v_playCallback (int phase, double tmin, double tmax, double t);
+		virtual void v_updateText () { }
+		virtual void v_prefs_addFields (EditorCommand cmd) { (void) cmd; }
+		virtual void v_prefs_setValues (EditorCommand cmd) { (void) cmd; }
+		virtual void v_prefs_getValues (EditorCommand cmd) { (void) cmd; }
+		virtual void v_createMenuItems_file_draw (EditorMenu menu) { (void) menu; }
+		virtual void v_createMenuItems_file_extract (EditorMenu menu) { (void) menu; }
+		virtual void v_createMenuItems_file_write (EditorMenu menu) { (void) menu; }
+		virtual void v_createMenuItems_view (EditorMenu menu);
+		virtual void v_createMenuItems_view_timeDomain (EditorMenu menu);
+		virtual void v_createMenuItems_view_audio (EditorMenu menu);
+		virtual void v_highlightSelection (double left, double right, double bottom, double top);
+		virtual void v_unhighlightSelection (double left, double right, double bottom, double top);
+		virtual double v_getBottomOfSoundAndAnalysisArea () { return 0.0; }
+		virtual void v_form_pictureSelection (EditorCommand cmd);
+		virtual void v_ok_pictureSelection (EditorCommand cmd);
+		virtual void v_do_pictureSelection (EditorCommand cmd);
+};
+
+int theFunctionEditor_playCallback (void *void_me, int phase, double tmin, double tmax, double t);
 
 /*
 	Attributes:
 		data: must be a Function.
-
-	Methods:
-
-	void draw (I);
-		"draw your part of the data between startWindow and endWindow."
-
-	void play (I, double tmin, double tmax);
-		"user clicked in one of the rectangles above or below the data window."
-
-	int click (I, double xWC, double yWC, int shiftKeyPressed);
-		"user clicked in data window with the left (Mac: only) mouse button."
-		'xWC' is the time; 'yWC' is a value between 0.0 (bottom) and 1.0 (top).
-		'shiftKeyPressed' flags if the Shift key was held down during the click.
-		Return FunctionEditor_UPDATE_NEEDED if you want a window update, i.e.,
-			if your 'click' moves the cursor or otherwise changes the appearance of the data.
-		Return FunctionEditor_NO_UPDATE_NEEDED if you do not want a window update, e.g.,
-			if your 'click' method just 'plays' something or puts a dialog on the screen.
-			In the latter case, the 'ok' callback of the dialog should
-			call FunctionEditor_marksChanged if necessary.
-		FunctionEditor::click moves the cursor to 'xWC', drags to create a selection, 
-			or extends the selection.
 
 	int clickB (I, double xWC, double yWC);
 		"user clicked in data window with the middle mouse button (Mac: control- or option-click)."
@@ -140,38 +145,20 @@ Thing_declare2 (FunctionEditor, Editor);
 		"user typed a key to the data window."
 		FunctionEditor::key ignores this message.
 */
+
+
 #define FunctionEditor_UPDATE_NEEDED  1
 #define FunctionEditor_NO_UPDATE_NEEDED  0
 
-int FunctionEditor_init (FunctionEditor me, GuiObject parent, const wchar_t *title, Any data);
+void FunctionEditor_init (FunctionEditor me, GuiObject parent, const wchar *title, Function data);
 /*
 	Function:
 		creates an Editor with a drawing area, a scroll bar and some buttons.
 	Preconditions:
 		parent != NULL;
-		Thing_member (data, classFunction);
 	Postconditions:
-		my cursorMenu contains the following entries:
-			Move cursor to B
-			Move cursor to E
-			Move cursor to...
-			Move cursor by...
-		my beginMenu contains:
-			Move B to cursor
-			Move B to E
-			Move B to...
-			Move B by...
-		my endMenu contains:
-			Move E to cursor
-			Move E to B
-			Move E to...
-			Move E by...
 		my drawingArea is attached to the form at all sides,
 		my scrollBar only to the bottom, left and right sides.
-		The other members are 0.0 or NULL.
-		The inheritor should call
-			'GuiObject_show (my dialog); GuiObject_show (my shell);'
-			before calling FunctionEditor_open (me).
 */ 
 
 void FunctionEditor_marksChanged (FunctionEditor me);

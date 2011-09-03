@@ -2,7 +2,7 @@
 #define _Polygon_h_
 /* Polygon.h
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,22 +19,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2009/12/14
- */
+#include "Data.h"
+#include "Graphics.h"
 
-#ifndef _Data_h_
-	#include "Data.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-
-#define Polygon_members  Data_members \
-	long numberOfPoints; \
-	double *x, *y;
-#define Polygon_methods  Data_methods
-class_create (Polygon, Data);
+#include "Polygon_def.h"
+#define Polygon__methods(klas)  Data__methods(klas)
+oo_CLASS_CREATE (Polygon, Data);
 
 Polygon Polygon_create (long numberOfPoints);
 /*
@@ -71,6 +61,7 @@ void Polygon_salesperson (I, long numberOfIterations);
 /*** Drawing routines. ***/
 
 void Polygon_draw (I, Graphics g, double xmin, double xmax, double ymin, double ymax);
+void Polygon_drawClosed (I, Graphics g, double xmin, double xmax, double ymin, double ymax);
 
 void Polygon_paint (I, Graphics g, Graphics_Colour colour, double xmin, double xmax, double ymin, double ymax);
 
@@ -83,5 +74,5 @@ void Polygon_paintCircles (I, Graphics g,
 void Polygons_drawConnection (I, thou, Graphics g,
 	double xmin, double xmax, double ymin, double ymax, int hasArrow, double relativeLength);
 
-#endif
 /* End of file Polygon.h */
+#endif

@@ -2,7 +2,7 @@
 #define _RealTier_h_
 /* RealTier.h
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,33 +19,17 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2009/01/18
- */
-
-#ifndef _AnyTier_h_
-	#include "AnyTier.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
-#ifndef _Vector_h_
-	#include "Vector.h"
-#endif
-#ifndef _Interpreter_decl_h_
-	#include "Interpreter_decl.h"
-#endif
+#include "AnyTier.h"
+#include "Graphics.h"
+#include "TableOfReal.h"
+#include "Vector.h"
+#include "Interpreter_decl.h"
 
 /********** class RealPoint **********/
 
-#define RealPoint_members Data_members \
-	double time; \
-	double value;
-#define RealPoint_methods Data_methods
-class_create (RealPoint, Data);
+#include "RealTier_def.h"
+#define RealPoint__methods(klas) AnyPoint__methods(klas)
+oo_CLASS_CREATE (RealPoint, AnyPoint);
 
 RealPoint RealPoint_create (double time, double value);
 /*
@@ -56,13 +40,12 @@ RealPoint RealPoint_create (double time, double value);
 
 /********** class RealTier **********/
 
-#define RealTier_members Function_members \
-	SortedSetOfDouble points;
-#define RealTier_methods Function_methods
-class_create (RealTier, Function);
+#define RealTier__methods(klas) Function__methods(klas)
+oo_CLASS_CREATE (RealTier, Function);
 
-void RealTier_init_e (I, double tmin, double tmax);
+void RealTier_init (I, double tmin, double tmax);
 RealTier RealTier_create (double tmin, double tmax);
+RealTier RealTier_createWithClass (double tmin, double tmax, RealTier_Table klas);
 /*
 	Postconditions:
 		result -> xmin == tmin;
@@ -88,18 +71,18 @@ double RealTier_getStandardDeviation_points (I, double tmin, double tmax);
 
 int RealTier_addPoint (I, double t, double value);
 void RealTier_draw (I, Graphics g, double tmin, double tmax,
-	double ymin, double ymax, int garnish, const wchar_t *method, const wchar_t *quantity);
-TableOfReal RealTier_downto_TableOfReal (I, const wchar_t *timeLabel, const wchar_t *valueLabel);
+	double ymin, double ymax, int garnish, const wchar *method, const wchar *quantity);
+TableOfReal RealTier_downto_TableOfReal (I, const wchar *timeLabel, const wchar *valueLabel);
 
 int RealTier_interpolateQuadratically (I, long numberOfPointsPerParabola, int logarithmically);
 
-Table RealTier_downto_Table (I, const wchar_t *indexText, const wchar_t *timeText, const wchar_t *valueText);
-RealTier Vector_to_RealTier (I, long channel);
-RealTier Vector_to_RealTier_peaks (I, long channel);
-RealTier Vector_to_RealTier_valleys (I, long channel);
-RealTier PointProcess_upto_RealTier (PointProcess me, double value);
+Table RealTier_downto_Table (I, const wchar *indexText, const wchar *timeText, const wchar *valueText);
+RealTier Vector_to_RealTier (I, long channel, RealTier_Table klas);
+RealTier Vector_to_RealTier_peaks (I, long channel, RealTier_Table klas);
+RealTier Vector_to_RealTier_valleys (I, long channel, RealTier_Table klas);
+RealTier PointProcess_upto_RealTier (PointProcess me, double value, RealTier_Table klas);
 
-int RealTier_formula (I, const wchar_t *expression, Interpreter interpreter, thou);
+int RealTier_formula (I, const wchar *expression, Interpreter interpreter, thou);
 void RealTier_multiplyPart (I, double tmin, double tmax, double factor);
 void RealTier_removePointsBelow (RealTier me, double level);
 

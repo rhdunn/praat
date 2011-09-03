@@ -2,7 +2,7 @@
 #define _ICA_h_
 /* ICA.h
  *
- * Copyright (C) 2010 David Weenink
+ * Copyright (C) 2010-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,29 +21,38 @@
 
 /*
   djmw 20101202 Initial version
+  djmw 20110306 Latest modification.
 */
-#ifndef _SSCP_h_
-	#include "SSCP.h"
+#include "SSCP.h"
+#include "Sound.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
 
-#define MixingMatrix_members TableOfReal_members
-#define MixingMatrix_methods TableOfReal_methods
-class_create (MixingMatrix, TableOfReal);
+Thing_declare1cpp (MixingMatrix);
+struct structMixingMatrix : public structTableOfReal {
+};
+#define MixingMatrix__methods(klas) TableOfReal__methods(klas)
+Thing_declare2cpp (MixingMatrix, TableOfReal);
 
-#define Diagonalizer_members TableOfReal_members
-#define Diagonalizer_methods TableOfReal_methods
-class_create (Diagonalizer, TableOfReal);
+Thing_declare1cpp (Diagonalizer);
+struct structDiagonalizer : public structTableOfReal {
+};
+#define Diagonalizer__methods(klas) TableOfReal__methods(klas)
+Thing_declare2cpp (Diagonalizer, TableOfReal);
 
-#define CrossCorrelationTable_members SSCP_members
-#define CrossCorrelationTable_methods SSCP_methods
-class_create (CrossCorrelationTable, SSCP);
+Thing_declare1cpp (CrossCorrelationTable);
+struct structCrossCorrelationTable : public structSSCP {
+};
+#define CrossCorrelationTable__methods(klas) SSCP__methods(klas)
+Thing_declare2cpp (CrossCorrelationTable, SSCP);
 
-#define CrossCorrelationTables_members Ordered_members
-#define CrossCorrelationTables_methods Ordered_methods
-class_create (CrossCorrelationTables, Ordered);
+Thing_declare1cpp (CrossCorrelationTables);
+struct structCrossCorrelationTables : public structOrdered {
+};
+#define CrossCorrelationTables__methods(klas) Ordered__methods(klas)
+Thing_declare2cpp (CrossCorrelationTables, Ordered);
 
 /*
 	Cell [i,j] of a CrossCorrelationTable contains the cross-correlation between signal i and signal j.
@@ -84,13 +93,13 @@ Sound Sound_to_Sound_BSS (Sound me, double startTime, double endTime, long ncova
 Sound Sound_and_PCA_to_Sound_pc (Sound me, PCA thee, long numberOfComponents, int whiten);
 PCA Sound_to_PCA (Sound me, double startTime, double endTime);
 
-int MixingMatrix_and_CrossCorrelationTables_improveUnmixing (MixingMatrix me, CrossCorrelationTables thee, long maxNumberOfIterations, double tol, int method);
+void MixingMatrix_and_CrossCorrelationTables_improveUnmixing (MixingMatrix me, CrossCorrelationTables thee, long maxNumberOfIterations, double tol, int method);
 
 /*
 	Determine the matrix that diagonalizes a series of CrossCorrelationTables as well as possible.
 */
 Diagonalizer CrossCorrelationTables_to_Diagonalizer (CrossCorrelationTables me, long maxNumberOfIterations, double tol, int method);
-int Diagonalizer_and_CrossCorrelationTables_improveDiagonality (Diagonalizer me, CrossCorrelationTables thee, long maxNumberOfIterations, double tol, int method);
+void Diagonalizer_and_CrossCorrelationTables_improveDiagonality (Diagonalizer me, CrossCorrelationTables thee, long maxNumberOfIterations, double tol, int method);
 
 /*
 	Determine V*C[k]*V' for k=1..n, where V is the diagonalizer matrix and C[k} the k-th CrossCorrelationTable.
@@ -114,5 +123,9 @@ CrossCorrelationTable Sound_to_CrossCorrelationTable (Sound me, double startTime
 CrossCorrelationTables Sound_to_CrossCorrelationTables (Sound me, double startTime, double endTime, double lagTime, long n);
 
 MixingMatrix TableOfReal_to_MixingMatrix (TableOfReal me);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /*_ICA_h_ */

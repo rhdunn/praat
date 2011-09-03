@@ -2,7 +2,7 @@
 #define _FFNet_h_
 /* FFNet.h
  *
- * Copyright (C) 1997-2008 David Weenink
+ * Copyright (C) 1997-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,21 +30,17 @@
  djmw 20080121 float -> double
 */
 
-#ifndef _Data_h_
-	#include "Data.h"
-#endif
-#ifndef _Categories_h_
-	#include "Categories.h"
-#endif
-#ifndef _Minimizers_h_
-	#include "Minimizers.h"
-#endif
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
+#include "Data.h"
+#include "Categories.h"
+#include "Minimizers.h"
+#include "TableOfReal.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 #include "FFNet_def.h"
-#define FFNet_methods Data_methods
+#define FFNet__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (FFNet, Data);
 
 /* Parameters:
@@ -77,14 +73,14 @@ oo_CLASS_CREATE (FFNet, Data);
  *
  * A network consists of nLayers layers. Layer numbering is from 0...nLayers.
  * Layer 0 is the input layer,  the highest numbered layer is the output layer
- *   (nLayers <= 4) 
- * Each layer consists of a number of units. The biases of all the units in a layer 
- * are modelled with connections to an extra unit in the lower layer (with constant 
+ *   (nLayers <= 4)
+ * Each layer consists of a number of units. The biases of all the units in a layer
+ * are modelled with connections to an extra unit in the lower layer (with constant
  * activity 1.0). Nodes refers to 'units' + 'bias units'.
- * The variable 'nNodes' is the total number of nodes (inclusive bias nodes). 
+ * The variable 'nNodes' is the total number of nodes (inclusive bias nodes).
  * E.g. the topology (2,3,4), i.e., 2 inputs, 3 units in the first layer
  * and 4 units in the second layer (outputs) is modelled
- * with (2+1)+ (3+1)+ (4) = 11 nodes. 
+ * with (2+1)+ (3+1)+ (4) = 11 nodes.
  * The numbering of the weights is as follows (indices 1..nWeights):
  * E.g., topology (I,H,O) (I inputs, H hidden units and O output units)
  * There are a total of H* (I+1) + O* (H+1) weights in this net.
@@ -110,9 +106,9 @@ oo_CLASS_CREATE (FFNet, Data);
  * For a node k we need to know:
  * 1. isbias[1..nNodes]        : usage: if (isbias[k]) ...
  *      true if node k is a bias node. There are nLayers bias nodes
- * 2. nodeFirst[1..nNodes]       : usage is j=nodeFirst[k]; 
+ * 2. nodeFirst[1..nNodes]       : usage is j=nodeFirst[k];
  *      j is the first node that is connected to k .
- * 3. nodeLast[1..nNodes]        : usage is j=nodeLast[k] 
+ * 3. nodeLast[1..nNodes]        : usage is j=nodeLast[k]
  *      j is the  last node that is connected to k (bias included).
  * For the calculation of the errors,  during learning,  in unit k we need to
  * know which weights from the preceeding layer connect to it.
@@ -126,26 +122,31 @@ oo_CLASS_CREATE (FFNet, Data);
  *  copy everything except minimizer, patterns and inputs.
  */
 
-int FFNet_init (FFNet me, long numberOfInputs, long nodesInLayer1, long nodesInLayer2, 
+void FFNet_init (FFNet me, long numberOfInputs, long nodesInLayer1, long nodesInLayer2,
+	long numberOfOutputs, int outputsAreLinear);
+
+FFNet FFNet_create (long numberOfInputs, long numberInLayer1, long numberInLayer2,
 	long numberOfOutputs, int outputsAreLinear	);
 
-FFNet FFNet_create (long numberOfInputs, long numberInLayer1, long numberInLayer2, 
-	long numberOfOutputs, int outputsAreLinear	);
-	
-void FFNet_createNameFromTopology (FFNet me, MelderString *name);	
-/* Create names as <inputs>-<outputs>, <inputs>-<hidden>-<outputs>, 
+wchar_t * FFNet_createNameFromTopology (FFNet me);
+/* Create names as <inputs>-<outputs>, <inputs>-<hidden>-<outputs>,
 	<inputs>-<hidden1>-<hidden2>-<outputs> for 1, 2 or 3 layer networks.
 */
 
 #define FFNet_COST_MSE 1
-    
+
 void FFNet_setCostFunction (FFNet me, int type);
 
 #define FFNet_NONLIN_SIGMOID 1
 
 void FFNet_setNonLinearity (FFNet me, int type);
 
-int FFNet_setOutputCategories (FFNet me, Categories thee);
+void FFNet_setOutputCategories (FFNet me, Categories thee);
+
+double FFNet_getBias (FFNet me, long layer, long unit);
+void FFNet_setBias (FFNet me, long layer, long node, double value);
+void FFNet_setWeight (FFNet me, long later, long node, long node_from, double value);
+double FFNet_getWeight (FFNet me, long later, long node, long node_from);
 
 void FFNet_reset (FFNet me, double wrange);
 /* reset the neural net:
@@ -153,9 +154,9 @@ void FFNet_reset (FFNet me, double wrange);
  *   interval (-wrange, wrange).
  *   forget links with minimizer.
  */
- 
+
 void FFNet_propagateToLayer (FFNet me, const double input[], double activity[], long layer);
-/* propagate the input through the net to layer and calculate the activities */ 
+/* propagate the input through the net to layer and calculate the activities */
 
 void FFNet_propagate (FFNet me, const double input[], double output[]);
 /* step (1) feed forward input from "input layer" to "output layer"
@@ -190,9 +191,9 @@ void FFNet_weightConnectsUnits (FFNet me, long index, long *fromUnit, long *toUn
  * w[index] connects unit fromUnit in "layer-1" with unit toUnit in "layer".
  *  fromUnit returns 0 then w[index] is bias.
  */
- 
+
 long FFNet_getNodeNumberFromUnitNumber (FFNet me, long unit, long layer);
- 
+
 void FFNet_nodeToUnitInLayer (FFNet me, long node, long *unit, long *layer);
 /* translate node index to unit "unit" in layer "layer" */
 
@@ -210,9 +211,9 @@ void FFNet_drawTopology (FFNet me, Graphics g);
 void FFNet_drawActivation (FFNet me, Graphics g);
 void FFNet_drawWeightsToLayer (FFNet me, Graphics g, int toLayer, int scaling, int garnish);
 /* Deprecated: the strengths of the weights that connect to the nodes in later 'layer' */
-/* are drawn with boxes. The area of each box corresponds to the strength. */ 
+/* are drawn with boxes. The area of each box corresponds to the strength. */
 /* Black boxes have negative strength? */
- 
+
 void FFNet_drawCostHistory (FFNet me, Graphics g, long from_iteration, long to_iteration,
 	double from_cost, double to_cost, int garnish);
 /* draw cost vs epochs */
@@ -222,5 +223,9 @@ Collection FFNet_createIrisExample (long numberOfHidden1, long numberOfHidden2);
 TableOfReal FFNet_extractWeights (FFNet me, long layer);
 void FFNet_drawWeights (FFNet me, Graphics g, long layer, int garnish);
 FFNet FFNet_and_TabelOfReal_to_FFNet (FFNet me, TableOfReal him, long layer);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _FFNet_h_ */

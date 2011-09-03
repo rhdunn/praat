@@ -2,7 +2,7 @@
 #define _CCA_h_
 /* CCA.h
  *
- * Copyright (C) 1993-2007 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,30 +22,20 @@
 /*
  djmw 2001
  djmw 20020423 GPL header
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _Eigen_h_
-	#include "Eigen.h"
+#include "Eigen.h"
+#include "TableOfReal.h"
+#include "Strings.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
-
-#ifndef _Strings_h_
-	#include "Strings.h"
-#endif
-
-#define CCA_members Data_members \
-	long numberOfCoefficients; \
-	long numberOfObservations; \
-	Strings yLabels; \
-	Strings xLabels; \
-	Eigen y; \
-	Eigen x;
-#define CCA_methods Data_methods
-class_create (CCA, Data);
+#include "CCA_def.h"
+#define CCA__methods(klas) Data__methods(klas)
+oo_CLASS_CREATE (CCA, Data);
 
 /*
 	Class CCA represents the Canonical Correlation Analysis of two datasets
@@ -140,5 +130,9 @@ TableOfReal CCA_and_TableOfReal_predict (CCA me, TableOfReal thee, long from);
 	Given independent table, predict the dependent one, on the basis of 
 	the canonical correlations.
 */
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* CCA.h */

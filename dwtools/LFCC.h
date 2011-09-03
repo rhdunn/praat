@@ -4,7 +4,7 @@
  *
  * Linear Frequency Cepstral Coefficients class.
  *
- * Copyright (C) 1993-2008 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,18 +24,26 @@
 /*
  djmw 20001213
  djmw 20020813 GPL header
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _CC_h_
-	#include "CC.h"
-#endif
+#include "CC.h"
 
-#define LFCC_members CC_members
-#define LFCC_methods CC_methods
-class_create (LFCC, CC);
+Thing_declare1cpp (LFCC);
+struct structLFCC : public structCC {
+};
+#define LFCC__methods(klas) CC__methods(klas)
+Thing_declare2cpp (LFCC, CC);
+
+#ifdef __cplusplus
+	extern "C" {
+#endif
 
 LFCC LFCC_create (double tmin, double tmax, long nt, double dt, double t1,
 	long maximumNumberOfCoefficients, double fmin, double fmax);
-	
+
+#ifdef __cplusplus
+	}
+#endif
+
 #endif /* _LFCC_h_ */

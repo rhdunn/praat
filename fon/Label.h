@@ -2,7 +2,7 @@
 #define _Label_h_
 /* Label.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,22 +19,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/08/13
- */
+#include "Collection.h"
+#include "Function.h"
 
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
-#ifndef _Function_h_
-	#include "Function.h"
-#endif
+Thing_declare1cpp (Autosegment);
+struct structAutosegment : public structFunction {
+};
+#define Autosegment__methods(klas) Function__methods(klas)
+Thing_declare2cpp (Autosegment, Function);
 
-#define Autosegment_members Function_members
-#define Autosegment_methods Function_methods
-class_create (Autosegment, Function);
-
-Any Autosegment_create (double tmin, double tmax, const wchar_t *label);
+Autosegment Autosegment_create (double tmin, double tmax, const wchar *label);
 /*
 	Function:
 		create a new instance of Autosegment.
@@ -52,9 +46,11 @@ Any Autosegment_create (double tmin, double tmax, const wchar_t *label);
 			result -> name [] == label [];   // 'label' copied into 'name'
 */
 
-#define Tier_members Sorted_members
-#define Tier_methods Sorted_methods
-class_create (Tier, Sorted);
+Thing_declare1cpp (Tier);
+struct structTier : public structSorted {
+};
+#define Tier__methods(klas) Sorted__methods(klas)
+Thing_declare2cpp (Tier, Sorted);
 
 Tier Tier_create (long initialCapacity);
 /*
@@ -78,17 +74,19 @@ long Tier_timeToIndex (Tier me, double t);
 		result == 0 || my item [i] -> xmin <= result < my item [i] -> xmax;
 */
 
-int Tier_init (I, long initialCapacity);
+void Tier_init (I, long initialCapacity);
 
-#define Label_members Ordered_members
-#define Label_methods Ordered_methods
-class_create (Label, Ordered);
+Thing_declare1cpp (Label);
+struct structLabel : public structOrdered {
+};
+#define Label__methods(klas) Ordered__methods(klas)
+Thing_declare2cpp (Label, Ordered);
 
 Label Label_create (long initialNumberOfTiers);
 
-int Label_init (I, long initialNumberOfTiers);
+void Label_init (I, long initialNumberOfTiers);
 
-int Label_addTier (Label me);
+void Label_addTier (Label me);
 
 void Label_suggestDomain (Label me, double *tmin, double *tmax);
 

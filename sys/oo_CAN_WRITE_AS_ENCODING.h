@@ -17,15 +17,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/06/24 created as oo_CAN_WRITE_AS_ASCII.h
- * pb 2007/07/03 renamed to oo_CAN_WRITE_AS_ENCODING.h
- * pb 2007/10/01 struct_canWriteAsEncoding static
- * pb 2007/10/14 api
- * pb 2009/03/21 modern enums
- * pb 2011/03/03 removed oo_STRINGx
- */
-
 #include "oo_undef.h"
 
 #define oo_SIMPLE(type,storage,x)
@@ -46,18 +37,18 @@
 
 #define oo_ENUMx_VECTOR(type,t,storage,Type,x,min,max)
 
-#define oo_STRINGWx(storage,x)  \
+#define oo_STRINGx(storage,x)  \
 	if (my x && ! Melder_isEncodable (my x, encoding)) return false;
 
-#define oo_STRINGWx_ARRAY(storage,x,cap,n)  \
+#define oo_STRINGx_ARRAY(storage,x,cap,n)  \
 	for (int i = 0; i < n; i ++) \
 		if (my x [i] && ! Melder_isEncodable (my x [i], encoding)) return false;
 
-#define oo_STRINGWx_SET(storage,x,setType)  \
+#define oo_STRINGx_SET(storage,x,setType)  \
 	for (int i = 0; i <= setType##_MAX; i ++) \
 		if (my x [i] && ! Melder_isEncodable (my x [i], encoding)) return false;
 
-#define oo_STRINGWx_VECTOR(storage,x,min,max)  \
+#define oo_STRINGx_VECTOR(storage,x,min,max)  \
 	if (my x) { \
 		for (long i = min; i <= max; i ++) \
 			if (my x [i] && ! Melder_isEncodable (my x [i], encoding)) return false; \
@@ -99,8 +90,6 @@
 #define oo_WIDGET_VECTOR_FROM(x,cap,min,max)  \
 	!!!! Can never write Widgets... !!!!
 
-
-
 #define oo_OBJECT(Class,version,x)  \
 	if (my x && ! Data_canWriteAsEncoding (my x, encoding)) return false;
 
@@ -113,8 +102,6 @@
 #define oo_DIR(x)  \
 	if (! Melder_isEncodable (my x. path, encoding)) return false;
 
-
-
 #define oo_DEFINE_STRUCT(Type)  \
 	static bool Type##_canWriteAsEncoding (Type me, int encoding) { \
 		(void) me; (void) encoding;
@@ -122,8 +109,6 @@
 #define oo_END_STRUCT(Type)  \
 		return true; \
 	}
-
-
 
 #define oo_DEFINE_CLASS(Class,Parent)  \
 	static bool class##Class##_canWriteAsEncoding (I, int encoding) { \
@@ -134,25 +119,17 @@
 		return true; \
 	}
 
-
-
 #define oo_IF(condition)  \
 	if (condition) {
 
 #define oo_ENDIF  \
 	}
 
-
-
 #define oo_FROM(from)
 
 #define oo_ENDFROM
 
-
-
 #define oo_VERSION(version)
-
-
 
 #define oo_DECLARING  0
 #define oo_DESTROYING  0

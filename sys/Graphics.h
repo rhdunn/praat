@@ -19,21 +19,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
-
-#ifndef _Thing_h_
-	#include "Thing.h"
-#endif
+#include "Thing.h"
 
 #include "Graphics_enums.h"
 
-#ifdef __cplusplus
-	extern "C" {
-#endif
+Thing_declare1cpp (Graphics);
 
-typedef struct structGraphics *Graphics;
 Graphics Graphics_create (int resolution);
 Graphics Graphics_create_postscriptjob (MelderFile file, int resolution, enum kGraphicsPostscript_spots spots,
 	enum kGraphicsPostscript_paperSize paperSize, enum kGraphicsPostscript_orientation rotation, double magnification);
@@ -71,6 +62,7 @@ void Graphics_resetViewport (I, Graphics_Viewport viewport);
 void Graphics_setWindow (I, double x1, double x2, double y1, double y2);
 
 void Graphics_polyline (I, long numberOfPoints, double *x, double *y);
+void Graphics_polyline_closed (I, long numberOfPoints, double *x, double *y);
 void Graphics_text (I, double x, double y, const wchar_t *text);
 void Graphics_text1 (I, double x, double y, const wchar_t *s1);
 void Graphics_text2 (I, double x, double y, const wchar_t *s1, const wchar_t *s2);
@@ -185,7 +177,7 @@ void Graphics_setArrowSize (I, double arrorSize);
 
 void Graphics_inqViewport (I, double *x1NDC, double *x2NDC, double *y1NDC, double *y2NDC);
 void Graphics_inqWindow (I, double *x1WC, double *x2WC, double *y1WC, double *y2WC);
-int Graphics_inqFont (I);
+enum kGraphics_font Graphics_inqFont (I);
 int Graphics_inqFontSize (I);
 int Graphics_inqFontStyle (I);
 int Graphics_inqLineType (I);
@@ -239,10 +231,10 @@ bool Graphics_startRecording (I);
 bool Graphics_stopRecording (I);
 void Graphics_clearRecording (I);
 void Graphics_play (Graphics from, Graphics to);
-int Graphics_writeRecordings (I, FILE *f);
-int Graphics_readRecordings (I, FILE *f);
+void Graphics_writeRecordings (I, FILE *f);
+void Graphics_readRecordings (I, FILE *f);
 #ifdef _WIN32
-int Graphics_readRecordings_oldWindows (I, FILE *f);
+void Graphics_readRecordings_oldWindows (I, FILE *f);
 #endif
 void Graphics_markGroup (I);
 void Graphics_undoGroup (I);
@@ -258,10 +250,6 @@ void Graphics_waitMouseUp (I);
 void Graphics_getMouseLocation (I, double *xWC, double *yWC);
 
 void Graphics_nextSheetOfPaper (I);
-
-#ifdef __cplusplus
-	}
-#endif
 
 /* End of file Graphics.h */
 #endif

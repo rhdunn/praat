@@ -1,6 +1,6 @@
 /* Pitch_def.h
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,9 +18,7 @@
  */
 
 /*
- * pb 1995/08/24
- * pb 2002/07/16 GPL
- * pb 2008/01/19 version 1
+ * pb 2011/07/14
  */
 
 /* Attributes:
@@ -33,7 +31,7 @@
 	maxnCandidates >= 1	// Maximum number of candidates per time slice.
 	frame[1..nx].nCandidates	// Number of candidates in each time slice, including the unvoiced candidate.
 	frame[1..nx].candidate[1..nCandidates].frequency
-		// The frequency of each candidate (Hertz), 0 means aperiodic or silent.
+		// The frequency of each candidate (Hz), 0 means aperiodic or silent.
 		// candidate[1].frequency is the frequency of the currently best candidate.
 	frame[1..nx].candidate[1..nCandidates].strength
 		// The strength of each candidate, a real number between 0 and 1:
@@ -87,6 +85,11 @@ oo_DEFINE_CLASS (Pitch, Sampled)
 	oo_DOUBLE (ceiling)
 	oo_INT (maxnCandidates)
 	oo_STRUCT_VECTOR (Pitch_Frame, frame, my nx)
+
+	#if oo_DECLARING
+		// overridden methods:
+			void v_info ();
+	#endif
 
 oo_END_CLASS (Pitch)
 #undef ooSTRUCT
