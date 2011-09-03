@@ -1,6 +1,6 @@
 /* Ui.c
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,9 +46,12 @@
  * pb 2009/10/15 corrected colon removal
  * pb 2009/12/14 colours
  * pb 2009/12/22 invokingButtonTitle
+ * fb 2010/02/23 GTK
+ * fb 2010/03/01 GTK
  */
 
 #include <wctype.h>
+#include <ctype.h>
 #include "longchar.h"
 #include "machine.h"
 #include "Gui.h"
@@ -909,7 +912,15 @@ void UiForm_finish (I) {
 	my dialog = GuiDialog_create (my parent, DIALOG_X, DIALOG_Y, dialogWidth, dialogHeight, my name, gui_dialog_cb_close, me, 0);
 
 	#if gtk
-		form = GTK_DIALOG(my dialog) -> vbox;
+		form = gtk_vbox_new(FALSE, 0);
+		{
+			Widget scroll_win = gtk_scrolled_window_new(NULL, NULL);
+			gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_win), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+			gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll_win), form);
+			gtk_container_add(GTK_CONTAINER(GTK_DIALOG(my dialog)->vbox), scroll_win);
+			gtk_widget_show(scroll_win);
+		}
+		gtk_widget_show(form);
 		buttons = GTK_DIALOG(my dialog) -> action_area;
 	#else
 		form = my dialog;
@@ -1070,6 +1081,9 @@ void UiForm_finish (I) {
 	if (my helpTitle) {
 		my helpButton = GuiButton_createShown (buttons, HELP_BUTTON_X, HELP_BUTTON_X + HELP_BUTTON_WIDTH, y, Gui_AUTOMATIC,
 			L"Help", gui_button_cb_help, me, 0);
+		#if gtk
+			gtk_button_box_set_child_secondary(GTK_BUTTON_BOX(buttons), my helpButton, TRUE);
+		#endif
 	}
 	if (my numberOfFields > 1 || (my numberOfFields > 0 && my field [1] -> type != UI_LABEL)) {
 		if (my isPauseForm) {
@@ -1082,6 +1096,9 @@ void UiForm_finish (I) {
 				HELP_BUTTON_X + HELP_BUTTON_WIDTH + Gui_HORIZONTAL_DIALOG_SPACING + STANDARDS_BUTTON_WIDTH,
 				y, Gui_AUTOMATIC, L"Standards", gui_button_cb_revert, me, 0);
 		}
+		#if gtk
+		 gtk_button_box_set_child_secondary(GTK_BUTTON_BOX(buttons), my revertButton, TRUE);
+		#endif
 	}
 	if (my isPauseForm) {
 		x = HELP_BUTTON_X + REVERT_BUTTON_WIDTH + Gui_HORIZONTAL_DIALOG_SPACING;

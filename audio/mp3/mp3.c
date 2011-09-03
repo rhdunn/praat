@@ -131,7 +131,7 @@ int mp3_recognize (int nread, const char *data)
 	/* Otherwise the beginning of the file must be an MP3 frame */
 	if (bytes [0] != 0xFF)
 		return 0;
-	
+
 	/* This is not a foolproof check, but it is similar to file(1) */
 	return
 		((bytes [1] & 0xFE) == 0xFA) || /* MPEG ADTS, layer III, v1 */
