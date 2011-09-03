@@ -19,41 +19,78 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
+#include "Editor.h"
 
-#ifndef _Editor_h_
-	#include "Editor.h"
-#endif
+Thing_declare1cpp (DataSubEditor);
+Thing_declare1cpp (VectorEditor);
+Thing_declare1cpp (MatrixEditor);
+Thing_declare1cpp (StructEditor);
+Thing_declare1cpp (ClassEditor);
+Thing_declare1cpp (DataEditor);
 
-#ifdef __cplusplus
-	extern "C" {
-#endif
+typedef struct structDataSubEditor_FieldData {
+	GuiObject label, button, text;
+	void *address;
+	Data_Description description;
+	long minimum, maximum, min2, max2;
+	wchar *history;   // the full prefix of the members
+	int rank;   // should the button open a StructEditor (0) or VectorEditor (1) or MatrixEditor (2) ?
+} *DataSubEditor_FieldData;
 
-#define DataSubEditor__parents(Klas) Editor__parents(Klas) Thing_inherit (Klas, Editor)
-Thing_declare1 (DataSubEditor);
+#define kDataSubEditor_MAXNUM_ROWS  12
 
-#define VectorEditor__parents(Klas) DataSubEditor__parents(Klas) Thing_inherit (Klas, DataSubEditor)
-Thing_declare1 (VectorEditor);
+struct structDataSubEditor : public structEditor {
+	// new data:
+		DataEditor root;
+		void *address;
+		Data_Description description;
+		GuiObject scrollBar;
+		int irow, topField, numberOfFields;
+		struct structDataSubEditor_FieldData fieldData [1 + kDataSubEditor_MAXNUM_ROWS];
+	// overridden methods:
+		virtual void v_destroy ();
+		virtual bool v_scriptable () { return false; }
+		virtual void v_createChildren ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+};
+#define DataSubEditor__methods(Klas) \
+	long (*countFields) (Klas me); \
+	void (*showMembers) (Klas me);
+Thing_declare2cpp (DataSubEditor, Editor);
 
-#define MatrixEditor__parents(Klas) DataSubEditor__parents(Klas) Thing_inherit (Klas, DataSubEditor)
-Thing_declare1 (MatrixEditor);
+struct structVectorEditor : public structDataSubEditor {
+	long minimum, maximum;
+};
+#define VectorEditor__methods(Klas) DataSubEditor__methods(Klas)
+Thing_declare2cpp (VectorEditor, DataSubEditor);
 
-#define StructEditor__parents(Klas) DataSubEditor__parents(Klas) Thing_inherit (Klas, DataSubEditor)
-Thing_declare1 (StructEditor);
+struct structMatrixEditor : public structDataSubEditor {
+	long minimum, maximum, min2, max2;
+};
+#define MatrixEditor__methods(Klas) DataSubEditor__methods(Klas)
+Thing_declare2cpp (MatrixEditor, DataSubEditor);
 
-#define ClassEditor__parents(Klas) StructEditor__parents(Klas) Thing_inherit (Klas, StructEditor)
-Thing_declare1 (ClassEditor);
+struct structStructEditor : public structDataSubEditor {
+};
+#define StructEditor__methods(Klas) DataSubEditor__methods(Klas)
+Thing_declare2cpp (StructEditor, DataSubEditor);
 
-#define DataEditor__parents(Klas) ClassEditor__parents(Klas) Thing_inherit (Klas, ClassEditor)
-Thing_declare1 (DataEditor);
+struct structClassEditor : public structStructEditor {
+};
+#define ClassEditor__methods(Klas) StructEditor__methods(Klas)
+Thing_declare2cpp (ClassEditor, StructEditor);
 
-DataEditor DataEditor_create (GuiObject parent, const wchar_t *title, Any data);
+struct structDataEditor : public structClassEditor {
+	// new data:
+		Collection children;
+	// overridden methods:
+		void v_destroy ();
+		void v_dataChanged ();
+};
+#define DataEditor__methods(Klas) ClassEditor__methods(Klas)
+Thing_declare2cpp (DataEditor, ClassEditor);
 
-#ifdef __cplusplus
-	}
-#endif
+DataEditor DataEditor_create (GuiObject parent, const wchar *title, Any data);
 
 /* End of file DataEditor.h */
 #endif

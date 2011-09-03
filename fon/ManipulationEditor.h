@@ -2,7 +2,7 @@
 #define _ManipulationEditor_h_
 /* ManipulationEditor.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,41 +19,39 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/12/09
- */
-
-#ifndef _FunctionEditor_h_
-	#include "FunctionEditor.h"
-#endif
-#ifndef _Manipulation_h_
-	#include "Manipulation.h"
-#endif
+#include "FunctionEditor.h"
+#include "Manipulation.h"
 
 #include "ManipulationEditor_enums.h"
 
-#define ManipulationEditor__parents(Klas) FunctionEditor__parents(Klas) Thing_inherit (Klas, FunctionEditor)
-Thing_declare1 (ManipulationEditor);
+Thing_define (ManipulationEditor, FunctionEditor) {
+	// new data:
+		PointProcess previousPulses;
+		PitchTier previousPitch;
+		DurationTier previousDuration;
+		double soundmin, soundmax;
+		int synthesisMethod;
+		GuiObject synthPulsesButton, synthPulsesHumButton;
+		GuiObject synthPulsesLpcButton;
+		GuiObject synthPitchButton, synthPitchHumButton;
+		GuiObject synthPulsesPitchButton, synthPulsesPitchHumButton;
+		GuiObject synthOverlapAddNodurButton, synthOverlapAddButton;
+		GuiObject synthPitchLpcButton;
+		struct { enum kManipulationEditor_pitchUnits units; enum kManipulationEditor_draggingStrategy draggingStrategy; double minimum, minPeriodic, maximum, cursor; } pitchTier;
+		struct { double minimum, maximum, cursor;  } duration;
+		Graphics_Viewport inset;
+	// overridden methods:
+		virtual void v_destroy ();
+		virtual void v_createMenus ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_save ();
+		virtual void v_restore ();
+		virtual void v_draw ();
+		virtual int v_click (double xWC, double yWC, bool shiftKeyPressed);
+		virtual void v_play (double tmin, double tmax);
+};
 
-#define ManipulationEditor__members(Klas) FunctionEditor__members(Klas) \
-	PointProcess previousPulses; \
-	PitchTier previousPitch; \
-	DurationTier previousDuration; \
-	double soundmin, soundmax; \
-	int synthesisMethod; \
-	GuiObject synthPulsesButton, synthPulsesHumButton; \
-	GuiObject synthPulsesLpcButton; \
-	GuiObject synthPitchButton, synthPitchHumButton; \
-	GuiObject synthPulsesPitchButton, synthPulsesPitchHumButton; \
-	GuiObject synthOverlapAddNodurButton, synthOverlapAddButton; \
-	GuiObject synthPitchLpcButton; \
-	struct { int units, draggingStrategy; double minimum, minPeriodic, maximum, cursor; } pitchTier; \
-	struct { double minimum, maximum, cursor;  } duration; \
-	Graphics_Viewport inset;
-#define ManipulationEditor__methods(Klas) FunctionEditor__methods(Klas)
-Thing_declare2 (ManipulationEditor, FunctionEditor);
-
-ManipulationEditor ManipulationEditor_create (GuiObject parent, const wchar_t *title, Manipulation ana);
+ManipulationEditor ManipulationEditor_create (GuiObject parent, const wchar *title, Manipulation ana);
 
 void ManipulationEditor_prefs (void);
 

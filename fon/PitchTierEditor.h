@@ -2,7 +2,7 @@
 #define _PitchTierEditor_h_
 /* PitchTierEditor.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,32 +19,33 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/06/10
- */
+#include "RealTierEditor.h"
+#include "PitchTier.h"
+#include "Sound.h"
 
-#ifndef _RealTierEditor_h_
-	#include "RealTierEditor.h"
-#endif
-#ifndef _PitchTier_h_
-	#include "PitchTier.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
+Thing_define (PitchTierEditor, RealTierEditor) {
+	// overridden methods:
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_play (double tmin, double tmax);
+		virtual double v_minimumLegalValue () { return 0.0; }
+		virtual const wchar * v_quantityText () { return L"Frequency (Hz)"; }
+		virtual const wchar * v_quantityKey () { return L"Frequency"; }
+		virtual const wchar * v_rightTickUnits () { return L" Hz"; }
+		virtual double v_defaultYmin () { return 50.0; }
+		virtual double v_defaultYmax () { return 600.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set frequency range..."; }
+		virtual const wchar * v_defaultYminText () { return L"50.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"600.0"; }
+		virtual const wchar * v_yminText () { return L"Minimum frequency (Hz)"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum frequency (Hz)"; }
+		virtual const wchar * v_yminKey () { return L"Minimum frequency"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum frequency"; }
+};
 
-#define PitchTierEditor__parents(Klas) RealTierEditor__parents(Klas) Thing_inherit (Klas, RealTierEditor)
-Thing_declare1 (PitchTierEditor);
-
-#define PitchTierEditor__members(Klas) RealTierEditor__members(Klas)
-#define PitchTierEditor__methods(Klas) RealTierEditor__methods(Klas)
-Thing_declare2 (PitchTierEditor, RealTierEditor);
-
-PitchTierEditor PitchTierEditor_create (GuiObject parent, const wchar_t *title,
-	PitchTier pitch, Sound sound, int ownSound);
-/*
-	'sound' may be NULL.
-*/
+PitchTierEditor PitchTierEditor_create (GuiObject parent, const wchar *title,
+	PitchTier pitch,
+	Sound sound,   // may be NULL
+	bool ownSound);
 
 /* End of file PitchTierEditor.h */
 #endif

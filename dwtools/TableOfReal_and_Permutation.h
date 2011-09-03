@@ -2,7 +2,7 @@
 #define _TableOfReal_and_Permutation_h_
 /* TableOfReal_and_Permutation.h
  *
- * Copyright (C) 2005 David Weenink
+ * Copyright (C) 2005-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,13 +21,14 @@
 
 /*
  djmw 20050708
+ djmw 20110307 Latest modification
 */
 
-#ifndef _Permutation_h_
-	#include "Permutation.h"
-#endif
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
+#include "Permutation.h"
+#include "TableOfReal.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 TableOfReal TableOfReal_and_Permutation_permuteRows (I, Permutation thee);
@@ -35,5 +36,9 @@ TableOfReal TableOfReal_and_Permutation_permuteRows (I, Permutation thee);
 	Permutation (n1,n2,..nn) new his z[1] = my z[n1], his z[2] = my z[n2], ..*/
 
 Permutation TableOfReal_to_Permutation_sortRowLabels (I);
-	
+
+#ifdef __cplusplus
+	}
+#endif
+
 #endif /* _TableOfReal_and_Permutation_h_ */

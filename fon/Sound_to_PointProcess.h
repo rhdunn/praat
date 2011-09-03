@@ -1,6 +1,6 @@
 /* Sound_to_PointProcess.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,26 +17,18 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/01/28
- */
+#include "Sound.h"
+#include "PointProcess.h"
 
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
-
-PointProcess Sound_to_PointProcess_extrema (Sound me, long channel, int interpolation, int includeMaxima, int includeMinima);
+PointProcess Sound_to_PointProcess_extrema (Sound me, long channel, int interpolation, bool includeMaxima, bool includeMinima);
 PointProcess Sound_to_PointProcess_maxima (Sound me, long channel, int interpolation);
 PointProcess Sound_to_PointProcess_minima (Sound me, long channel, int interpolation);
 PointProcess Sound_to_PointProcess_allExtrema (Sound me, long channel, int interpolation);
 
-PointProcess Sound_to_PointProcess_zeroes (Sound me, long channel, int includeRaisers, int includeFallers);
+PointProcess Sound_to_PointProcess_zeroes (Sound me, long channel, bool includeRaisers, bool includeFallers);
 
 PointProcess Sound_to_PointProcess_periodic_cc (Sound me, double fmin, double fmax);
 
-PointProcess Sound_to_PointProcess_periodic_peaks (Sound me, double fmin, double fmax, int includeMaxima, int includeMinima);
+PointProcess Sound_to_PointProcess_periodic_peaks (Sound me, double fmin, double fmax, bool includeMaxima, bool includeMinima);
 
 /* End of file Sound_to_PointProcess.h */

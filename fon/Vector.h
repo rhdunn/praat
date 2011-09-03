@@ -2,7 +2,7 @@
 #define _Vector_h_
 /* Vector.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,20 +19,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/01/27
- */
-
 /* Vector inherits from Matrix */
 /* A Vector is horizontal Matrix. */
 /* The rows are 'channels'. There will often be only one channel, but e.g. a stereo sound has two. */
-#ifndef _Matrix_h_
-	#include "Matrix.h"
-#endif
+#include "Matrix.h"
 
-#define Vector_members  Matrix_members
-#define Vector_methods  Matrix_methods
-class_create (Vector, Matrix);
+Thing_declare1cpp (Vector);
+struct structVector : public structMatrix {
+};
+#define Vector__methods(klas)  Matrix__methods(klas)
+Thing_declare2cpp (Vector, Matrix);
 
 #define Vector_CHANNEL_AVERAGE  0
 #define Vector_CHANNEL_1  1
@@ -69,7 +65,7 @@ void Vector_multiplyByScalar (I, double scalar);
 void Vector_scale (I, double scale);
 
 void Vector_draw (I, Graphics g, double *pxmin, double *pxmax, double *pymin, double *pymax,
-	double defaultDy, const wchar_t *method);
+	double defaultDy, const wchar *method);
 /*
 	If *pxmin equals *pxmax, then autowindowing from my xmin to my xmax.
 	If *pymin equals *pymax, then autoscaling from minimum to maximum;

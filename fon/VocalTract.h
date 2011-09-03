@@ -2,7 +2,7 @@
 #define _VocalTract_h_
 /* VocalTract.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,21 +19,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2002/06/04
- * pb 2002/07/16 GPL
- */
+#include "Vector.h"
+#include "Graphics.h"
 
-#ifndef _Vector_h_
-	#include "Vector.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-
-#define VocalTract_members  Vector_members
-#define VocalTract_methods  Vector_methods
-class_create (VocalTract, Vector);
+Thing_declare1cpp (VocalTract);
+struct structVocalTract : public structVector {
+};
+#define VocalTract__methods(klas)  Vector__methods(klas)
+Thing_declare2cpp (VocalTract, Vector);
 
 /*
 	Attributes:
@@ -62,7 +55,7 @@ VocalTract VocalTract_create (long nx, double dx);
 		my z [1] [1..nx] == 1e-4; // straight tube, area 1 cm2.
  */
 
-VocalTract VocalTract_createFromPhone (wchar_t *phone);
+VocalTract VocalTract_createFromPhone (const wchar *phone);
 /* 'phone' is one of the following: a e i o u y1 y2 y3 jery p t k x pa ta ka pi ti ki pu tu ku */
 
 void VocalTract_draw (VocalTract me, Graphics g);   /* Draw a VocalTract into a Graphics. */

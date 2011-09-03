@@ -2,7 +2,7 @@
 #define _GaussianMixture_h_
 /* GaussianMixture.h
  *
- * Copyright (C) 1993-2010 David Weenink
+ * Copyright (C) 2010-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,28 +21,21 @@
 
 /*
  djmw 20101021 initial version
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _ClassificationTable_h_
-	#include "ClassificationTable.h"
-#endif
-#ifndef _Matrix_h_
-	#include "Matrix.h"
-#endif
-#ifndef _SSCP_h_
-	#include "SSCP.h"
-#endif
-#ifndef _TableOfReal_extensions_h_
-	#include "TableOfReal_extensions.h"
+#include "ClassificationTable.h"
+#include "Matrix.h"
+#include "SSCP.h"
+#include "TableOfReal_extensions.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
-#define GaussianMixture_members Data_members \
-	long numberOfComponents; \
-	long dimension; \
-	double *mixingProbabilities; \
-	Ordered covariances;
-#define GaussianMixture_methods Data_methods
-class_create (GaussianMixture, Data);
+#include "GaussianMixture_def.h"
+#define GaussianMixture__methods(klas) Data__methods(klas)
+oo_CLASS_CREATE (GaussianMixture, Data);
 
 /*
 	Constraints for a Gaussian mixture:
@@ -50,7 +43,7 @@ class_create (GaussianMixture, Data);
 */
 GaussianMixture GaussianMixture_create (long numberOfComponents, long dimension, long storage);
 /* Start each function with expand and end with unExpand */
-int GaussianMixture_expandPCA (GaussianMixture me);
+void GaussianMixture_expandPCA (GaussianMixture me);
 void GaussianMixture_unExpandPCA (GaussianMixture me);
 
 void GaussianMixture_drawConcentrationEllipses (GaussianMixture me, Graphics g,
@@ -64,7 +57,7 @@ void GaussianMixture_and_PCA_drawMarginalPdf (GaussianMixture me, PCA him, Graph
 
 GaussianMixture TableOfReal_to_GaussianMixture_fromRowLabels (I, long storage);
 
-int GaussianMixture_initialGuess (GaussianMixture me, TableOfReal thee, double nSigmas, double ru_range);
+void GaussianMixture_initialGuess (GaussianMixture me, TableOfReal thee, double nSigmas, double ru_range);
 /*
 	Give an initial guess for the centroids and covariances of the GaussianMixture based on the data in the table.
 	Position centroids on the nSigma-ellips in the pc1-pc2 plane with some random variation and the covariances as
@@ -82,15 +75,15 @@ int GaussianMixture_initialGuess (GaussianMixture me, TableOfReal thee, double n
 #define GaussianMixture_AICC 4
 #define GaussianMixture_CD_LIKELIHOOD 5
 
-wchar_t *GaussianMixture_criterionText (int criterion);
+const wchar_t *GaussianMixture_criterionText (int criterion);
 
 GaussianMixture TableOfReal_to_GaussianMixture (I, long numberOfComponents, double delta_lnp, long maxNumberOfIterations, double lambda, int storage, int criterion);
 
-int GaussianMixture_and_TableOfReal_improveLikelihood (GaussianMixture me, thou, double delta_lnp,
+void GaussianMixture_and_TableOfReal_improveLikelihood (GaussianMixture me, thou, double delta_lnp,
 	long maxNumberOfIterations, double lambda, int criterion);
 
 GaussianMixture GaussianMixture_and_TableOfReal_to_GaussianMixture_CEMM (GaussianMixture me, thou, long minNumberOfComponents, double delta_l, long maxNumberOfIterations, double lambda, int criterion);
-int GaussianMixture_splitComponent (GaussianMixture me, long component);
+void GaussianMixture_splitComponent (GaussianMixture me, long component);
 
 ClassificationTable GaussianMixture_and_TableOfReal_to_ClassificationTable (GaussianMixture me, TableOfReal thee);
 TableOfReal GaussianMixture_and_TableOfReal_to_TableOfReal_BHEPNormalityTests (GaussianMixture me, thou, double h);
@@ -98,7 +91,7 @@ TableOfReal GaussianMixture_and_TableOfReal_to_TableOfReal_BHEPNormalityTests (G
 double GaussianMixture_and_TableOfReal_getLikelihoodValue (GaussianMixture me, thou, int criterion);
 
 double GaussianMixture_getProbabilityAtPosition (GaussianMixture me, double *vector);
-double GaussianMixture_getProbabilityAtPosition_string (GaussianMixture me, wchar_t *vector);
+double GaussianMixture_getProbabilityAtPosition_string (GaussianMixture me, const wchar_t *vector);
 double GaussianMixture_getMarginalProbabilityAtPosition (GaussianMixture me, double *vector, double x);
 
 Correlation GaussianMixture_and_TableOfReal_to_Correlation (GaussianMixture me, thou);
@@ -116,14 +109,18 @@ TableOfReal GaussianMixture_extractMixingProbabilities (GaussianMixture me);
 PCA GaussianMixture_to_PCA (GaussianMixture me);
 
 Matrix GaussianMixture_and_PCA_to_Matrix_density (GaussianMixture me, PCA pca, long d1, long d2, double xmin, double xmax, long nx, double ymin, double ymax, long ny);
-int GaussianMixture_and_PCA_getIntervalsAlongDirections (GaussianMixture me, PCA thee, long d1, long d2, double nsigmas, double *xmin, double *xmax, double *ymin, double *ymax);
-int GaussianMixture_and_PCA_getIntervalAlongDirection (GaussianMixture me, PCA thee, long d, double nsigmas, double *xmin, double *xmax);
-int GaussianMixture_getIntervalAlongDirection (GaussianMixture me, long d, double nsigmas, double *xmin, double *xmax);
-int GaussianMixture_getIntervalsAlongDirections (GaussianMixture me, long d1, long d2, double nsigmas, double *xmin, double *xmax, double *ymin, double *ymax);
+void GaussianMixture_and_PCA_getIntervalsAlongDirections (GaussianMixture me, PCA thee, long d1, long d2, double nsigmas, double *xmin, double *xmax, double *ymin, double *ymax);
+void GaussianMixture_and_PCA_getIntervalAlongDirection (GaussianMixture me, PCA thee, long d, double nsigmas, double *xmin, double *xmax);
+void GaussianMixture_getIntervalAlongDirection (GaussianMixture me, long d, double nsigmas, double *xmin, double *xmax);
+void GaussianMixture_getIntervalsAlongDirections (GaussianMixture me, long d1, long d2, double nsigmas, double *xmin, double *xmax, double *ymin, double *ymax);
 
 /* with on demand expand of pca ! */
 int GaussianMixture_generateOneVector (GaussianMixture me, double *c, wchar_t **covname, double *buf);
 TableOfReal GaussianMixture_to_TableOfReal_randomSampling (GaussianMixture me, long numberOfPoints);
 
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _GaussianMixture_h_ */

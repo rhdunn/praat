@@ -1,6 +1,6 @@
 /* Sound_to_Formant.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,16 +17,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/03/30
- */
-
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _Formant_h_
-	#include "Formant.h"
-#endif
+#include "Sound.h"
+#include "Formant.h"
 
 Formant Sound_to_Formant_any (Sound me, double timeStep, int numberOfPoles, double maximumFrequency,
 	double halfdt_window, int which, double preemphasisFrequency, double safetyMargin);

@@ -2,7 +2,7 @@
 #define _Intensity_h_
 /* Intensity.h
  *
- * Copyright (C) 1992-2004 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  */
 
 /*
- * pb 2004/10/24
+ * pb 2011/07/14
  */
 
 /*
@@ -33,17 +33,19 @@
 	z = intensity (dB relative to 2e-5 N/m2 or 1e-12 W/m2)
 */
 
-#ifndef _Vector_h_
-	#include "Vector.h"
-#endif
+#include "Vector.h"
 
-#define Intensity_members Vector_members
-#define Intensity_methods Vector_methods
-class_create (Intensity, Vector);
+Thing_declare1cpp (Intensity);
+struct structIntensity : public structVector {
+	// overridden methods:
+		void v_info ();
+};
+#define Intensity__methods(klas) Vector__methods(klas)
+Thing_declare2cpp (Intensity, Vector);
 
 Intensity Intensity_create (double tmin, double tmax, long nt, double dt, double t1);
 
-int Intensity_init (Intensity me, double tmin, double tmax, long nt, double dt, double t1);
+void Intensity_init (Intensity me, double tmin, double tmax, long nt, double dt, double t1);
 
 Matrix Intensity_to_Matrix (Intensity me);
 

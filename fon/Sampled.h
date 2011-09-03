@@ -1,6 +1,8 @@
+#ifndef _Sampled_h_
+#define _Sampled_h_
 /* Sampled.h
  *
- * Copyright (C) 1992-2005 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,27 +19,18 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2005/06/16
- */
-
-#ifndef _Sampled_h_
-#define _Sampled_h_
-
 /* Sampled inherits from Function */
-#ifndef _Function_h_
-	#include "Function.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
+#include "Function.h"
+#include "Graphics.h"
 
-#define Sampled_members Function_members \
-	long nx; \
+Thing_declare1cpp (Sampled);
+struct structSampled : public structFunction {
+	long nx;
 	double dx, x1;
-#define Sampled_methods Function_methods \
+};
+#define Sampled__methods(klas) Function__methods(klas) \
 	double (*getValueAtSample) (I, long isamp, long ilevel, int unit);
-class_create (Sampled, Function);
+Thing_declare2cpp (Sampled, Function);
 
 /* A Sampled is a Function that is sampled at nx points [1..nx], */
 /* which are spaced apart by a constant distance dx. */
@@ -56,9 +49,9 @@ long Sampled_xToNearestIndex (I, double x);
 
 long Sampled_getWindowSamples (I, double xmin, double xmax, long *ixmin, long *ixmax);
 
-int Sampled_init (I, double xmin, double xmax, long nx, double dx, double x1);
+void Sampled_init (I, double xmin, double xmax, long nx, double dx, double x1);
 
-int Sampled_shortTermAnalysis (I, double windowDuration, double timeStep,
+void Sampled_shortTermAnalysis (I, double windowDuration, double timeStep,
 		long *numberOfFrames, double *firstTime);
 /*
 	Function:
@@ -124,5 +117,5 @@ double Sampled_getXOfMaximum (I, double xmin, double xmax, long ilevel, int unit
 void Sampled_drawInside
 	(I, Graphics g, double xmin, double xmax, double ymin, double ymax, double speckle_mm, long ilevel, int unit);
 
-#endif
 /* End of file Sampled.h */
+#endif

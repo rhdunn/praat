@@ -2,7 +2,7 @@
 #define _Harmonicity_h_
 /* Harmonicity.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,18 +19,13 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2002/06/04
- * pb 2002/07/16 GPL
- */
+#include "Vector.h"
 
-#ifndef _Vector_h_
-	#include "Vector.h"
-#endif
-
-#define Harmonicity_members  Vector_members
-#define Harmonicity_methods  Vector_methods
-class_create (Harmonicity, Vector);
+Thing_declare1cpp (Harmonicity);
+struct structHarmonicity : public structVector {
+};
+#define Harmonicity__methods(klas)  Vector__methods(klas)
+Thing_declare2cpp (Harmonicity, Vector);
 
 /* Attributes:
 		xmin				// Start time (seconds).

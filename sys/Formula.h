@@ -19,17 +19,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
-
-#ifndef _Thing_h_
-	#include "Thing.h"
-#endif
-
-#ifdef __cplusplus
-	extern "C" {
-#endif
+#include "Thing.h"
 
 #define kFormula_EXPRESSION_TYPE_NUMERIC  0
 #define kFormula_EXPRESSION_TYPE_STRING  1
@@ -46,18 +36,14 @@ struct Formula_Result {
 	int expressionType;
 	union {
 		double numericResult;
-		wchar_t *stringResult;
+		wchar *stringResult;
 		struct Formula_NumericArray numericArrayResult;
 	} result;
 };
 
-int Formula_compile (Any interpreter, Any data, const wchar_t *expression, int expressionType, int optimize);
+void Formula_compile (Any interpreter, Any data, const wchar *expression, int expressionType, int optimize);
 
-int Formula_run (long row, long col, struct Formula_Result *result);
-
-#ifdef __cplusplus
-	}
-#endif
+void Formula_run (long row, long col, struct Formula_Result *result);
 
 /* End of file Formula.h */
 #endif

@@ -19,19 +19,53 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
-
 /* Data inherits from Thing. */
 /* It adds the functionality of reproduction, comparison, reading, and writing. */
-#ifndef _Thing_h_
-	#include "Thing.h"
-#endif
+#include "Thing.h"
 
-#ifdef __cplusplus
-	extern "C" {
-#endif
+Thing_declare1cpp (Data);
+struct structData : public structThing {
+};
+#define Data__methods(Klas) Thing__methods(Klas) \
+	struct structData_Description *description; \
+	void (*copy) (Any data_from, Any data_to); \
+	bool (*equal) (Any data1, Any data2); \
+	bool (*canWriteAsEncoding) (I, int outputEncoding); \
+	void (*writeText) (I, MelderFile openFile); \
+	void (*readText) (I, MelderReadText text); \
+	void (*writeBinary) (I, FILE *f); \
+	void (*readBinary) (I, FILE *f); \
+	void (*writeCache) (I, CACHE *f); \
+	void (*readCache) (I, CACHE *f); \
+	void (*writeLisp) (I, FILE *f); \
+	void (*readLisp) (I, FILE *f); \
+	/* Messages for scripting. */ \
+	double (*getNrow) (I); \
+	double (*getNcol) (I); \
+	double (*getXmin) (I); \
+	double (*getXmax) (I); \
+	double (*getYmin) (I); \
+	double (*getYmax) (I); \
+	double (*getNx) (I); \
+	double (*getNy) (I); \
+	double (*getDx) (I); \
+	double (*getDy) (I); \
+	double (*getX) (I, long ix); \
+	double (*getY) (I, long iy); \
+	const wchar * (*getRowStr) (I, long irow); \
+	const wchar * (*getColStr) (I, long icol); \
+	double (*getCell) (I); \
+	const wchar * (*getCellStr) (I); \
+	double (*getVector) (I, long irow, long icol); \
+	const wchar * (*getVectorStr) (I, long icol); \
+	double (*getMatrix) (I, long irow, long icol); \
+	const wchar * (*getMatrixStr) (I, long irow, long icol); \
+	double (*getFunction0) (I); \
+	double (*getFunction1) (I, long irow, double x); \
+	double (*getFunction2) (I, double x, double y); \
+	double (*getRowIndex) (I, const wchar *rowLabel); \
+	double (*getColumnIndex) (I, const wchar *columnLabel);
+Thing_declare2cpp (Data, Thing);
 
 Any Data_copy (I);
 /*
@@ -64,9 +98,13 @@ bool Data_canWriteText (I);
 	The answer depends on whether the subclass defines the 'writeText' method.
 */
 
-int Data_createTextFile (I, MelderFile file, bool verbose);
+MelderFile Data_createTextFile (
+	I,
+	MelderFile file,
+	bool verbose
+);   // returns the input MelderFile in order to be caught by an autoMelderFile
 
-int Data_writeText (I, MelderFile openFile);
+void Data_writeText (I, MelderFile openFile);
 /*
 	Message:
 		"try to write yourself as text to an open file."
@@ -79,7 +117,7 @@ int Data_writeText (I, MelderFile openFile);
 		The format depends on the 'writeText' method defined by the subclass.
 */
 
-int Data_writeToTextFile (I, MelderFile file);
+void Data_writeToTextFile (I, MelderFile file);
 /*
 	Message:
 		"try to write yourself as text to a file".
@@ -90,7 +128,7 @@ int Data_writeToTextFile (I, MelderFile file);
 		The format of the lines after the second line is the same as in Data_writeText.
 */
 
-int Data_writeToShortTextFile (I, MelderFile file);
+void Data_writeToShortTextFile (I, MelderFile file);
 /*
 	Message:
 		"try to write yourself as text to a file".
@@ -108,12 +146,10 @@ bool Data_canWriteBinary (I);
 	The answer depends on whether the subclass defines the 'writeBinary' method.
 */
 
-int Data_writeBinary (I, FILE *f);
+void Data_writeBinary (I, FILE *f);
 /*
 	Message:
 		"try to write yourself as binary data to an open file."
-	Return value:
-		1 if OK, 0 in case of failure.
 	Failures:
 		I/O error.
 		Disk full.
@@ -123,7 +159,7 @@ int Data_writeBinary (I, FILE *f);
 		and IEEE floating-point format.
 */
 
-int Data_writeToBinaryFile (I, MelderFile file);
+void Data_writeToBinaryFile (I, MelderFile file);
 /*
 	Message:
 		"try to write yourself as binary data to a file".
@@ -140,12 +176,10 @@ bool Data_canWriteLisp (I);
 	The answer depends on whether the subclass defines a 'writeLisp' method.
 */
 
-int Data_writeLisp (I, FILE *f);
+void Data_writeLisp (I, FILE *f);
 /*
 	Message:
 		"try to write yourself as a sequence of LISP objects to the stream <f>."
-	Return value:
-		1 if OK, 0 in case of failure.
 	Failures:
 		I/O error.
 		Disk full.
@@ -153,7 +187,7 @@ int Data_writeLisp (I, FILE *f);
 		The format depends on the 'writeLisp' method defined by the subclass.
 */
 
-int Data_writeLispToConsole (I);
+void Data_writeLispToConsole (I);
 /*
 	Message:
 		"try to write yourself as a sequence of LISP objects to the standard output."
@@ -164,7 +198,7 @@ int Data_writeLispToConsole (I);
 		The standard output will most often be a window named "Console".
 */
 
-int Data_writeToLispFile (I, MelderFile file);
+void Data_writeToLispFile (I, MelderFile file);
 /*
 	Message:
 		"try to write yourself as a sequence of LISP objects to a file".
@@ -188,14 +222,12 @@ bool Data_canReadText (I);
 	but is preferably the same as the answer from Data_canWriteText.
 */
 
-int Data_readText (I, MelderReadText text);
+void Data_readText (I, MelderReadText text);
 /*
 	Message:
 		"try to read yourself as text from a string."
-	Return value:
-		1 if OK, 0 in case of failure.
 	Failures:
-		The 'readText' method of the subclass failed (returned 0).
+		The 'readText' method of the subclass failed.
 		I/O error.
 		Early end of file detected.
 	Description:
@@ -212,7 +244,7 @@ Any Data_readFromTextFile (MelderFile file);
 		e.g., if the first line is "PersonTextFile", the Data will be a Person.
 		The format of the lines after the first line is the same as in Data_readText.
 	Return value:
-		the new object if OK, or NULL in case of failure.
+		the new object.
 	Failures:
 		Error opening file <fileName>.
 		The file <fileName> does not contain an object.
@@ -227,14 +259,12 @@ bool Data_canReadBinary (I);
 	but is preferably the same as the answer from Data_canWriteBinary.
 */
 
-int Data_readBinary (I, FILE *f);
+void Data_readBinary (I, FILE *f);
 /*
 	Message:
 		"try to read yourself as binary data from the stream <f>."
-	Return value:
-		1 if OK, 0 in case of failure.
 	Failures:
-		The 'readBinary' method of the subclass returns an error (0).
+		The 'readBinary' method of the subclass throws an error.
 		I/O error.
 		Early end of file detected.
 	Description:
@@ -251,7 +281,7 @@ Any Data_readFromBinaryFile (MelderFile file);
 		e.g., if the file starts with is "PersonBinaryFile", the Data will be a Person.
 		The format of the file after this is the same as in Data_readBinary.
 	Return value:
-		the new object if OK, or NULL in case of failure.
+		the new object.
 	Failures:
 		Error opening file <fileName>.
 		The file <fileName> does not contain an object.
@@ -266,14 +296,12 @@ bool Data_canReadLisp (I);
 	but is preferably the same as the answer from Data_canWriteLisp.
 */
 
-int Data_readLisp (I, FILE *f);
+void Data_readLisp (I, FILE *f);
 /*
 	Message:
 		"try to read yourself from a sequence of LISP objects in the stream <f>."
-	Return value:
-		1 if OK, 0 in case of failure.
 	Failures:
-		The 'readLisp' method of the subclass failed (returned 0).
+		The 'readLisp' method of the subclass failed.
 		I/O error.
 		Early end of file detected.
 	Description:
@@ -290,7 +318,7 @@ Any Data_readFromLispFile (MelderFile fs);
 		e.g., if the first line is "PersonLispFile", the Data will be a Person.
 		The format of the lines after the first line is the same as in Data_readLisp.
 	Return value:
-		the new object if OK, or NULL in case of failure.
+		the new object.
 	Failures:
 		Error opening file <fileName>.
 		The file <fileName> does not contain an object.
@@ -309,48 +337,6 @@ typedef struct structData_Description {
 	const wchar_t *min2, *max2;   /* For matrices. */
 } *Data_Description;
 
-#define Data_members Thing_members
-#define Data_methods Thing_methods \
-	struct structData_Description *description; \
-	int (*copy) (Any data_from, Any data_to); \
-	bool (*equal) (Any data1, Any data2); \
-	bool (*canWriteAsEncoding) (I, int outputEncoding); \
-	int (*writeText) (I, MelderFile openFile); \
-	int (*readText) (I, MelderReadText text); \
-	int (*writeBinary) (I, FILE *f); \
-	int (*readBinary) (I, FILE *f); \
-	int (*writeCache) (I, CACHE *f); \
-	int (*readCache) (I, CACHE *f); \
-	int (*writeLisp) (I, FILE *f); \
-	int (*readLisp) (I, FILE *f); \
-	/* Messages for scripting. */ \
-	double (*getNrow) (I); \
-	double (*getNcol) (I); \
-	double (*getXmin) (I); \
-	double (*getXmax) (I); \
-	double (*getYmin) (I); \
-	double (*getYmax) (I); \
-	double (*getNx) (I); \
-	double (*getNy) (I); \
-	double (*getDx) (I); \
-	double (*getDy) (I); \
-	double (*getX) (I, long ix); \
-	double (*getY) (I, long iy); \
-	wchar_t * (*getRowStr) (I, long irow); \
-	wchar_t * (*getColStr) (I, long icol); \
-	double (*getCell) (I); \
-	wchar_t * (*getCellStr) (I); \
-	double (*getVector) (I, long irow, long icol); \
-	wchar_t * (*getVectorStr) (I, long icol); \
-	double (*getMatrix) (I, long irow, long icol); \
-	wchar_t * (*getMatrixStr) (I, long irow, long icol); \
-	double (*getFunction0) (I); \
-	double (*getFunction1) (I, long irow, double x); \
-	double (*getFunction2) (I, double x, double y); \
-	double (*getRowIndex) (I, const wchar_t *rowLabel); \
-	double (*getColumnIndex) (I, const wchar_t *columnLabel);
-class_create (Data, Thing);
-
 /* The values of 'type' in struct descriptions. */
 
 #define bytewa  1
@@ -366,20 +352,18 @@ class_create (Data, Thing);
 #define doublewa  11
 #define fcomplexwa  12
 #define dcomplexwa  13
-#define charwa  14
-#define wcharwa  15
-#define enumwa  16
-#define lenumwa  17
-#define booleanwa  18
-#define questionwa  19
-#define stringwwa  20
-#define lstringwwa  21
-#define maxsingletypewa lstringwwa
-#define structwa  22
-#define widgetwa  23
-#define objectwa  24
-#define collectionwa  25
-#define inheritwa  26
+#define enumwa  14
+#define lenumwa  15
+#define booleanwa  16
+#define questionwa  17
+#define stringwa  18
+#define lstringwa  19
+#define maxsingletypewa lstringwa
+#define structwa  20
+#define widgetwa  21
+#define objectwa  22
+#define collectionwa  23
+#define inheritwa  24
 
 /* Recursive routines for working with struct members. */
 
@@ -441,12 +425,8 @@ Defining a file-type recognizer:
 	}
 	From this example, we see that if the file is recognized, it should be read immediately,
 	and the resulting object (always a descendant of class Data) should be returned.
-	We also see that the return value NULL is used either for notifying Data_readFromFile
-	of the fact that the file is not a Sun audio file,
-	or for returning an error message (because Sound_readFromSunAudioFile may return NULL).
-	Data_readFromFile will distinguish between these two possibilities by checking the error queue
-	(with Melder_hasError). This means that Sound_readFromSunAudioFile is obliged
-	to queue an error (with Melder_error) in case of a failure.
+	We also see that the return value NULL is used for notifying Data_readFromFile
+	of the fact that the file is not a Sun audio file.
 Registering a file-type recognizer:
 	You would put a statement like the following in the initialization section of your program:
 	Data_recognizeFileType (Sound_sunAudioFileRecognizer);
@@ -470,10 +450,6 @@ Behaviour:
 */
 
 extern structMelderDir Data_directoryBeingRead;
-
-#ifdef __cplusplus
-	}
-#endif
 
 /* End of file Data.h */
 #endif

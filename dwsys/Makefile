@@ -1,14 +1,16 @@
 # makefile for library "dwsys".
-# David Weenink 20100223
+# David Weenink 20110414
 
 include ../makefile.defs
 
-CFLAGS = -I ../stat -I ../num -I ../sys -I ../GSL -I ../kar
+CFLAGS = $(DEFS) -I ../stat -I ../num -I ../sys -I dwsys -I ../GSL -I ../kar
+
+CPPFLAGS = $(CFLAGS)
 
 all: libdwsys.a
 
 OBJECTS = Collection_extensions.o Command.o \
-	Eigen.o Index.o \
+	DLL.o Eigen.o Index.o \
 	NUM2.o NUMhuber.o NUMlapack.o NUMmachar.o \
 	NUMf2c.o NUMcblas.o NUMclapack.o NUMfft_d.o NUMsort2.o \
 	Permutation.o Permutation_and_Index.o \

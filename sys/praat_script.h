@@ -1,6 +1,8 @@
+#ifndef _praat_script_h_
+#define _praat_script_h_
 /* praat_script.h
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,22 +19,17 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2009/12/22
- */
+#include "Interpreter.h"
 
-#ifndef _Interpreter_h_
-	#include "Interpreter.h"
-#endif
-
-int praat_executeCommand (Interpreter me, const wchar_t *command);
-int praat_executeCommandFromStandardInput (const char *programName);
-int praat_executeScriptFromFile (MelderFile file, const wchar_t *arguments);
-int praat_executeScriptFromFileNameWithArguments (const wchar_t *nameAndArguments);
-int praat_executeScriptFromText (wchar_t *text);
-int praat_executeScriptFromDialog (Any dia);
-int DO_praat_runScript (UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter_dummy, const wchar_t *invokingButtonTitle, bool modified, void *dummy);
-int DO_RunTheScriptFromAnyAddedMenuCommand (UiForm sendingForm_dummy, const wchar_t *scriptPath, Interpreter interpreter_dummy, const wchar_t *invokingButtonTitle, bool modified, void *dummy);
-int DO_RunTheScriptFromAnyAddedEditorCommand (Any editor, const wchar_t *script);
+void praat_executeCommand (Interpreter me, wchar *command);
+void praat_executeCommandFromStandardInput (const char *programName);
+void praat_executeScriptFromFile (MelderFile file, const wchar *arguments);
+void praat_executeScriptFromFileNameWithArguments (const wchar *nameAndArguments);
+void praat_executeScriptFromText (wchar *text);
+void praat_executeScriptFromDialog (Any dia);
+void DO_praat_runScript (UiForm sendingForm, const wchar *sendingString, Interpreter interpreter_dummy, const wchar *invokingButtonTitle, bool modified, void *dummy);
+void DO_RunTheScriptFromAnyAddedMenuCommand (UiForm sendingForm_dummy, const wchar *scriptPath, Interpreter interpreter_dummy, const wchar *invokingButtonTitle, bool modified, void *dummy);
+void DO_RunTheScriptFromAnyAddedEditorCommand (Any editor, const wchar *script);
 
 /* End of file praat_script.h */
+#endif

@@ -1,6 +1,6 @@
 /* Sound_to_Pitch.h
  *
- * Copyright (C) 1992-2003 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,16 +17,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2003/05/20
- */
-
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _Pitch_h_
-	#include "Pitch.h"
-#endif
+#include "Sound.h"
+#include "Pitch.h"
 
 Pitch Sound_to_Pitch (Sound me, double timeStep,
 	double minimumPitch, double maximumPitch);
@@ -47,7 +39,7 @@ Pitch Sound_to_Pitch_cc (Sound me, double timeStep, double minimumPitch,
 Pitch Sound_to_Pitch_any (Sound me,
 
 	double dt,                 /* time step (seconds); 0.0 = automatic = periodsPerWindow / minimumPitch / 4 */
-	double minimumPitch,       /* (Hertz) */
+	double minimumPitch,       /* (Hz) */
 	double periodsPerWindow,   /* ac3 for pitch analysis, 6 or 4.5 for HNR, 1 for FCC */
 	int maxnCandidates,        /* maximum number of candidates per frame */
 	int method,                /* 0 or 1 = AC, 2 or 3 = FCC, 0 or 2 = fast, 1 or 3 = accurate */
@@ -57,7 +49,7 @@ Pitch Sound_to_Pitch_any (Sound me,
 	double octaveCost,         /* favours higher pitches; default 0.01 */
 	double octaveJumpCost,     /* default 0.35 */
 	double voicedUnvoicedCost, /* default 0.14 */
-	double maximumPitch);      /* (Hertz) */
+	double maximumPitch);      /* (Hz) */
 /*
 	Function:
 		acoustic periodicity analysis.

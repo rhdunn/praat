@@ -1,6 +1,6 @@
 /* Sound_PointProcess.h
  *
- * Copyright (C) 2010 Paul Boersma
+ * Copyright (C) 2010-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,16 +17,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2010/12/09
- */
-
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
+#include "Sound.h"
+#include "PointProcess.h"
 
 Sound Sound_PointProcess_to_SoundEnsemble_correlate (Sound me, PointProcess thee, double tmin, double tmax);
 

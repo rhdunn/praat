@@ -2,7 +2,7 @@
 #define _Excitations_h_
 /* Excitations.h
  *
- * Copyright (C) 1993-2007 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,25 +21,23 @@
 
 /*
  djmw 20020813 GPL header
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
-#ifndef _Excitation_h_
-	#include "Excitation.h"
-#endif
-#ifndef _Pattern_h_
-	#include "Pattern.h"
-#endif
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
-#define Excitations_members Ordered_members
-#define Excitations_methods Ordered_methods
+#include "Collection.h"
+#include "Excitation.h"
+#include "Pattern.h"
+#include "TableOfReal.h"
 
-class_create (Excitations, Ordered);
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
+Thing_declare1cpp (Excitations);
+struct structExcitations : public structOrdered {
+};
+#define Excitations__methods(klas) Ordered__methods(klas)
+Thing_declare2cpp (Excitations, Ordered);
 
 /* Excitations is a collection of objects of the same class Excitation */
 
@@ -51,6 +49,10 @@ Pattern Excitations_to_Pattern (Excitations me, long join);
 TableOfReal Excitations_to_TableOfReal (Excitations me);
 /* Precondition: my size >= 1, all items have same dimension */
 
-Any Excitations_getItem (Excitations m, long item);
+Excitation Excitations_getItem (Excitations m, long item);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Excitations_h_ */

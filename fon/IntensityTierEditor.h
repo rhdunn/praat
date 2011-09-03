@@ -2,7 +2,7 @@
 #define _IntensityTierEditor_h_
 /* IntensityTierEditor.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,29 +19,30 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/06/10
- */
+#include "RealTierEditor.h"
+#include "IntensityTier.h"
+#include "Sound.h"
 
-#ifndef _RealTierEditor_h_
-	#include "RealTierEditor.h"
-#endif
-#ifndef _IntensityTier_h_
-	#include "IntensityTier.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
+Thing_define (IntensityTierEditor, RealTierEditor) {
+	// overridden methods:
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_play (double tmin, double tmax);
+		virtual const wchar * v_quantityText () { return L"Intensity (dB)"; }
+		virtual const wchar * v_quantityKey () { return L"Intensity"; }
+		virtual const wchar * v_rightTickUnits () { return L" dB"; }
+		virtual double v_defaultYmin () { return 50.0; }
+		virtual double v_defaultYmax () { return 100.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set intensity range..."; }
+		virtual const wchar * v_defaultYminText () { return L"50.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"100.0"; }
+		virtual const wchar * v_yminText () { return L"Minimum intensity (dB)"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum intensity (dB)"; }
+		virtual const wchar * v_yminKey () { return L"Minimum intensity"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum intensity"; }
+};
 
-#define IntensityTierEditor__parents(Klas) RealTierEditor__parents(Klas) Thing_inherit (Klas, RealTierEditor)
-Thing_declare1 (IntensityTierEditor);
-
-#define IntensityTierEditor__members(Klas) RealTierEditor__members(Klas)
-#define IntensityTierEditor__methods(Klas) RealTierEditor__methods(Klas)
-Thing_declare2 (IntensityTierEditor, RealTierEditor);
-
-IntensityTierEditor IntensityTierEditor_create (GuiObject parent, const wchar_t *title,
-	IntensityTier intensity, Sound sound, int ownSound);
+IntensityTierEditor IntensityTierEditor_create (GuiObject parent, const wchar *title,
+	IntensityTier intensity, Sound sound, bool ownSound);
 /*
 	'sound' may be NULL.
 */

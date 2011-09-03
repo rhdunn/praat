@@ -2,7 +2,7 @@
 #define _PitchEditor_h_
 /* PitchEditor.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,25 +19,19 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/06/10
- */
+#include "FunctionEditor.h"
+#include "Pitch.h"
 
-#ifndef _FunctionEditor_h_
-	#include "FunctionEditor.h"
-#endif
-#ifndef _Pitch_h_
-	#include "Pitch.h"
-#endif
+Thing_define (PitchEditor, FunctionEditor) {
+	// overridden methods:
+		virtual void v_createMenus ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_draw ();
+		virtual void v_play (double tmin, double tmax);
+		virtual int v_click (double xWC, double yWC, bool shiftKeyPressed);
+};
 
-#define PitchEditor__parents(Klas) FunctionEditor__parents(Klas) Thing_inherit (Klas, FunctionEditor)
-Thing_declare1 (PitchEditor);
-
-#define PitchEditor__members(Klas) FunctionEditor__members(Klas)
-#define PitchEditor__methods(Klas) FunctionEditor__methods(Klas)
-Thing_declare2 (PitchEditor, FunctionEditor);
-
-PitchEditor PitchEditor_create (GuiObject parent, const wchar_t *title, Pitch pitch);
+PitchEditor PitchEditor_create (GuiObject parent, const wchar *title, Pitch pitch);
 
 /* End of file PitchEditor.h */
 #endif

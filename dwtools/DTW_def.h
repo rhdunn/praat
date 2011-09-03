@@ -61,10 +61,13 @@ oo_DEFINE_CLASS (DTW, Matrix)
 	oo_LONG (pathLength)
 	oo_STRUCT_VECTOR (DTW_Path, path, my pathLength)
 	#if ! oo_READING && ! oo_WRITING
+		oo_DOUBLE (wx)
+		oo_DOUBLE (wy)
+		oo_DOUBLE (wd)
 		oo_STRUCT (DTW_Path_Query, pathQuery)
 	#endif
 	#if oo_READING
-		if (! DTW_Path_Query_init (& my pathQuery, my ny, my nx)) return 0;
+		DTW_Path_Query_init (& my pathQuery, my ny, my nx);
 		DTW_Path_recode (me);
 	#endif
 oo_END_CLASS (DTW)

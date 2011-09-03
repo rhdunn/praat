@@ -2,7 +2,7 @@
 #define _Distributions_h_
 /* Distributions.h
  *
- * Copyright (C) 1997-2008 Paul Boersma
+ * Copyright (C) 1997-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,29 +19,27 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2008/04/08
- */
-
 /* Distributions inherits from TableOfReal */
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
+#include "TableOfReal.h"
 
-#define Distributions_members TableOfReal_members
-#define Distributions_methods TableOfReal_methods
-class_create (Distributions, TableOfReal);
+Thing_declare1cpp (Distributions);
+struct structDistributions : public structTableOfReal {
+};
+#define Distributions__methods(klas) TableOfReal__methods(klas)
+Thing_declare2cpp (Distributions, TableOfReal);
 
 Distributions Distributions_create (long numberOfRows, long numberOfColumns);
 
-int Distributions_peek (Distributions me, long column, wchar_t **string);
+int Distributions_peek (Distributions me, long column, wchar **string);
 int Distributions_peek_opt (Distributions me, long column, long *row);
 
-double Distributions_getProbability (Distributions me, const wchar_t *string, long column);
+double Distributions_getProbability (Distributions me, const wchar *string, long column);
 double Distributionses_getMeanAbsoluteDifference (Distributions me, Distributions thee, long column);
 
 Distributions Distributions_addTwo (Distributions me, Distributions thee);
 Distributions Distributions_addMany (Collection me);
+
+void Distributions_checkSpecifiedColumnNumberWithinRange (Distributions me, long columnNumber);
 
 /* End of file Distributions.h */
 #endif

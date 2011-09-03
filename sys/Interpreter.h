@@ -19,76 +19,58 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
+#include "Collection.h"
+#include "Gui.h"
+#include "Formula.h"
 
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
-#ifndef _Gui_h_
-	#include "Gui.h"
-#endif
-#include "Ui_decl.h"
-#include "Interpreter_decl.h"
-#ifndef _Formula_h_
-	#include "Formula.h"
-#endif
-
-#ifdef __cplusplus
-	extern "C" {
-#endif
-
-#define InterpreterVariable_members Thing_members \
-	wchar_t *key, *stringValue; \
-	double numericValue; \
+Thing_declare1cpp (InterpreterVariable);
+struct structInterpreterVariable : public structSimpleString {
+	wchar *stringValue;
+	double numericValue;
 	struct Formula_NumericArray numericArrayValue;
-#define InterpreterVariable_methods Thing_methods
-class_create (InterpreterVariable, Thing);
+};
+#define InterpreterVariable__methods(klas) SimpleString__methods(klas)
+Thing_declare2cpp (InterpreterVariable, SimpleString);
 
 #define Interpreter_MAXNUM_PARAMETERS  400
 #define Interpreter_MAXNUM_LABELS  1000
 #define Interpreter_MAX_CALL_DEPTH  50
 
-#define Interpreter_members Thing_members \
-	wchar_t *environmentName; \
-	Any editorClass; \
-	int numberOfParameters, numberOfLabels, callDepth; \
-	wchar_t parameters [1+Interpreter_MAXNUM_PARAMETERS] [100]; \
-	unsigned char types [1+Interpreter_MAXNUM_PARAMETERS]; \
-	wchar_t *arguments [1+Interpreter_MAXNUM_PARAMETERS]; \
-	wchar_t choiceArguments [1+Interpreter_MAXNUM_PARAMETERS] [100]; \
-	wchar_t labelNames [1+Interpreter_MAXNUM_LABELS] [100]; \
-	long labelLines [1+Interpreter_MAXNUM_LABELS]; \
-	wchar_t dialogTitle [1+100], procedureNames [1+Interpreter_MAX_CALL_DEPTH] [100]; \
-	SortedSetOfString variables; \
+Thing_define (Interpreter, Thing) {
+	wchar *environmentName;
+	Any editorClass;
+	int numberOfParameters, numberOfLabels, callDepth;
+	wchar parameters [1+Interpreter_MAXNUM_PARAMETERS] [100];
+	unsigned char types [1+Interpreter_MAXNUM_PARAMETERS];
+	wchar *arguments [1+Interpreter_MAXNUM_PARAMETERS];
+	wchar choiceArguments [1+Interpreter_MAXNUM_PARAMETERS] [100];
+	wchar labelNames [1+Interpreter_MAXNUM_LABELS] [100];
+	long labelLines [1+Interpreter_MAXNUM_LABELS];
+	wchar dialogTitle [1+100], procedureNames [1+Interpreter_MAX_CALL_DEPTH] [100];
+	SortedSetOfString variables;
 	bool running, stopped;
-#define Interpreter_methods Thing_methods
-class_create_opaque (Interpreter, Thing);
+};
 
-Interpreter Interpreter_create (wchar_t *environmentName, Any editorClass);
+Interpreter Interpreter_create (wchar *environmentName, Any editorClass);
 Interpreter Interpreter_createFromEnvironment (Any editor);
 
-int Melder_includeIncludeFiles (wchar_t **text);
-int Interpreter_readParameters (Interpreter me, wchar_t *text);
+void Melder_includeIncludeFiles (wchar **text);
+long Interpreter_readParameters (Interpreter me, wchar *text);
+Thing_declare (UiForm);
 Any Interpreter_createForm (Interpreter me, GuiObject parent, const wchar_t *fileName,
-	int (*okCallback) (UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter, const wchar_t *invokingButtonTitle, bool modified, void *closure), void *okClosure);
-int Interpreter_getArgumentsFromDialog (Interpreter me, Any dialog);
-int Interpreter_getArgumentsFromString (Interpreter me, const wchar_t *arguments);
-int Interpreter_run (Interpreter me, wchar_t *text);   /* Destroys 'text'. */
-void Interpreter_stop (Interpreter me);   // Can be called from any procedure called deep-down by the interpreter. Will stop before next line.
-int Interpreter_voidExpression (Interpreter me, const wchar_t *expression);
-int Interpreter_numericExpression (Interpreter me, const wchar_t *expression, double *value);
-int Interpreter_stringExpression (Interpreter me, const wchar_t *expression, wchar_t **value);
-int Interpreter_numericArrayExpression (Interpreter me, const wchar_t *expression, struct Formula_NumericArray *value);
-int Interpreter_anyExpression (Interpreter me, const wchar_t *expression, struct Formula_Result *result);
+	void (*okCallback) (UiForm sendingForm, const wchar *sendingString, Interpreter interpreter, const wchar *invokingButtonTitle, bool modified, void *closure), void *okClosure);
+void Interpreter_getArgumentsFromDialog (Interpreter me, Any dialog);
+void Interpreter_getArgumentsFromString (Interpreter me, const wchar *arguments);
+void Interpreter_run (Interpreter me, wchar *text);   // destroys 'text'
+void Interpreter_stop (Interpreter me);   // can be called from any procedure called deep-down by the interpreter; will stop before next line
+void Interpreter_voidExpression (Interpreter me, const wchar *expression);
+void Interpreter_numericExpression (Interpreter me, const wchar *expression, double *value);
+void Interpreter_stringExpression (Interpreter me, const wchar *expression, wchar **value);
+void Interpreter_numericArrayExpression (Interpreter me, const wchar *expression, struct Formula_NumericArray *value);
+void Interpreter_anyExpression (Interpreter me, const wchar *expression, struct Formula_Result *result);
 
-InterpreterVariable Interpreter_hasVariable (Interpreter me, const wchar_t *key);
-InterpreterVariable Interpreter_lookUpVariable (Interpreter me, const wchar_t *key);
-
-#ifdef __cplusplus
-	}
-#endif
+InterpreterVariable Interpreter_hasVariable (Interpreter me, const wchar *key);
+InterpreterVariable Interpreter_lookUpVariable (Interpreter me, const wchar *key);
 
 /* End of file Interpreter.h */
 #endif

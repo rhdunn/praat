@@ -19,33 +19,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2002/10/31 NUMlog2 instead of log2
- * pb 2003/06/23 removed NUMbesselJ and NUMbesselY
- * pb 2004/10/16 replaced struct Type with struct structType
- * pb 2005/07/08 NUMpow
- * pb 2006/08/02 NUMinvSigmoid
- * pb 2007/06/21 readText and writeText API change
- * pb 2007/06/28 double degreesOfFreedom
- * pb 2007/07/21 readText API change
- * pb 2007/08/10 NUMsort_strW
- * pb 2008/01/19 double
- * pb 2008/04/09 40-digit constants
- * pb 2008/04/09 NUMinit
- * pb 2008/04/12 NUMlinprog
- * pb 2008/09/21 NUMshift
- * pb 2008/09/22 NUMscale
- * pb 2008/11/04 MelderReadText
- * pb 2009/03/14 NUMvector_append
- * pb 2009/03/21 NUMvector_insert
 /* "NUM" = "NUMerics" */
 /* More mathematical and numerical things than there are in <math.h>. */
-
-#ifdef __cplusplus
-	extern "C" {
-#endif
-
-void NUMinit (void);
 
 /********** Inherit all the ANSI routines from math.h **********/
 
@@ -72,10 +47,11 @@ void NUMinit (void);
 #endif
 #include <stdio.h>
 #include <wchar.h>
-#ifndef _abcio_h_
-	#include "abcio.h"
-#endif
+#include "abcio.h"
 #define NUMlog2(x)  (log (x) * NUMlog2e)
+
+void NUMinit (void);
+
 double NUMpow (double base, double exponent);   /* Zero for non-positive base. */
 void NUMshift (double *x, double xfrom, double xto);
 void NUMscale (double *x, double xminfrom, double xmaxfrom, double xminto, double xmaxto);
@@ -181,15 +157,15 @@ void NUMvector_copyElements (long elementSize, void *v, void *to, long lo, long 
 	These vectors need not have been created by NUMvector.
 */
 
-int NUMvector_equal (long elementSize, void *v1, void *v2, long lo, long hi);
+bool NUMvector_equal (long elementSize, void *v1, void *v2, long lo, long hi);
 /*
 	return 1 if the vector elements v1 [lo..hi] are equal
 	to the corresponding elements of the vector v2; otherwise, return 0.
 	The vectors need not have been created by NUMvector.
 */
 
-void NUMvector_append_e (long elementSize, void **v, long lo, long *hi);
-void NUMvector_insert_e (long elementSize, void **v, long lo, long *hi, long position);
+void NUMvector_append (long elementSize, void **v, long lo, long *hi);
+void NUMvector_insert (long elementSize, void **v, long lo, long *hi, long position);
 /*
 	add one element to the vector *v.
 	The new element is initialized to zero.
@@ -233,7 +209,7 @@ void NUMmatrix_copyElements (long elementSize, void *m, void *to, long row1, lon
 	These matrices need not have been created by NUMmatrix.
 */
 
-int NUMmatrix_equal (long elementSize, void *m1, void *m2, long row1, long row2, long col1, long col2);
+bool NUMmatrix_equal (long elementSize, void *m1, void *m2, long row1, long row2, long col1, long col2);
 /*
 	return 1 if the matrix elements m1 [r1..r2] [c1..c2] are equal
 	to the corresponding elements of the matrix m2; otherwise, return 0.
@@ -246,14 +222,14 @@ int NUMmatrix_equal (long elementSize, void *m1, void *m2, long row1, long row2,
 	void NUM##t##vector_free (type *v, long lo); \
 	type * NUM##t##vector_copy (const type *v, long lo, long hi); \
 	void NUM##t##vector_copyElements (const type *v, type *to, long lo, long hi); \
-	int NUM##t##vector_equal (const type *v1, const type *v2, long lo, long hi); \
-	void NUM##t##vector_append_e (type **v, long lo, long *hi); \
-	void NUM##t##vector_insert_e (type **v, long lo, long *hi, long position); \
+	bool NUM##t##vector_equal (const type *v1, const type *v2, long lo, long hi); \
+	void NUM##t##vector_append (type **v, long lo, long *hi); \
+	void NUM##t##vector_insert (type **v, long lo, long *hi, long position); \
 	type ** NUM##t##matrix (long row1, long row2, long col1, long col2); \
 	void NUM##t##matrix_free (type **m, long row1, long col1); \
 	type ** NUM##t##matrix_copy (type **m, long row1, long row2, long col1, long col2); \
 	void NUM##t##matrix_copyElements (type **m, type **to, long row1, long row2, long col1, long col2); \
-	int NUM##t##matrix_equal (type **m1, type **m2, long row1, long row2, long col1, long col2);
+	bool NUM##t##matrix_equal (type **m1, type **m2, long row1, long row2, long col1, long col2);
 FUNCTION (b, signed char)
 FUNCTION (s, short)
 FUNCTION (i, int)
@@ -266,60 +242,7 @@ FUNCTION (f, float)
 FUNCTION (d, double)
 FUNCTION (fc, fcomplex)
 FUNCTION (dc, dcomplex)
-FUNCTION (c, char)
 #undef FUNCTION
-
-#define NUMstructvector(Type,lo,hi)  \
-	NUMvector (sizeof (struct struct##Type), lo, hi)
-#define NUMstructvector_free(Type,v,lo)  \
-	NUMvector_free (sizeof (struct struct##Type), v, lo)
-#define NUMstructvector_copy(Type,v,lo,hi)  \
-	NUMvector_copy (sizeof (struct struct##Type), v, lo, hi)
-#define NUMstructvector_copyElements(Type,v,to,lo,hi)  \
-	NUMvector_copyElements (sizeof (struct struct##Type), v, to, lo, hi)
-#define NUMstructvector_equal(Type,v1,v2,lo,hi)  \
-	NUMvector_equal (sizeof (struct struct##Type), v1, v2, lo, hi)
-#define NUMstructvector_append_e(Type,v,lo,hi)  \
-	NUMvector_append_e (sizeof (struct struct##Type), (void **) v, lo, hi)
-#define NUMstructvector_insert_e(Type,v,lo,hi,position)  \
-	NUMvector_insert_e (sizeof (struct struct##Type), (void **) v, lo, hi, position)
-
-#define NUMpvector(lo,hi)  \
-	NUMvector (sizeof (void *), lo, hi)
-#define NUMpvector_free(v,lo)  \
-	NUMvector_free (sizeof (void *), v, lo)
-#define NUMpvector_copy(v,lo,hi)  \
-	NUMvector_copy (sizeof (void *), v, lo, hi)
-#define NUMpvector_copyElements(v,to,lo,hi)  \
-	NUMvector_copyElements (sizeof (void *), v, to, lo, hi)
-#define NUMpvector_equal(v1,v2,lo,hi)  \
-	NUMvector_equal (sizeof (void *), v1, v2, lo, hi)
-#define NUMpvector_append_e(v,lo,hi)  \
-	NUMvector_append_e (sizeof (void *), (void **) v, lo, hi)
-#define NUMpvector_insert_e(v,lo,hi,position)  \
-	NUMvector_insert_e (sizeof (void *), (void **) v, lo, hi, position)
-
-#define NUMstructmatrix(Type,row1,row2,col1,col2)  \
-	NUMmatrix (sizeof (struct struct##Type), row1, row2, col1, col2)
-#define NUMstructmatrix_free(Type,m,row1,col1)  \
-	NUMmatrix_free (sizeof (struct struct##Type), m, row1, col1)
-#define NUMstructmatrix_copy(Type,m,row1,row2,col1,col2)  \
-	NUMmatrix_copy (sizeof (struct struct##Type), m, row1, row2, col1, col2)
-#define NUMstructmatrix_copyElements(Type,m,to,row1,row2,col1,col2)  \
-	NUMmatrix_copyElements (sizeof (struct struct##Type), m, to, row1, row2, col1, col2)
-#define NUMstructmatrix_equal(Type,m1,m2,row1,row2,col1,col2)  \
-	NUMmatrix_equal (sizeof (struct struct##Type), m1, m2, row1, row2, col1, col2)
-
-#define NUMpmatrix(row1,row2,col1,col2)  \
-	NUMmatrix (sizeof (void *), row1, row2, col1, col2)
-#define NUMpmatrix_free(m,row1,col1)  \
-	NUMmatrix_free (sizeof (void *), m, row1, col1)
-#define NUMpmatrix_copy(m,row1,row2,col1,col2)  \
-	NUMmatrix_copy (sizeof (void *), m, row1, row2, col1, col2)
-#define NUMpmatrix_copyElements(m,to,row1,row2,col1,col2)  \
-	NUMmatrix_copyElements (sizeof (void *), m, to, row1, row2, col1, col2)
-#define NUMpmatrix_equal(m1,m2,row1,row2,col1,col2)  \
-	NUMmatrix_equal (sizeof (void *), m1, m2, row1, row2, col1, col2)
 
 long NUM_getTotalNumberOfArrays (void);   /* For debugging. */
 
@@ -344,7 +267,7 @@ double NUMincompleteGammaQ (double a, double x);
 double NUMchiSquareP (double chiSquare, double degreesOfFreedom);
 double NUMchiSquareQ (double chiSquare, double degreesOfFreedom);
 double NUMcombinations (long n, long k);
-double NUMincompleteBeta (double a, double b, double x);
+double NUMincompleteBeta (double a, double b, double x);   // incomplete beta function Ix(a,b). Preconditions: a, b > 0; 0 <= x <= 1
 double NUMbinomialP (double p, double k, double n);
 double NUMbinomialQ (double p, double k, double n);
 double NUMinvBinomialP (double p, double k, double n);
@@ -403,7 +326,7 @@ double NUMimproveExtremum (double *y, long nx, long ixmid, int interpolation, do
 double NUMimproveMaximum (double *y, long nx, long ixmid, int interpolation, double *ixmid_real);
 double NUMimproveMinimum (double *y, long nx, long ixmid, int interpolation, double *ixmid_real);
 
-int NUM_viterbi (
+void NUM_viterbi (
 	long numberOfFrames, long maxnCandidates,
 	long (*getNumberOfCandidates) (long iframe, void *closure),
 	double (*getLocalCost) (long iframe, long icand, void *closure),
@@ -411,7 +334,7 @@ int NUM_viterbi (
 	void (*putResult) (long iframe, long place, void *closure),
 	void *closure);
 
-int NUM_viterbi_multi (
+void NUM_viterbi_multi (
 	long nframe, long ncand, int ntrack,
 	double (*getLocalCost) (long iframe, long icand, int itrack, void *closure),
 	double (*getTransitionCost) (long iframe, long icand1, long icand2, int itrack, void *closure),
@@ -461,15 +384,15 @@ void NUMautoscale (double x [], long n, double scale);
 
 /* The following ANSI-C power trick generates the declarations of 156 functions. */
 #define FUNCTION(t,type,storage)  \
-	int NUM##t##vector_writeText_##storage (const type *v, long lo, long hi, MelderFile file, const wchar_t *name); \
-	int NUM##t##vector_writeBinary_##storage (const type *v, long lo, long hi, FILE *f); \
-	int NUM##t##vector_writeCache_##storage (const type *v, long lo, long hi, CACHE *f); \
+	void NUM##t##vector_writeText_##storage (const type *v, long lo, long hi, MelderFile file, const wchar *name); \
+	void NUM##t##vector_writeBinary_##storage (const type *v, long lo, long hi, FILE *f); \
+	void NUM##t##vector_writeCache_##storage (const type *v, long lo, long hi, CACHE *f); \
 	type * NUM##t##vector_readText_##storage (long lo, long hi, MelderReadText text, const char *name); \
 	type * NUM##t##vector_readBinary_##storage (long lo, long hi, FILE *f); \
 	type * NUM##t##vector_readCache_##storage (long lo, long hi, CACHE *f); \
-	int NUM##t##matrix_writeText_##storage (type **v, long r1, long r2, long c1, long c2, MelderFile file, const wchar_t *name); \
-	int NUM##t##matrix_writeBinary_##storage (type **v, long r1, long r2, long c1, long c2, FILE *f); \
-	int NUM##t##matrix_writeCache_##storage (type **v, long r1, long r2, long c1, long c2, CACHE *f); \
+	void NUM##t##matrix_writeText_##storage (type **v, long r1, long r2, long c1, long c2, MelderFile file, const wchar *name); \
+	void NUM##t##matrix_writeBinary_##storage (type **v, long r1, long r2, long c1, long c2, FILE *f); \
+	void NUM##t##matrix_writeCache_##storage (type **v, long r1, long r2, long c1, long c2, CACHE *f); \
 	type ** NUM##t##matrix_readText_##storage (long r1, long r2, long c1, long c2, MelderReadText text, const char *name); \
 	type ** NUM##t##matrix_readBinary_##storage (long r1, long r2, long c1, long c2, FILE *f); \
 	type ** NUM##t##matrix_readCache_##storage (long r1, long r2, long c1, long c2, CACHE *f);
@@ -485,40 +408,39 @@ FUNCTION (d, double, r4)
 FUNCTION (d, double, r8)
 FUNCTION (fc, fcomplex, c8)
 FUNCTION (dc, dcomplex, c16)
-FUNCTION (c, char, c1)
 #undef FUNCTION
 
 /*
-int NUMr8vector_writeBinary (const double *v, long lo, long hi, FILE *f);   // etc
+void NUMdvector_writeBinary_r8 (const double *v, long lo, long hi, FILE *f);   // etc
 	write the vector elements v [lo..hi] as machine-independent
 	binary data to the stream f.
 	Return 0 if anything went wrong, else return 1.
 	The vectors need not have been created by NUM...vector.
-double * NUMr8vector_readText (long lo, long hi, MelderReadString *text, const char *name);   // etc
+double * NUMdvector_readText_r8 (long lo, long hi, MelderReadString *text, const char *name);   // etc
 	create and read a vector as text.
 	Queue an error message and return NULL if anything went wrong.
 	Every element is supposed to be on the beginning of a line.
-double * NUMr8vector_readBinary (long lo, long hi, FILE *f);   // etc
+double * NUMdvector_readBinary_r8 (long lo, long hi, FILE *f);   // etc
 	create and read a vector as machine-independent binary data from the stream f.
 	Queue an error message and return NULL if anything went wrong.
-int NUMr8vector_writeText (const double *v, long lo, long hi, MelderFile file, const char *name);   // etc
+void NUMdvector_writeText_r8 (const double *v, long lo, long hi, MelderFile file, const wchar *name);   // etc
 	write the vector elements v [lo..hi] as text to the stream f,
 	each element on its own line, preceded by "name [index]: ".
 	Return 0 if anything went wrong, else return 1.
 	The vectors need not have been created by NUMvector.
-int NUMr8matrix_writeText (double **m, long r1, long r2, long c1, long c2, MelderFile file, const char *name);   // etc
+void NUMdmatrix_writeText_r8 (double **m, long r1, long r2, long c1, long c2, MelderFile file, const wchar *name);   // etc
 	write the matrix elements m [r1..r2] [c1..c2] as text to the stream f.
 	Return 0 if anything went wrong, else return 1.
 	The matrices need not have been created by NUMmatrix.
-int NUMr8matrix_writeBinary (double **m, long r1, long r2, long c1, long c2, FILE *f);   // etc
+void NUMdmatrix_writeBinary_r8 (double **m, long r1, long r2, long c1, long c2, FILE *f);   // etc
 	write the matrix elements m [r1..r2] [c1..c2] as machine-independent
 	binary data to the stream f.
 	Return 0 if anything went wrong, else return 1.
 	The matrices need not have been created by NUMmatrix.
-double ** NUMr8matrix_readText (long r1, long r2, long c1, long c2, MelderReadString *text, const char *name);   // etc
+double ** NUMdmatrix_readText_r8 (long r1, long r2, long c1, long c2, MelderReadString *text, const char *name);   // etc
 	create and read a matrix as text.
 	Give an error message and return NULL if anything went wrong.
-double ** NUMr8matrix_readBinary (long r1, long r2, long c1, long c2, FILE *f);   // etc
+double ** NUMdmatrix_readBinary_r8 (long r1, long r2, long c1, long c2, FILE *f);   // etc
 	create and read a matrix as machine-independent binary data from the stream f.
 	Give an error message and return NULL if anything went wrong.
 */
@@ -527,14 +449,140 @@ typedef struct structNUMlinprog *NUMlinprog;
 void NUMlinprog_delete (NUMlinprog me);
 NUMlinprog NUMlinprog_new (bool maximize);
 void NUMlinprog_addVariable (NUMlinprog me, double lowerBound, double upperBound, double coeff);
-int NUMlinprog_addConstraint (NUMlinprog me, double lowerBound, double upperBound);
+void NUMlinprog_addConstraint (NUMlinprog me, double lowerBound, double upperBound);
 void NUMlinprog_addConstraintCoefficient (NUMlinprog me, double coefficient);
-int NUMlinprog_run (NUMlinprog me);
+void NUMlinprog_run (NUMlinprog me);
 double NUMlinprog_getPrimalValue (NUMlinprog me, long ivar);
 
-#ifdef __cplusplus
+template <class T>
+T* NUMvector (long from, long to) {
+	T* result = static_cast <T*> (NUMvector (sizeof (T), from, to)); therror
+	return result;
+}
+
+template <class T>
+void NUMvector_free (T* ptr, long from) {
+	NUMvector_free (sizeof (T), ptr, from);
+}
+
+template <class T>
+T* NUMvector_copy (T* ptr, long lo, long hi) {
+	T* result = static_cast <T*> (NUMvector_copy (sizeof (T), ptr, lo, hi)); therror
+	return result;
+}
+
+template <class T>
+bool NUMvector_equal (T* v1, T* v2, long lo, long hi) {
+	return NUMvector_equal (sizeof (T), v1, v2, lo, hi);
+}
+
+template <class T>
+void NUMvector_copyElements (T* vfrom, T* vto, long lo, long hi) {
+	NUMvector_copyElements (sizeof (T), vfrom, vto, lo, hi);
+}
+
+template <class T>
+void NUMvector_append (T** v, long lo, long *hi) {
+	NUMvector_append (sizeof (T), (void**) v, lo, hi); therror
+}
+
+template <class T>
+void NUMvector_insert (T** v, long lo, long *hi, long position) {
+	NUMvector_insert (sizeof (T), (void**) v, lo, hi, position); therror
+}
+
+template <class T>
+class autoNUMvector {
+	T* ptr;
+	long from;
+public:
+	autoNUMvector<T> (long from, long to) : from (from) {
+		ptr = static_cast <T*> (NUMvector (sizeof (T), from, to)); therror
 	}
-#endif
+	autoNUMvector (T *ptr, long from) : ptr (ptr), from (from) {
+		therror
+	}
+	autoNUMvector () : ptr (NULL), from (1) {
+	}
+	~autoNUMvector<T> () {
+		if (ptr) NUMvector_free (sizeof (T), ptr, from);
+	}
+	T& operator[] (long i) {
+		return ptr [i];
+	}
+	T* peek () const {
+		return ptr;
+	}
+	T* transfer () {
+		T* temp = ptr;
+		ptr = NULL;   // make the pointer non-automatic again
+		return temp;
+	}
+	void reset (long newFrom, long to) {
+		if (ptr) NUMvector_free (sizeof (T), ptr, from);
+		ptr = static_cast <T*> (NUMvector (sizeof (T), from = newFrom, to)); therror
+	}
+};
+
+template <class T>
+T** NUMmatrix (long row1, long row2, long col1, long col2) {
+	T** result = static_cast <T**> (NUMmatrix (sizeof (T), row1, row2, col1, col2)); therror
+	return result;
+}
+
+template <class T>
+void NUMmatrix_free (T** ptr, long row1, long col1) {
+	NUMmatrix_free (sizeof (T), ptr, row1, col1);
+}
+
+template <class T>
+T** NUMmatrix_copy (T** ptr, long row1, long row2, long col1, long col2) {
+	T** result = static_cast <T**> (NUMmatrix_copy (sizeof (T), ptr, row1, row2, col1, col2)); therror
+	return result;
+}
+
+template <class T>
+bool NUMmatrix_equal (T* m1, T* m2, long row1, long row2, long col1, long col2) {
+	return NUMmatrix_equal (sizeof (T), m1, m2, row1, row2, col1, col2);
+}
+
+template <class T>
+void NUMmatrix_copyElements (T** mfrom, T** mto, long row1, long row2, long col1, long col2) {
+	NUMmatrix_copyElements (sizeof (T), mfrom, mto, row1, row2, col1, col2);
+}
+
+template <class T>
+class autoNUMmatrix {
+	T** ptr;
+	long row1, col1;
+public:
+	autoNUMmatrix (long row1, long row2, long col1, long col2) : row1 (row1), col1 (col1) {
+		ptr = static_cast <T**> (NUMmatrix (sizeof (T), row1, row2, col1, col2)); therror
+	}
+	autoNUMmatrix (T **ptr, long row1, long col1) : ptr (ptr), row1 (row1), col1 (col1) {
+		therror
+	}
+	autoNUMmatrix () : ptr (NULL), row1 (0), col1 (0) {
+	}
+	~autoNUMmatrix () {
+		if (ptr) NUMmatrix_free (sizeof (T), ptr, row1, col1);
+	}
+	T*& operator[] (long row) {
+		return ptr [row];
+	}
+	T** peek () const {
+		return ptr;
+	}
+	T** transfer () {
+		T** temp = ptr;
+		ptr = NULL;
+		return temp;
+	}
+	void reset (long newRow1, long row2, long newCol1, long col2) {
+		if (ptr) NUMmatrix_free (sizeof (T), ptr, row1, col1);
+		ptr = static_cast <T**> (NUMmatrix (sizeof (T), row1 = newRow1, row2, col1 = newCol1, col2)); therror
+	}
+};
 
 /* End of file NUM.h */
 #endif

@@ -2,7 +2,7 @@
 #define _DurationTier_h_
 /* DurationTier.h
  *
- * Copyright (C) 1992-2010 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,27 +19,23 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2010/10/19
- */
-
-#ifndef _RealTier_h_
-	#include "RealTier.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
+#include "RealTier.h"
+#include "Graphics.h"
 
 /********** class DurationTier **********/
 
-#define DurationTier_members RealTier_members
-#define DurationTier_methods RealTier_methods
-class_create (DurationTier, RealTier);
+Thing_declare1cpp (DurationTier);
+struct structDurationTier : public structRealTier {
+// overridden methods:
+	void v_info ();
+};
+#define DurationTier__methods(klas) RealTier__methods(klas)
+Thing_declare2cpp (DurationTier, RealTier);
 
 DurationTier DurationTier_create (double tmin, double tmax);
 
 void DurationTier_draw (DurationTier me, Graphics g, double tmin, double tmax,
-	double ymin, double ymax, const wchar_t *method, int garnish);
+	double ymin, double ymax, const wchar *method, int garnish);
 
 DurationTier PointProcess_upto_DurationTier (PointProcess me);
 

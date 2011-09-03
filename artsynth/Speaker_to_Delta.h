@@ -1,6 +1,6 @@
 /* Speaker_to_Delta.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +17,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 1994/04/28
- * pb 2002/07/16 GPL
- */
-
-#ifndef _Speaker_h_
-	#include "Speaker.h"
-#endif
-#ifndef _Delta_h_
-	#include "Delta.h"
-#endif
+#include "Speaker.h"
+#include "Delta.h"
 
 Delta Speaker_to_Delta (Speaker me);
 

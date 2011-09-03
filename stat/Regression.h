@@ -2,7 +2,7 @@
 #define _Regression_h_
 /* Regression.h
  *
- * Copyright (C) 2005-2007 Paul Boersma
+ * Copyright (C) 2005-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,37 +19,27 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/11/18
- */
+#include "Table.h"
 
-#ifndef _Table_h_
-	#include "Table.h"
-#endif
-
-/* For the inheritors. */
 #include "Regression_def.h"
-
-#define RegressionParameter_methods  Data_methods
+#define RegressionParameter__methods(klas)  Data__methods(klas)
 oo_CLASS_CREATE (RegressionParameter, Data);
-
-#define Regression_members  Data_members \
-	double intercept; \
-	Ordered parameters;
-#define Regression_methods  Data_methods
+#define Regression__methods(klas)  Data__methods(klas)
 oo_CLASS_CREATE (Regression, Data);
 
-int Regression_init (I);
-int Regression_addParameter (I, const wchar_t *label, double minimum, double maximum, double value);
-long Regression_getFactorIndexFromFactorName_e (I, const wchar_t *factorName);
+void Regression_init (I);
+void Regression_addParameter (I, const wchar *label, double minimum, double maximum, double value);
+long Regression_getFactorIndexFromFactorName_e (I, const wchar *factorName);
 
-#define LinearRegression_members  Regression_members
-#define LinearRegression_methods  Regression_methods
-class_create (LinearRegression, Regression);
+Thing_declare1cpp (LinearRegression);
+struct structLinearRegression : public structRegression {
+};
+#define LinearRegression__methods(klas)  Regression__methods(klas)
+Thing_declare2cpp (LinearRegression, Regression);
 
 LinearRegression LinearRegression_create (void);
 
 LinearRegression Table_to_LinearRegression (Table me);
 
-#endif
 /* End of file Regression.h */
+#endif

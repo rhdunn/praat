@@ -2,7 +2,7 @@
 #define _Ltas_h_
 /* Ltas.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,29 +19,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/01/26
- */
+#include "Spectrum.h"
+#include "Sound.h"
+#include "PointProcess.h"
+#include "Collection.h"
 
-#ifndef _Spectrum_h_
-	#include "Spectrum.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _Vector_h_
-	#include "Vector.h"
-#endif
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
-
-#define Ltas_members  Vector_members
-#define Ltas_methods  Vector_methods
-class_create (Ltas, Vector);
+Thing_declare1cpp (Ltas);
+struct structLtas : public structVector {
+};
+#define Ltas__methods(klas)  Vector__methods(klas)
+Thing_declare2cpp (Ltas, Vector);
 
 /*
 	Attributes:
@@ -71,7 +58,7 @@ Ltas Ltas_create (long nx, double dx);
  */
 
 void Ltas_draw (Ltas me, Graphics g, double fmin, double fmax,
-	double minimum, double maximum, int garnish, const wchar_t *method);
+	double minimum, double maximum, int garnish, const wchar *method);
 
 Matrix Ltas_to_Matrix (Ltas me);
 Ltas Matrix_to_Ltas (Matrix me);

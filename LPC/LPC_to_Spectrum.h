@@ -2,7 +2,7 @@
 #define _LPC_to_Spectrum_h_
 /* LPC_to_Spectrum.h
  *
- * Copyright (C) 1994-2002 David Weenink
+ * Copyright (C) 1994-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +22,17 @@
 /*
  djmw 19980224
  djmw 20020812 GPL header
+ djmw 20110702 Latest modification
 */
 
 #include "LPC.h"
 #include "Spectrum.h"
 
-int LPC_Frame_into_Spectrum (LPC_Frame me, Spectrum thee, double bandwidthReduction,
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
+void LPC_Frame_into_Spectrum (LPC_Frame me, Spectrum thee, double bandwidthReduction,
 	double deEmphasisFrequency);
 	
 Spectrum LPC_to_Spectrum (LPC me, double t, double dfMin, double bandwidthReduction,
@@ -37,6 +42,8 @@ Spectrum LPC_to_Spectrum2 (LPC me, double t, double dfMin, double bandwidthReduc
 /* if(dfMin >= 0) df <= dfMin else df = NyquistFrequency / 512 */
 /* integration radius r = exp (- pi * bandwidthReduction / samplingFrequency) */
 
-int LPC_Frame_into_Spectrum2 (LPC_Frame me, Spectrum thee, double bandwidthReduction);
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _LPC_and_Spectrum_h_ */

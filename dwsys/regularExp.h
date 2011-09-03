@@ -27,7 +27,7 @@
 *                                                                              *
 *******************************************************************************/
 /*
-	djmw 20080110 Extra parameter for SubstituteRE to allow error differentiation 
+	djmw 20080110 Extra parameter for SubstituteRE to allow error differentiation
  */
 
 /* Number of text capturing parentheses allowed. */
@@ -43,6 +43,10 @@
 
 /* Structure to contain the compiled form of a regular expression plus
    pointers to matched text.  `program' is the actual compiled regex code. */
+
+#ifdef __cplusplus
+	extern "C" {
+#endif
 
 typedef struct regexp {
    regularExp_CHAR *startp [NSUBEXP];  /* Captured text starting locations. */
@@ -65,14 +69,14 @@ typedef struct regexp {
 typedef enum {
   REDFLT_STANDARD         = 0,
   REDFLT_CASE_INSENSITIVE = 1
-  /* REDFLT_MATCH_NEWLINE = 2    Currently not used. */ 
+  /* REDFLT_MATCH_NEWLINE = 2    Currently not used. */
 } RE_DEFAULT_FLAG;
 
 /* Compiles a regular expression into the internal format used by `ExecRE'. */
-   
+
 regexp * CompileRE (
    const regularExp_CHAR  *exp,         /* String containing the regex specification. */
-   regularExp_CHAR **errorText,   /* Text of any error message produced. */
+   wchar_t **errorText,   /* Text of any error message produced. */
    int  defaultFlags); /* Flags for default RE-operation */
 
 /* Match a `regexp' structure against a string. */
@@ -119,5 +123,9 @@ void SetREDefaultWordDelimiters (
 /* Enable (or disable) brace counting quantifiers, e.g. `(foo){0,3}'. */
 
 void EnableCountingQuantifier (int is_enabled);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _regularExp_h_ */

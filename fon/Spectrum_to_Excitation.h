@@ -1,6 +1,6 @@
 /* Spectrum_to_Excitation.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +17,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 1995/03/07
- * pb 2002/07/16 GPL
- */
-
-#ifndef _Spectrum_h_
-	#include "Spectrum.h"
-#endif
-#ifndef _Excitation_h_
-	#include "Excitation.h"
-#endif
+#include "Spectrum.h"
+#include "Excitation.h"
 
 Excitation Spectrum_to_Excitation (I, double df);
 /*

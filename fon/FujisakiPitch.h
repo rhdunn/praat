@@ -2,7 +2,7 @@
 #define _FujisakiPitch_h_
 /* FujisakiPitch.h
  *
- * Copyright (C) 2002 Paul Boersma
+ * Copyright (C) 2002-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,26 +19,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2002/05/18
- * pb 2002/07/16 GPL
- */
-
-#ifndef _Pitch_h_
-	#include "Pitch.h"
-#endif
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
+#include "Pitch.h"
+#include "Collection.h"
 
 #include "FujisakiPitch_def.h"
-
-#define FujisakiCommand_methods Function_methods
+#define FujisakiCommand__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (FujisakiCommand, Function);
 
 FujisakiCommand FujisakiCommand_create (double tmin, double tmax, double amplitude);
 
-#define FujisakiPitch_methods Function_methods
+#define FujisakiPitch__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (FujisakiPitch, Function);
 
 FujisakiPitch FujisakiPitch_create (double tmin, double tmax,
@@ -47,5 +37,5 @@ FujisakiPitch FujisakiPitch_create (double tmin, double tmax,
 FujisakiPitch Pitch_to_FujisakiPitch (Pitch me, double gamma, double timeResolution,
 	FujisakiPitch *intermediate1, FujisakiPitch *intermediate2, FujisakiPitch *intermediate3);
 
-#endif
 /* End of file FujisakiPitch.h */
+#endif

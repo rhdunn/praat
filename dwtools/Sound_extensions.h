@@ -2,7 +2,7 @@
 #define _Sound_extensions_h_
 /* Sound_extensions.h
  *
- * Copyright (C) 1993-2010 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,26 +21,19 @@
 
 /*
  djmw 20020813 GPL header
- djmw 20100415 Latest modification
+ djmw 20110307 Latest modification
 */
 
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _Pitch_h_
-	#include "Pitch.h"
-#endif
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
-#ifndef _TextGrid_h_
-	#include "TextGrid.h"
-#endif
-#ifndef _Interpreter_decl_h_
-	#include "Interpreter_decl.h"
+
+#include "Sound.h"
+#include "Pitch.h"
+#include "Collection.h"
+#include "PointProcess.h"
+#include "TextGrid.h"
+#include "Interpreter_decl.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 int Sound_writeToNistAudioFile (Sound me, MelderFile file);
@@ -65,13 +58,13 @@ Sound Sound_readFromDialogicADPCMFile (MelderFile file, double sampleRate);
 /*
 */
 
-int Sound_writeToRawFile (Sound me, MelderFile file, const char *format, int littleEndian,
+void Sound_writeToRawFile (Sound me, MelderFile file, const char *format, int littleEndian,
 	int nBitsCoding, int unSigned);
 
 void Sound_into_Sound (Sound me, Sound to, double startTime);
 /* precondition: my dx == to->dx (equal sampling times */
 
-int Sound_overwritePart (Sound me, double t1, double t2, Sound thee, double t3);
+void Sound_overwritePart (Sound me, double t1, double t2, Sound thee, double t3);
 /*
 	Overwrite the part between (t1,t2) in me with samples from Sound thee,
 	starting at t3 in thee.
@@ -181,7 +174,7 @@ PointProcess Sound_to_PointProcess_getJumps (Sound me, double minimumJump, doubl
 	within time dt
 */
 
-int Sound_filter_part_formula (Sound me, double t1, double t2, const wchar_t *formula, Interpreter interpreter);
+void Sound_filter_part_formula (Sound me, double t1, double t2, const wchar_t *formula, Interpreter interpreter);
 
 Sound Sound_changeSpeaker (Sound me, double pitchMin, double pitchMax,
 	double formantMultiplier, // > 0
@@ -203,5 +196,9 @@ TextGrid Sound_to_TextGrid_detectSilences (Sound me, double minPitch, double tim
 	double silenceThreshold, double minSilenceDuration, double minSoundingDuration,
 	wchar_t *silentLabel, wchar_t *soundingLabel);
 
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Sound_extensions_h_ */

@@ -2,7 +2,7 @@
 #define _Index_h_
 /* Index.h
  *
- * Copyright (C) 2005-2010 David Weenink
+ * Copyright (C) 2005-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,32 +21,23 @@
 
 /*
  djmw 20050724
- djmw 20101007 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _Data_h_
-	#include "Data.h"
+#include "Collection.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
-#ifndef _Distributions_h_
-	#include "Collection.h"
-#endif
+#include "Index_def.h"
+#define Index__methods(klas) Data__methods(klas)
+oo_CLASS_CREATE (Index, Data);
 
-#define Index_members Data_members \
-	Ordered classes; \
-	long numberOfElements; \
-	long *classIndex;
+#define StringsIndex__methods(klas) Index__methods(klas)
+oo_CLASS_CREATE (StringsIndex, Index);
 
-#define Index_methods Data_methods
-class_create (Index, Data);
-
-#define StringsIndex_members Index_members
-
-#define StringsIndex_methods Index_methods
-class_create (StringsIndex, Index);
-
-
-int Index_init (I, long numberOfElements);
+void Index_init (I, long numberOfElements);
 
 Index Index_extractPart (I, long from, long to);
 
@@ -56,5 +47,9 @@ int StringsIndex_getClass (StringsIndex me, wchar_t *classLabel);
 
 long StringsIndex_countItems (StringsIndex me, int iclas);
 
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Index_h_ */

@@ -4,7 +4,7 @@
  *
  * Principal Component Analysis
  * 
- * Copyright (C) 1993-2007 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,32 +23,21 @@
 
 /*
  djmw 20020813 GPL header
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
 
-#ifndef _Data_h_
-	#include "Data.h"
+#include "TableOfReal.h"
+#include "Configuration.h"
+#include "Eigen.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
-
-#ifndef _Configuration_h_
-	#include "Configuration.h"
-#endif
-
-#ifndef _Eigen_h_
-	#include "Eigen.h"
-#endif
-
-#define PCA_members Eigen_members \
-	long numberOfObservations;			\
-	wchar_t **labels;						\
-	double *centroid;
-#define PCA_methods Eigen_methods
-class_create (PCA, Eigen);
+#include "PCA_def.h"
+#define PCA__methods(klas) Eigen__methods(klas)
+oo_CLASS_CREATE (PCA, Eigen);
 
 PCA PCA_create (long numberOfComponents, long dimension);
 
@@ -75,6 +64,9 @@ TableOfReal PCA_and_Configuration_to_TableOfReal_reconstruct (PCA me, thou);
 
 TableOfReal PCA_to_TableOfReal_reconstruct1 (PCA me, wchar_t *numstring);
 
+#ifdef __cplusplus
+	}
+#endif
+
 #endif /* _PCA_h_ */
 
-/* End of file PCA.h */

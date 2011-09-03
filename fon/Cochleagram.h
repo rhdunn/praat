@@ -2,7 +2,7 @@
 #define _Cochleagram_h_
 /* Cochleagram.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,18 +19,13 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 1995/07/24
- * pb 2002/07/16 GPL
- */
+#include "Matrix.h"
 
-#ifndef _Matrix_h_
-	#include "Matrix.h"
-#endif
-
-#define Cochleagram_members  Matrix_members
-#define Cochleagram_methods  Matrix_methods
-class_create (Cochleagram, Matrix);
+Thing_declare1cpp (Cochleagram);
+struct structCochleagram : public structMatrix {
+};
+#define Cochleagram__methods(klas)  Matrix__methods(klas)
+Thing_declare2cpp (Cochleagram, Matrix);
 
 /* Normally, the attributes will meet the following:
 	xmin;			// Start time (seconds).
@@ -43,7 +38,7 @@ class_create (Cochleagram, Matrix);
 	ny;				// Number of frequencies.
 	dy = 25.6 / ny;		// Frequency step (Bark).
 	y1 = 0.5 * dy;		// Centre of first frequency band (Bark).
-	z;				// Basilar filter output (milliVolt), or firing rate (Hertz), or intensity (phon).
+	z;				// Basilar filter output (milliVolt), or firing rate (Hz), or intensity (phon).
 */
 
 Cochleagram Cochleagram_create (double tmin, double tmax, long nt, double dt, double t1,

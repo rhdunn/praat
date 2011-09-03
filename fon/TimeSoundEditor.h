@@ -2,7 +2,7 @@
 #define _TimeSoundEditor_h_
 /* TimeSoundEditor.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,19 +19,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/12/07
- */
-
-#ifndef _FunctionEditor_h_
-	#include "FunctionEditor.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _LongSound_h_
-	#include "LongSound.h"
-#endif
+#include "FunctionEditor.h"
+#include "Sound.h"
+#include "LongSound.h"
 
 struct TimeSoundEditor_sound {
 	/* KEEP IN SYNC WITH PREFS. */
@@ -40,23 +30,30 @@ struct TimeSoundEditor_sound {
 	double minimum, maximum;
 };
 
-#define TimeSoundEditor__parents(Klas) FunctionEditor__parents(Klas) Thing_inherit (Klas, FunctionEditor)
-Thing_declare1 (TimeSoundEditor);
-
-#define TimeSoundEditor__members(Klas) FunctionEditor__members(Klas) \
-	bool ownSound; \
-	struct TimeSoundEditor_sound sound; \
-	struct { LongSound data; } longSound; \
-	GuiObject drawButton, publishButton, publishPreserveButton, publishWindowButton; \
-	GuiObject writeAiffButton, writeAifcButton, writeWavButton, writeNextSunButton, writeNistButton, writeFlacButton;
-#define TimeSoundEditor__methods(Klas) FunctionEditor__methods(Klas) \
-	void (*createMenuItems_view_sound) (Klas me, EditorMenu menu); \
-	void (*updateMenuItems_file) (Klas me);
-Thing_declare2 (TimeSoundEditor, FunctionEditor);
+Thing_define (TimeSoundEditor, FunctionEditor) {
+	// new data:
+		bool ownSound;
+		struct TimeSoundEditor_sound sound;
+		struct { LongSound data; } longSound;
+		GuiObject drawButton, publishButton, publishPreserveButton, publishWindowButton;
+		GuiObject writeAiffButton, writeAifcButton, writeWavButton, writeNextSunButton, writeNistButton, writeFlacButton;
+	// overridden methods:
+		virtual void v_destroy ();
+		virtual void v_info ();
+		virtual void v_createMenuItems_file (EditorMenu menu);
+		virtual void v_createMenuItems_query_info (EditorMenu menu);
+		virtual void v_createMenuItems_file_draw (EditorMenu menu);
+		virtual void v_createMenuItems_file_extract (EditorMenu menu);
+		virtual void v_createMenuItems_file_write (EditorMenu menu);
+		virtual void v_createMenuItems_view (EditorMenu menu);
+	// new methods:
+		virtual void v_createMenuItems_view_sound (EditorMenu menu);
+		virtual void v_updateMenuItems_file ();
+};
 
 void TimeSoundEditor_prefs (void);
 
-int TimeSoundEditor_init (TimeSoundEditor me, GuiObject parent, const wchar_t *title, Any data, Any sound, bool ownSound);
+void TimeSoundEditor_init (TimeSoundEditor me, GuiObject parent, const wchar *title, Function data, Function sound, bool ownSound);
 
 void TimeSoundEditor_draw_sound (TimeSoundEditor me, double globalMinimum, double globalMaximum);
 

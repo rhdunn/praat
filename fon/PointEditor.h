@@ -2,7 +2,7 @@
 #define _PointEditor_h_
 /* PointEditor.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,31 +19,25 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/09/08
- */
+#include "TimeSoundEditor.h"
+#include "PointProcess.h"
 
-#ifndef _TimeSoundEditor_h_
-	#include "TimeSoundEditor.h"
-#endif
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
+Thing_define (PointEditor, TimeSoundEditor) {
+	// new data:
+		Sound monoSound;
+		GuiObject addPointAtDialog;
+	// overridden methods:
+		virtual void v_destroy ();
+		virtual void v_createMenus ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_draw ();
+		virtual void v_play (double tmin, double tmax);
+};
 
-#define PointEditor__parents(Klas) TimeSoundEditor__parents(Klas) Thing_inherit (Klas, TimeSoundEditor)
-Thing_declare1 (PointEditor);
-
-#define PointEditor__members(Klas) TimeSoundEditor__members(Klas) \
-	Sound monoSound; \
-	GuiObject addPointAtDialog;
-#define PointEditor__methods(Klas) TimeSoundEditor__methods(Klas)
-Thing_declare2 (PointEditor, TimeSoundEditor);
-
-PointEditor PointEditor_create (GuiObject parent, const wchar_t *title,
-	PointProcess point, Sound sound);
-/*
-	'sound' may be NULL.
-*/
+PointEditor PointEditor_create (GuiObject parent, const wchar *title,
+	PointProcess point,
+	Sound sound   // may be NULL
+);
 
 /* End of file PointEditor.h */
 #endif

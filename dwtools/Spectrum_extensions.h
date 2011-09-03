@@ -2,7 +2,7 @@
 #define _Spectrum_extensions_h_
 /* Spectrum_extensions.h
  *
- * Copyright (C) 1993-2003 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,29 +22,27 @@
 /*
  djmw 20010114
  djmw 20020813 GPL header
- djmw 20031023 Latest modification
+ djmw 20110307 Latest modification
 */
 
-#ifndef _Spectrum_h_
-	#include "Spectrum.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
+#include "Spectrum.h"
+#include "Sound.h"
+#include "Graphics.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 Matrix Spectrum_unwrap (Spectrum me);
 /*
 	Unwrap the phases of the spectrum according to an algorithm by
 	Tribolet as published in:
-	
+
 	Tribolet, J.M. & Quatieri, T.F. (1979), Computation of the Complex
-		Spectrum, in: Programs for Digital Signal Processing, 
+		Spectrum, in: Programs for Digital Signal Processing,
 		Digital Signal Processing Commitee (eds), IEEE Press,
 		chapter 7.1.
-		
+
 	First row of returned matrix contains the amplitudes-squared,
 	second row contains the unwrapped phases.
 */
@@ -54,5 +52,9 @@ void Spectrum_drawPhases (Spectrum me, Graphics g, double fmin, double fmax,
 
 Spectrum Spectra_multiply (Spectrum me, Spectrum thee);
 void Spectrum_conjugate (Spectrum me);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Spectrum_extensions_h_ */

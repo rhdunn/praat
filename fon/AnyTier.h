@@ -2,7 +2,7 @@
 #define _AnyTier_h_
 /* AnyTier.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,24 +19,15 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2000/08/23
- * pb 2002/07/16 GPL
- */
-
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
+#include "Collection.h"
+#include "PointProcess.h"
 
 #include "AnyTier_def.h"
 
-#define AnyPoint_methods Data_methods
-oo_CLASS_CREATE (AnyPoint, Data);
+#define AnyPoint__methods(klas) SimpleDouble__methods(klas)
+oo_CLASS_CREATE (AnyPoint, SimpleDouble);
 
-#define AnyTier_methods Function_methods
+#define AnyTier__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (AnyTier, Function);
 
 long AnyTier_timeToLowIndex (I, double time);
@@ -44,13 +35,11 @@ long AnyTier_timeToHighIndex (I, double time);
 long AnyTier_getWindowPoints (I, double tmin, double tmax, long *imin, long *imax);
 long AnyTier_timeToNearestIndex (I, double time);
 long AnyTier_hasPoint (I, double t);
-int AnyTier_addPoint (I, Any point);
+void AnyTier_addPoint (I, Any point);
 void AnyTier_removePoint (I, long i);
 void AnyTier_removePointNear (I, double time);
 void AnyTier_removePointsBetween (I, double tmin, double tmax);
 PointProcess AnyTier_downto_PointProcess (I);
-
-#define AnyPoint_members Data_members double time;
 
 #endif
 /* End of file AnyTier.h */

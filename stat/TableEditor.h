@@ -2,7 +2,7 @@
 #define _TableEditor_h_
 /* TableEditor.h
  *
- * Copyright (C) 2006-2007 Paul Boersma
+ * Copyright (C) 2006-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,21 +19,29 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/06/10
- */
+#include "Editor.h"
+#include "Table.h"
 
-#ifndef _Editor_h_
-	#include "Editor.h"
-#endif
-#ifndef _Table_h_
-	#include "Table.h"
-#endif
+#define kTableEditor_MAXNUM_VISIBLE_COLUMNS  100
 
-#define TableEditor__parents(Klas) Editor__parents(Klas) Thing_inherit (TableEditor, Editor)
-Thing_declare1 (TableEditor);
+Thing_define (TableEditor, Editor) {
+	// new data:
+		long topRow, leftColumn, selectedRow, selectedColumn;
+		GuiObject text, drawingArea, horizontalScrollBar, verticalScrollBar;
+		double columnLeft [kTableEditor_MAXNUM_VISIBLE_COLUMNS], columnRight [kTableEditor_MAXNUM_VISIBLE_COLUMNS];
+		Graphics graphics;
+	// overridden methods:
+		virtual void v_destroy ();
+		virtual void v_createChildren ();
+		virtual void v_createMenus ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_dataChanged ();
+	// new methods:
+		virtual void v_draw ();
+		virtual int v_click (double xWC, double yWC, bool shiftKeyPressed);
+};
 
-TableEditor TableEditor_create (GuiObject parent, const wchar_t *title, Table table);
+TableEditor TableEditor_create (GuiObject parent, const wchar *title, Table table);
 
 /* End of file TableEditor.h */
 #endif

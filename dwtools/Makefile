@@ -1,17 +1,20 @@
 # Makefile of the library "dwtools"
 # David Weenink, 22 February 2010
-# djmw 20101227 Latest modification
+# djmw 20110721 Latest modification
 
 include ../makefile.defs
 
-CFLAGS = -I ../num -I ../LPC -I ../fon -I ../sys -I ../dwsys -I ../audio -I ../stat
+CFLAGS = $(DEFS) -I ../num -I ../LPC -I ../fon -I ../sys -I ../stat -I ../dwsys -I ../audio
+
+CPPFLAGS = $(CFLAGS)
 
 OBJECTS = Activation.o AffineTransform.o \
 	Categories.o CategoriesEditor.o \
 	Categories_and_Strings.o CCA.o CCA_and_Correlation.o \
 	CC.o CCs_to_DTW.o \
 	ClassificationTable.o Confusion.o \
-	Configuration.o Configuration_AffineTransform.o \
+	Configuration.o ContingencyTable.o \
+	Configuration_AffineTransform.o \
 	Configuration_and_Procrustes.o Distance.o \
 	DTW.o DTW_and_TextGrid.o \
 	Discriminant.o  Discriminant_Pattern_Categories.o \

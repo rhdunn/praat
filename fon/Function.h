@@ -1,6 +1,8 @@
+#ifndef _Function_h_
+#define _Function_h_
 /* Function.h
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,31 +19,25 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2008/09/22
- */
+#include "Data.h"
 
-#ifndef _Function_h_
-#define _Function_h_
-
-/* Function inherits from Data */
-#ifndef _Data_h_
-	#include "Data.h"
-#endif
-
-#define Function_members  Data_members \
+Thing_declare1cpp (Function);
+struct structFunction : public structData {
 	double xmin, xmax;
-#define Function_methods  Data_methods \
+// overridden methods:
+	void v_info ();
+};
+#define Function__methods(klas)  Data__methods(klas) \
 	int domainQuantity; \
 	int (*getMinimumUnit) (void *klas, long ilevel); \
 	int (*getMaximumUnit) (void *klas, long ilevel); \
-	const wchar_t * (*getUnitText) (void *klas, long ilevel, int unit, unsigned long flags); \
+	const wchar * (*getUnitText) (void *klas, long ilevel, int unit, unsigned long flags); \
 	int (*isUnitLogarithmic) (void *klas, long ilevel, int unit); \
 	double (*convertStandardToSpecialUnit) (void *klas, double value, long ilevel, int unit); \
 	double (*convertSpecialToStandardUnit) (void *klas, double value, long ilevel, int unit); \
 	void (*shiftX) (I, double xfrom, double xto); \
 	void (*scaleX) (I, double xminfrom, double xmaxfrom, double xminto, double xmaxto);
-class_create (Function, Data);
+Thing_declare2cpp (Function, Data);
 
 /*
 	An object of type Function represents a function f (x, ...) on the domain [xmin, xmax] * ....
@@ -75,7 +71,7 @@ int ClassFunction_getMaximumUnit (void *klas, long ilevel);
 #define Function_UNIT_TEXT_SHORT            0x00000001
 #define Function_UNIT_TEXT_GRAPHICAL        0x00000002
 #define Function_UNIT_TEXT_MENU             0x00000004
-const wchar_t * ClassFunction_getUnitText (void *klas, long ilevel, int unit, unsigned long flags);
+const wchar * ClassFunction_getUnitText (void *klas, long ilevel, int unit, unsigned long flags);
 
 int ClassFunction_isUnitLogarithmic (void *klas, long ilevel, int unit);
 

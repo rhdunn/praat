@@ -19,10 +19,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
-
 /* Collections contain a number of items whose class is a subclass of Data.
 
 	class Collection = Data {
@@ -49,21 +45,21 @@
 	class Cyclic = Collection;   // The cyclic list (a, b, c, d) equals (b, c, d, a) but not (d, c, a, b).
 */
 
-#ifndef _Simple_h_
-	#include "Simple.h"
-#endif
+#include "Simple.h"
 
-#ifdef __cplusplus
-	extern "C" {
-#endif
-
-#define Collection_members Data_members \
-	void *itemClass; \
-	long _capacity, size; \
-	Any *item;
-#define Collection_methods Data_methods \
+Thing_declare1cpp (Collection);
+struct structCollection : public structData {
+	// new data:
+		void *itemClass;
+		long _capacity, size;
+		bool _dontOwnItems;
+		Any *item;
+	// overridden methods:
+		void v_info ();
+};
+#define Collection__methods(klas) Data__methods(klas) \
 	long (*position) (I, Any data);
-class_create (Collection, Data);
+Thing_declare2cpp (Collection, Data);
 
 /*
 	An object of type Collection is a collection of items of any class.
@@ -77,8 +73,8 @@ class_create (Collection, Data);
 		item [1..size]		// the items.
 */
 
-int Collection_init (I, void *itemClass, long initialCapacity);
-Any Collection_create (void *itemClass, long initialCapacity);
+void Collection_init (I, void *itemClass, long initialCapacity);
+Collection Collection_create (void *itemClass, long initialCapacity);
 /*
 	Function:
 		return a new empty Collection, or NULL if out of memory.
@@ -88,6 +84,8 @@ Any Collection_create (void *itemClass, long initialCapacity);
 		my _capacity == initialCapacity;
 */
 
+void Collection_dontOwnItems (I);
+
 /*
 	Data_copy, Data_equal, Data_writeXXX, Data_readXXX
 	try to copy, compare, write, or read all the items.
@@ -95,7 +93,7 @@ Any Collection_create (void *itemClass, long initialCapacity);
 	these routines fail with a message and return 0.
 */
 
-int Collection_addItem (I, Any item);
+void Collection_addItem (I, Any item);
 /*
 	Function:
 		add the 'item' to the collection. Return 0 if out of memory, else 1.
@@ -104,7 +102,7 @@ int Collection_addItem (I, Any item);
 	Postconditions if result == 1:
 		my size >= my old size + 1;
 		if (my size > my old _capacity) my _capacity == 2 * my old _capacity;
-	When calling this function, you transfer ownership of 'item' to the Collection.
+	When calling this function, you transfer ownership of 'item' to the Collection, unless dontOwnItems is on.
 	For a SortedSet, this may mean that the Collection immediately disposes of 'item',
 	if that item already occurred in the Collection.
 */
@@ -172,7 +170,7 @@ Any Collections_merge (I, thou);
 
 /* For the inheritors. */
 
-int _Collection_insertItem (I, Any item, long position);
+void _Collection_insertItem (I, Any item, long position);
 
 /* Methods:
 
@@ -184,18 +182,20 @@ int _Collection_insertItem (I, Any item, long position);
 
 /********** class Ordered **********/
 
-#define Ordered_members Collection_members
-#define Ordered_methods Collection_methods
-class_create (Ordered, Collection);
+Thing_declare1cpp (Ordered);
+struct structOrdered : public structCollection {
+};
+#define Ordered__methods(klas) Collection__methods(klas)
+Thing_declare2cpp (Ordered, Collection);
 
-Any Ordered_create (void);
-int Ordered_init (I, void *itemClass, long initialCapacity);
+Ordered Ordered_create (void);
+void Ordered_init (I, void *itemClass, long initialCapacity);
 
 /* Behaviour:
 	Collection_addItem (Ordered) inserts an item at the end.
 */
 
-int Ordered_addItemPos (I, Any data, long position);
+void Ordered_addItemPos (I, Any data, long position);
 /*
 	Function:
 		insert an item at 'position'.
@@ -206,12 +206,14 @@ int Ordered_addItemPos (I, Any data, long position);
 /********** class Sorted **********/
 /* A Sorted is a sorted Collection. */
 
-#define Sorted_members Collection_members
-#define Sorted_methods Collection_methods \
+Thing_declare1cpp (Sorted);
+struct structSorted : public structCollection {
+};
+#define Sorted__methods(klas) Collection__methods(klas) \
 	int (*compare) (I, thou);
-class_create (Sorted, Collection);
+Thing_declare2cpp (Sorted, Collection);
 
-int Sorted_init (I, void *itemClass, long initialCapacity);
+void Sorted_init (I, void *itemClass, long initialCapacity);
 
 /* Behaviour:
 	Collection_addItem (Sorted) inserts an item at such a position that the collection stays sorted.
@@ -227,7 +229,7 @@ int Sorted_init (I, void *itemClass, long initialCapacity);
 	with every insertion.
 */
 
-int Sorted_addItem_unsorted (I, Any data);
+void Sorted_addItem_unsorted (I, Any data);
 /*
 	Function:
 		add an item to the collection, quickly at the end.
@@ -240,11 +242,13 @@ void Sorted_sort (I);
 
 /********** class SortedSet **********/
 
-#define SortedSet_members Sorted_members
-#define SortedSet_methods Sorted_methods
-class_create (SortedSet, Sorted);
+Thing_declare1cpp (SortedSet);
+struct structSortedSet : public structSorted {
+};
+#define SortedSet__methods(klas) Sorted__methods(klas)
+Thing_declare2cpp (SortedSet, Sorted);
 
-int SortedSet_init (I, void *itemClass, long initialCapacity);
+void SortedSet_init (I, void *itemClass, long initialCapacity);
 
 /* Behaviour:
 	Collection_addItem (SortedSet) refuses to insert an item if this item already occurs.
@@ -256,65 +260,73 @@ int SortedSet_hasItem (I, Any item);
 
 /********** class SortedSetOfInt **********/
 
-#define SortedSetOfInt_members SortedSet_members
-#define SortedSetOfInt_methods SortedSet_methods
-class_create (SortedSetOfInt, SortedSet);
+Thing_declare1cpp (SortedSetOfInt);
+struct structSortedSetOfInt : public structSortedSet {
+};
+#define SortedSetOfInt__methods(klas) SortedSet__methods(klas)
+Thing_declare2cpp (SortedSetOfInt, SortedSet);
 
-int SortedSetOfInt_init (I);
+void SortedSetOfInt_init (I);
 SortedSetOfInt SortedSetOfInt_create (void);
 
 /********** class SortedSetOfShort **********/
 
-#define SortedSetOfShort_members SortedSet_members
-#define SortedSetOfShort_methods SortedSet_methods
-class_create (SortedSetOfShort, SortedSet);
+Thing_declare1cpp (SortedSetOfShort);
+struct structSortedSetOfShort : public structSortedSet {
+};
+#define SortedSetOfShort__methods(klas) SortedSet__methods(klas)
+Thing_declare2cpp (SortedSetOfShort, SortedSet);
 
-int SortedSetOfShort_init (I);
+void SortedSetOfShort_init (I);
 SortedSetOfShort SortedSetOfShort_create (void);
 
 /********** class SortedSetOfLong **********/
 
-#define SortedSetOfLong_members SortedSet_members
-#define SortedSetOfLong_methods SortedSet_methods
-class_create (SortedSetOfLong, SortedSet);
+Thing_declare1cpp (SortedSetOfLong);
+struct structSortedSetOfLong : public structSortedSet {
+};
+#define SortedSetOfLong__methods(klas) SortedSet__methods(klas)
+Thing_declare2cpp (SortedSetOfLong, SortedSet);
 
-int SortedSetOfLong_init (I);
+void SortedSetOfLong_init (I);
 SortedSetOfLong SortedSetOfLong_create (void);
 
 /********** class SortedSetOfDouble **********/
 
-#define SortedSetOfDouble_members SortedSet_members
-#define SortedSetOfDouble_methods SortedSet_methods
-class_create (SortedSetOfDouble, SortedSet);
+Thing_declare1cpp (SortedSetOfDouble);
+struct structSortedSetOfDouble : public structSortedSet {
+};
+#define SortedSetOfDouble__methods(klas) SortedSet__methods(klas)
+Thing_declare2cpp (SortedSetOfDouble, SortedSet);
 
-int SortedSetOfDouble_init (I);
+void SortedSetOfDouble_init (I);
 SortedSetOfDouble SortedSetOfDouble_create (void);
 
 /********** class SortedSetOfString **********/
 
-#define SortedSetOfString_members SortedSet_members
-#define SortedSetOfString_methods SortedSet_methods
-class_create (SortedSetOfString, SortedSet);
+Thing_declare1cpp (SortedSetOfString);
+struct structSortedSetOfString : public structSortedSet {
+};
+#define SortedSetOfString__methods(klas) SortedSet__methods(klas)
+Thing_declare2cpp (SortedSetOfString, SortedSet);
 
-int SortedSetOfString_init (I);
+void SortedSetOfString_init (I);
 SortedSetOfString SortedSetOfString_create (void);
 long SortedSetOfString_lookUp (SortedSetOfString me, const wchar_t *string);
-int SortedSetOfString_add (SortedSetOfString me, const wchar_t *string);
+void SortedSetOfString_add (SortedSetOfString me, const wchar_t *string);
 
 /********** class Cyclic **********/
 
-#define Cyclic_members Collection_members
-#define Cyclic_methods Collection_methods \
+Thing_declare1cpp (Cyclic);
+struct structCyclic : public structCollection {
+};
+#define Cyclic__methods(klas) Collection__methods(klas) \
 	int (*compare) (I, thou);   /* virtual */
-class_create (Cyclic, Collection);
+Thing_declare2cpp (Cyclic, Collection);
 
-int Cyclic_init (I, void *itemClass, long initialCapacity);
+void Cyclic_init (I, void *itemClass, long initialCapacity);
 
 void Cyclic_unicize (I);
-
-#ifdef __cplusplus
-	}
-#endif
 
 /* End of file Collection.h */
 #endif

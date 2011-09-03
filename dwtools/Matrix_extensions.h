@@ -2,7 +2,7 @@
 #define _Matrix_extensions_h_
 /* Matrix_extensions.h
  *
- * Copyright (C) 1993-2006 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,10 +21,15 @@
 
 /*
  djmw 20020813 GPL header
+ djmw 20110307 Latest modification
 */
 
 #include "Matrix.h"
 #include "Graphics.h"
+
+#ifdef __cplusplus
+	extern "C" {
+#endif
 
 void Matrix_scatterPlot (I, Any g, long icx, long icy,
     double xmin, double xmax, double ymin, double ymax,
@@ -40,7 +45,7 @@ void Matrix_scale (I, int choice);
 /* choice = 2 :rows, divide each row elmnt by the maximum (abs) of that row	*/
 /* choice = 3 :columns, divide each col elmnt by the maximum of that col	*/
 
-Any Matrix_transpose (I);
+Matrix Matrix_transpose (I);
 
 void Matrix_drawDistribution (I, Graphics g, double xmin, double xmax,
 	double ymin, double ymax, double minimum, double maximum, long nBins,
@@ -52,5 +57,9 @@ void Matrix_drawSliceY (I, Graphics g, double x, double ymin, double ymax,
 int Matrix_fitPolynomial (I, long maxDegree);
 
 Matrix Matrix_solveEquation (I, double tolerance);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Matrix_extensions_h_ */

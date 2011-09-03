@@ -2,7 +2,7 @@
 #define _Spectrogram_h_
 /* Spectrogram.h
  *
- * Copyright (C) 1992-2003 David Weenink & Paul Boersma
+ * Copyright (C) 1992-2011 David Weenink & Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,20 +19,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2003/05/27
- */
+#include "Matrix.h"
+#include "Graphics.h"
 
-#ifndef _Matrix_h_
-	#include "Matrix.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-
-#define Spectrogram_members  Matrix_members
-#define Spectrogram_methods  Matrix_methods
-class_create (Spectrogram, Matrix);
+Thing_declare1cpp (Spectrogram);
+struct structSpectrogram : public structMatrix {
+};
+#define Spectrogram__methods(klas)  Matrix__methods(klas)
+Thing_declare2cpp (Spectrogram, Matrix);
 
 /* Attributes:
 	xmin			// Start time (seconds).
@@ -40,14 +34,14 @@ class_create (Spectrogram, Matrix);
 	nx			// Number of time slices.
 	dx			// The time between two subsequent time slices.
 	x1			// The centre of the first time slice.
-	ymin			// Minimum frequency (Hertz).
-	ymax		// Maximum frequency (Hertz).
-	dy			// Frequency step (Hertz).
-	y1			// Centre of first frequency band (Hertz).
+	ymin			// Minimum frequency (Hz).
+	ymax		// Maximum frequency (Hz).
+	dy			// Frequency step (Hz).
+	y1			// Centre of first frequency band (Hz).
 	z [iy] [ix]		// Power spectrum density.
 */
 
-Any Spectrogram_create (double tmin, double tmax, long nt, double dt, double t1,
+Spectrogram Spectrogram_create (double tmin, double tmax, long nt, double dt, double t1,
 					double fmin, double fmax, long nf, double df, double f1);
 /*
 	Function:
