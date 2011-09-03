@@ -1588,6 +1588,22 @@ DO
 		GET_REAL (L"Frequency step"), GET_ENUM (kSound_to_Spectrogram_windowShape, L"Window shape"), 8.0, 8.0))
 END
 
+FORM (Sound_to_Espeak, L"From Sound to Spectrogram", L"Sound: To Espeak...")
+	POSITIVE (L"Minimum pitch (Hz)", L"75")
+	POSITIVE (L"Maximum pitch (Hz)", L"300")
+	POSITIVE (L"Maximum frequency (Hz)", L"9500")
+	POSITIVE (L"Frequency step (Hz)", L"40")
+	POSITIVE (L"Maximum formant (Hz)", L"5000")
+	REAL (L"Adjust (min freq)", L"2500")
+	OK
+DO
+	EVERY_TO (Sound_to_Espeak (OBJECT, GET_REAL (L"Minimum pitch"), GET_REAL (L"Maximum pitch"),
+		GET_REAL (L"Maximum frequency"),
+		GET_REAL (L"Frequency step"),
+		GET_REAL (L"Maximum formant"),
+		GET_REAL (L"Adjust")))
+END
+
 FORM (Sound_to_Spectrum, L"Sound: To Spectrum", L"Sound: To Spectrum...")
 	BOOLEAN (L"Fast", 1)
 	OK
@@ -2103,6 +2119,7 @@ void praat_uvafon_Sound_init (void) {
 		praat_addAction1 (classSound, 0, L"To Ltas (pitch-corrected)...", 0, 1, DO_Sound_to_Ltas_pitchCorrected);
 		praat_addAction1 (classSound, 0, L"-- spectrotemporal --", 0, 1, 0);
 		praat_addAction1 (classSound, 0, L"To Spectrogram...", 0, 1, DO_Sound_to_Spectrogram);
+		praat_addAction1 (classSound, 0, L"To eSpeak...", 0, 1, DO_Sound_to_Espeak);
 		praat_addAction1 (classSound, 0, L"To Cochleagram...", 0, 1, DO_Sound_to_Cochleagram);
 		praat_addAction1 (classSound, 0, L"To Cochleagram (edb)...", 0, praat_DEPTH_1 + praat_HIDDEN, DO_Sound_to_Cochleagram_edb);
 	praat_addAction1 (classSound, 0, L"Formants & LPC -", 0, 0, 0);

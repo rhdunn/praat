@@ -9,6 +9,7 @@ OBJECTS = Transition.o Distributions_and_Transition.o \
    Matrix_and_PointProcess.o Matrix_and_Polygon.o AnyTier.o RealTier.o \
    Sound.o LongSound.o Sound_files.o Sound_audio.o PointProcess_and_Sound.o ParamCurve.o \
    Pitch.o Harmonicity.o Intensity.o Matrix_and_Pitch.o Sound_to_Pitch.o \
+   Sound_JSD.o \
    Sound_to_Intensity.o Sound_to_Harmonicity.o Sound_to_Harmonicity_GNE.o Sound_to_PointProcess.o \
    Pitch_to_PointProcess.o Pitch_to_Sound.o Pitch_Intensity.o \
    PitchTier.o Pitch_to_PitchTier.o PitchTier_to_PointProcess.o PitchTier_to_Sound.o Manipulation.o \
