@@ -20,37 +20,22 @@
  */
 
 /*
- * pb 2011/01/10
+ * pb 2011/07/14
  */
 
-/* Matrix inherits from Sampled */
-#ifndef _Sampled_h_
-	#include "Sampled.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-#ifndef _Table_h_
-	#include "Table.h"
-#endif
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
-#ifndef _Interpreter_decl_h
-	#include "Interpreter_decl.h"
-#endif
+#include "Sampled.h"
+#include "Graphics.h"
+#include "Table.h"
+#include "TableOfReal.h"
+#include "Interpreter_decl.h"
 
-#define Matrix_members Sampled_members \
-	double ymin, ymax; \
-	long ny; \
-	double dy, y1; \
-	double **z;
-#define Matrix_methods Sampled_methods
-class_create (Matrix, Sampled);
+#include "Matrix_def.h"
+#define Matrix__methods(klas) Sampled__methods(klas)
+oo_CLASS_CREATE (Matrix, Sampled);
 
-int Matrix_init
-	(I, double xmin, double xmax, long nx, double dx, double x1,
-		double ymin, double ymax, long ny, double dy, double y1);
+void Matrix_init
+	(Matrix me, double xmin, double xmax, long nx, double dx, double x1,
+	            double ymin, double ymax, long ny, double dy, double y1);
 
 Matrix Matrix_create
 	(double xmin, double xmax, long nx, double dx, double x1,
@@ -196,7 +181,7 @@ long Matrix_getWindowExtrema (I, long ixmin, long ixmax, long iymin, long iymax,
 		if result == 0, *minimum and *maximum are not changed;
 */
 
-int Matrix_formula (Matrix me, const wchar_t *expression, Interpreter interpreter, Matrix target);
+void Matrix_formula (Matrix me, const wchar *expression, Interpreter interpreter, Matrix target);
 /*
 	Arguments:
 		"me" is the Matrix referred to as "self" or with "nx" etc. in the expression
@@ -211,8 +196,8 @@ int Matrix_formula (Matrix me, const wchar_t *expression, Interpreter interprete
 	Return value:
 		0 in case of failure, otherwise 1.
 */
-int Matrix_formula_part (Matrix me, double xmin, double xmax, double ymin, double ymax,
-	const wchar_t *expression, Interpreter interpreter, Matrix target);
+void Matrix_formula_part (Matrix me, double xmin, double xmax, double ymin, double ymax,
+	const wchar *expression, Interpreter interpreter, Matrix target);
 
 /***** Graphics routines. *****/
 /*
@@ -270,19 +255,19 @@ void Matrix_movie (I, Graphics g);
 
 Matrix Matrix_readFromRawTextFile (MelderFile file);
 Matrix Matrix_readAP (MelderFile file);
-Matrix Matrix_appendRows (I, thou);
+Matrix Matrix_appendRows (Matrix me, Matrix thee, Matrix_Table klas);
 
-int Matrix_eigen (I, Matrix *eigenvectors, Matrix *eigenvalues);
+void Matrix_eigen (I, Matrix *eigenvectors, Matrix *eigenvalues);
 Matrix Matrix_power (I, long power);
 
 void Matrix_scaleAbsoluteExtremum (I, double scale);
 
 Matrix Table_to_Matrix (Table me);
-int Matrix_writeToMatrixTextFile (Matrix me, MelderFile file);
-int Matrix_writeToHeaderlessSpreadsheetFile (Matrix me, MelderFile file);
+void Matrix_writeToMatrixTextFile (Matrix me, MelderFile file);
+void Matrix_writeToHeaderlessSpreadsheetFile (Matrix me, MelderFile file);
 
 Matrix TableOfReal_to_Matrix (I);
 TableOfReal Matrix_to_TableOfReal (I);
 
-#endif
 /* End of file Matrix.h */
+#endif

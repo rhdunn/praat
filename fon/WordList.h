@@ -19,22 +19,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/03
- */
-
-#ifndef _Strings_h_
-	#include "Strings.h"
-#endif
+#include "Strings.h"
 
 #include "WordList_def.h"
-
-#define WordList_methods Data_methods
+#define WordList__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (WordList, Data);
 
 WordList Strings_to_WordList (Strings me);
 Strings WordList_to_Strings (WordList me);
 
-int WordList_hasWord (WordList me, const wchar_t *word);
+bool WordList_hasWord (WordList me, const wchar *word);
 
+/* End of file WordList.h */
 #endif

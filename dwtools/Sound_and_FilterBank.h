@@ -2,7 +2,7 @@
 #define _Sound_and_FilterBank_h_
 /* Sound_and_FilterBank.h
  *
- * Copyright (C) 1993-2002 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,27 +22,26 @@
 /*
  djmw 20010404
  djmw 20020813 GPL header
+ djmw 20110307 Latest modification
 */
 
-#ifndef _FilterBank_h_
-	#include "FilterBank.h"
-#endif
-#ifndef _Pitch_h_
-	#include "Pitch.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
+#include "FilterBank.h"
+#include "Pitch.h"
+#include "Sound.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 BarkFilter Sound_to_BarkFilter (Sound me, double analysisWidth, double dt,
 	double f1_bark, double fmax_bark, double df_bark);
 /*
 	Filtering with filters on a Bark scale as defined by
-		Andrew Sekey & Brian Hanson (1984), "Improved 1-Bark bandwidth 
+		Andrew Sekey & Brian Hanson (1984), "Improved 1-Bark bandwidth
 		"auditory filter", Jasa 75, 1902-1904.
-	Although not explicitely stated the filter function is defined in the 
+	Although not explicitely stated the filter function is defined in the
 	power domain.
-	10 log F(z) = 15.8 + 7.5(z + 0.5) - 17.5 * sqrt(1 + (z + 0.5)^2)  
+	10 log F(z) = 15.8 + 7.5(z + 0.5) - 17.5 * sqrt(1 + (z + 0.5)^2)
 */
 
 MelFilter Sound_to_MelFilter (Sound me, double analysisWidth, double dt,
@@ -52,8 +51,12 @@ FormantFilter Sound_to_FormantFilter (Sound me, double analysisWidth,
 	double dt, double f1_hz, double fmax_hz, double df_hz, double relative_bw,
 	double minimumPitch, double maximumPitch);
 
-FormantFilter Sound_and_Pitch_to_FormantFilter (Sound me, Pitch thee, 
+FormantFilter Sound_and_Pitch_to_FormantFilter (Sound me, Pitch thee,
 	double analysisWidth, double dt, double f1_hz, double fmax_hz,
-	double df_hz, double relative_bw);	
+	double df_hz, double relative_bw);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Sound_and_FilterBank_h_ */

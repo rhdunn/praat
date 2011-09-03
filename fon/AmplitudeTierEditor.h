@@ -2,7 +2,7 @@
 #define _AmplitudeTierEditor_h_
 /* AmplitudeTierEditor.h
  *
- * Copyright (C) 2003-2007 Paul Boersma
+ * Copyright (C) 2003-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,32 +19,34 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/06/10
- */
+#include "RealTierEditor.h"
+#include "AmplitudeTier.h"
+#include "Sound.h"
 
-#ifndef _RealTierEditor_h_
-	#include "RealTierEditor.h"
-#endif
-#ifndef _AmplitudeTier_h_
-	#include "AmplitudeTier.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
+Thing_define (AmplitudeTierEditor, RealTierEditor) {
+	// overridden methods:
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_play (double tmin, double tmax);
+		virtual const wchar *
+			v_quantityText ()
+				{ return L"Sound pressure (Pa)"; }
+		virtual const wchar * v_quantityKey () { return L"Sound pressure"; }
+		virtual const wchar * v_rightTickUnits () { return L" Pa"; }
+		virtual double v_defaultYmin () { return -1.0; }
+		virtual double v_defaultYmax () { return +1.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set amplitude range..."; }
+		virtual const wchar * v_defaultYminText () { return L"-1.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"+1.0"; }
+		virtual const wchar * v_yminText () { return L"Minimum amplitude (Pa)"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum amplitude (Pa)"; }
+		virtual const wchar * v_yminKey () { return L"Minimum amplitude"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum amplitude"; }
+};
 
-#define AmplitudeTierEditor__parents(Klas) RealTierEditor__parents(Klas) Thing_inherit (Klas, RealTierEditor)
-Thing_declare1 (AmplitudeTierEditor);
-
-#define AmplitudeTierEditor__members(Klas) RealTierEditor__members(Klas)
-#define AmplitudeTierEditor__methods(Klas) RealTierEditor__methods(Klas)
-Thing_declare2 (AmplitudeTierEditor, RealTierEditor);
-
-AmplitudeTierEditor AmplitudeTierEditor_create (GuiObject parent, const wchar_t *title,
-	AmplitudeTier amplitude, Sound sound, int ownSound);
-/*
-	'sound' may be NULL.
-*/
+AmplitudeTierEditor AmplitudeTierEditor_create (GuiObject parent, const wchar *title,
+	AmplitudeTier amplitude,
+	Sound sound,   // may be NULL
+	bool ownSound);
 
 /* End of file AmplitudeTierEditor.h */
 #endif

@@ -19,28 +19,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
-
-#ifdef __cplusplus
-	extern "C" {
-#endif
-
 void Machine_initLookAndFeel (unsigned int argc, char **argv);
-char **Machine_getXresources (void);
-#ifndef UNIX
-	#define Machine_getXresources()  0
-#endif
 int Machine_getMenuBarHeight (void);
 int Machine_getMainWindowMenuBarHeight (void);
 int Machine_getTitleBarHeight (void);
 int Machine_getScrollBarWidth (void);
 int Machine_getTextHeight (void);
-
-#ifdef __cplusplus
-	}
-#endif
 
 /* End of file machine.h */
 #endif

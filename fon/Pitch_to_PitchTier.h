@@ -1,6 +1,6 @@
 /* Pitch_to_PitchTier.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +17,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2010/10/19
- */
-
-#ifndef _Pitch_h_
-	#include "Pitch.h"
-#endif
-
-#ifndef _PitchTier_h_
-	#include "PitchTier.h"
-#endif
+#include "Pitch.h"
+#include "PitchTier.h"
 
 PitchTier Pitch_to_PitchTier (Pitch me);
 /*
@@ -38,7 +29,7 @@ PitchTier Pitch_to_PitchTier (Pitch me);
 
 void PitchTier_Pitch_draw (PitchTier me, Pitch uv, Graphics g,
 	double tmin, double tmax, double fmin, double fmax,
-	int nonPeriodicLineType, int garnish, const wchar_t *method);
+	int nonPeriodicLineType, int garnish, const wchar *method);
 
 Pitch Pitch_PitchTier_to_Pitch (Pitch me, PitchTier tier);
 

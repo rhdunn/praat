@@ -2,7 +2,7 @@
 #define _Delta_h_
 /* Delta.h
  *
- * Copyright (C) 1992-2004 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,9 +19,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2004/10/16
- */
+#include "Thing.h"
 
 typedef struct structDelta_Tube *Delta_Tube;
 struct structDelta_Tube
@@ -55,23 +53,15 @@ struct structDelta_Tube
 	double B, r, R, DeltaP, v;
 };
 
-#include "Thing.h"
-#define Delta_members Thing_members \
-	int numberOfTubes; \
-	struct structDelta_Tube *tube;
-#define Delta_methods Thing_methods
-class_create (Delta, Thing);
-
-/*
-	Members:
-		numberOfTubes >= 1
-		tube [1..numberOfTubes]
-*/
+Thing_define (Delta, Thing) {
+	int numberOfTubes;              // >= 1
+	struct structDelta_Tube *tube;  // tube [1..numberOfTubes]
+};
 
 Delta Delta_create (int numberOfTubes);
 /*
 	Function:
-		return a new Delta or NULL if out of memory.
+		return a new Delta.
 	Preconditions:
 		numberOfTubes >= 1;
 	Postconditions:

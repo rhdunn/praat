@@ -19,43 +19,38 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
+#include "Editor.h"
 
-#ifndef _Editor_h_
-	#include "Editor.h"
-#endif
+Thing_define (TextEditor, Editor) {
+	// data:
+		structMelderFile file;
+		GuiObject textWidget;
+		Any openDialog, saveDialog, printDialog, findDialog;
+		int dirty, fontSize;
+		GuiObject dirtyNewDialog, dirtyOpenDialog, dirtyCloseDialog;
+		GuiObject fontSizeButton_10, fontSizeButton_12, fontSizeButton_14, fontSizeButton_18, fontSizeButton_24;
+	// functions:
+		void init (GuiObject parent, const wchar *initialText);
+	// overridden methods:
+		virtual void v_destroy ();
+		virtual void v_nameChanged ();
+		virtual void v_goAway ();
+		virtual void v_createChildren ();
+		virtual void v_createMenus ();
+		virtual bool v_hasQueryMenu () { return false; }
+	// new methods:
+		virtual bool v_fileBased () { return true; };   // if true, have New, Open..., Save; if false, have Clear
+		virtual void v_clear () { }
+};
 
-#ifdef __cplusplus
-	extern "C" {
-#endif
+TextEditor TextEditor_create (
+	GuiObject parent,
+	const wchar *initialText   // may be NULL
+);
 
-#define TextEditor__parents(Klas) Editor__parents(Klas) Thing_inherit (Klas, Editor)
-Thing_declare1 (TextEditor);
-
-#define TextEditor__members(Klas) Editor__members(Klas) \
-	structMelderFile file; \
-	GuiObject textWidget; \
-	Any openDialog, saveDialog, printDialog, findDialog; \
-	int dirty, fontSize; \
-	GuiObject dirtyNewDialog, dirtyOpenDialog, dirtyCloseDialog; \
-	GuiObject fontSizeButton_10, fontSizeButton_12, fontSizeButton_14, fontSizeButton_18, fontSizeButton_24;
-#define TextEditor__methods(Klas) Editor__methods(Klas) \
-	bool fileBased; \
-	void (*clear) (Klas me);
-Thing_declare2 (TextEditor, Editor);
-
-int TextEditor_init (TextEditor me, GuiObject parent, const wchar_t *initialText);
-TextEditor TextEditor_create (GuiObject parent, const wchar_t *initialText);
-	/* 'initalText' may be NULL. */
 void TextEditor_showOpen (TextEditor me);
 
 void TextEditor_prefs (void);
-
-#ifdef __cplusplus
-	}
-#endif
 
 /* End of file TextEditor.h */
 #endif

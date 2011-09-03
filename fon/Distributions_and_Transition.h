@@ -1,6 +1,6 @@
 /* Distributions_and_Transition.h
  *
- * Copyright (C) 1997-2002 Paul Boersma
+ * Copyright (C) 1997-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +17,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 1997/03/02
- * pb 2002/07/16 GPL
- */
-
-#ifndef _Distributions_h_
-	#include "Distributions.h"
-#endif
-#ifndef _Transition_h_
-	#include "Transition.h"
-#endif
+#include "Distributions.h"
+#include "Transition.h"
 
 Transition Distributions_to_Transition (Distributions underlying, Distributions surface,
 	long environment, Transition adjacency, int greedy);

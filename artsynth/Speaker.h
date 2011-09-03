@@ -2,7 +2,7 @@
 #define _Speaker_h_
 /* Speaker.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,19 +19,13 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/10/09
- */
-
-#ifndef _Data_h_
-	#include "Data.h"
-#endif
+#include "Data.h"
 
 #include "Speaker_def.h"
-#define Speaker_methods Data_methods
+#define Speaker__methods(klas) Data__methods(klas)
 oo_CLASS_CREATE (Speaker, Data);
 
-Speaker Speaker_create (wchar_t *kindOfSpeaker, int numberOfVocalCordMasses);
+Speaker Speaker_create (wchar *kindOfSpeaker, int numberOfVocalCordMasses);
 	/* Preconditions:								*/
 	/*    1 <= numberOfVocalCordMasses <= 2;					*/
 	/* Failures:									*/

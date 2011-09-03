@@ -2,7 +2,7 @@
 #define _RealTierEditor_h_
 /* RealTierEditor.h
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,29 +19,35 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2009/01/23
- */
+#include "TimeSoundEditor.h"
+#include "RealTier.h"
 
-#ifndef _TimeSoundEditor_h_
-	#include "TimeSoundEditor.h"
-#endif
-#ifndef _RealTier_h_
-	#include "RealTier.h"
-#endif
-
-#define RealTierEditor__parents(Klas) TimeSoundEditor__parents(Klas) Thing_inherit (Klas, TimeSoundEditor)
-Thing_declare1 (RealTierEditor);
-
-#define RealTierEditor__members(Klas) TimeSoundEditor__members(Klas) \
-	double ymin, ymax, ycursor;
-#define RealTierEditor__methods(Klas) TimeSoundEditor__methods(Klas) \
-	double minimumLegalValue, maximumLegalValue; \
-	const wchar_t *quantityText, *quantityKey, *rightTickUnits; \
-	double defaultYmin, defaultYmax; \
-	const wchar_t *setRangeTitle, *defaultYminText, *defaultYmaxText; \
-	const wchar_t *yminText, *ymaxText, *yminKey, *ymaxKey;
-Thing_declare2 (RealTierEditor, TimeSoundEditor);
+Thing_define (RealTierEditor, TimeSoundEditor) {
+	// new data:
+		double ymin, ymax, ycursor;
+	// overridden methods:
+		virtual void v_createMenus ();
+		virtual void v_dataChanged ();
+		virtual void v_draw ();
+		virtual int v_click (double xWC, double yWC, bool shiftKeyPressed);
+		virtual void v_play (double tmin, double tmax);
+		virtual void v_createMenuItems_view (EditorMenu menu);
+	// new methods:
+		virtual double v_minimumLegalValue () { return NUMundefined; }
+		virtual double v_maximumLegalValue () { return NUMundefined; }
+		virtual const wchar * v_quantityText () { return L"Y"; }   // normally includes units
+		virtual const wchar * v_quantityKey () { return L"Y"; }   // without units
+		virtual const wchar * v_rightTickUnits () { return L""; }
+		virtual double v_defaultYmin () { return 0.0; }
+		virtual double v_defaultYmax () { return 1.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set range..."; }
+		virtual const wchar * v_defaultYminText () { return L"0.0"; }
+		virtual const wchar * v_defaultYmaxText () { return L"1.0"; }
+		virtual const wchar * v_yminText () { return L"Minimum"; }   // normally includes units
+		virtual const wchar * v_ymaxText () { return L"Maximum"; }   // normally includes units
+		virtual const wchar * v_yminKey () { return L"Minimum"; }   // without units
+		virtual const wchar * v_ymaxKey () { return L"Maximum"; }   // without units
+};
 
 void RealTierEditor_updateScaling (RealTierEditor me);
 /*
@@ -49,7 +55,7 @@ void RealTierEditor_updateScaling (RealTierEditor me);
 	Call after every change in the data.
 */
 
-int RealTierEditor_init (RealTierEditor me, GuiObject parent, const wchar_t *title, RealTier data, Sound sound, int ownSound);
+void RealTierEditor_init (RealTierEditor me, GuiObject parent, const wchar *title, RealTier data, Sound sound, bool ownSound);
 /*
 	'Sound' may be NULL;
 	if 'ownSound' is TRUE, the editor will contain a deep copy of the Sound,

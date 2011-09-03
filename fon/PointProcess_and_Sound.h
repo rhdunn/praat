@@ -1,6 +1,6 @@
 /* PointProcess_and_Sound.h
  *
- * Copyright (C) 1992-2005 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,16 +17,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2005/07/07
- */
-
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
+#include "PointProcess.h"
+#include "Sound.h"
 
 Sound PointProcess_to_Sound_pulseTrain (PointProcess me, double samplingFrequency,
 	double adaptFactor, double adaptTime, long interpolationDepth);
@@ -52,9 +44,9 @@ Sound PointProcess_to_Sound_phonation
 #define PointProcess_to_Sound_phonation_DEFAULT_POWER_1  3.0
 #define PointProcess_to_Sound_phonation_DEFAULT_POWER_2  4.0
 
-int PointProcess_playPart (PointProcess me, double tmin, double tmax);
-int PointProcess_play (PointProcess me);
-int PointProcess_hum (PointProcess me, double tmin, double tmax);
+void PointProcess_playPart (PointProcess me, double tmin, double tmax);
+void PointProcess_play (PointProcess me);
+void PointProcess_hum (PointProcess me, double tmin, double tmax);
 Sound PointProcess_to_Sound_hum (PointProcess me);
 
 /* End of file PointProcess_and_Sound.h */

@@ -1,6 +1,6 @@
 /* Pitch_to_PointProcess.h
  *
- * Copyright (C) 1992-2003 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,21 +17,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 1996/04/26
- * pb 2002/07/16 GPL
- * pb 2003/02/26
- */
-
-#ifndef _Pitch_h_
-	#include "Pitch.h"
-#endif
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
+#include "Pitch.h"
+#include "PointProcess.h"
+#include "Sound.h"
 
 PointProcess Pitch_to_PointProcess (Pitch pitch);
 

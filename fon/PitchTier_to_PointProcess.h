@@ -1,6 +1,6 @@
 /* PitchTier_to_PointProcess.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,20 +17,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 1997/06/06
- * pb 2002/07/16 GPL
- */
-
-#ifndef _PitchTier_h_
-	#include "PitchTier.h"
-#endif
-#ifndef _PointProcess_h_
-	#include "PointProcess.h"
-#endif
-#ifndef _Pitch_h_
-	#include "Pitch.h"
-#endif
+#include "PitchTier.h"
+#include "PointProcess.h"
+#include "Pitch.h"
 
 PointProcess PitchTier_to_PointProcess (PitchTier me);
 

@@ -2,7 +2,7 @@
 #define _ParamCurve_h_
 /* ParamCurve.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,11 +20,6 @@
  */
 
 /*
- * pb 1995/03/07
- * pb 2002/07/16 GPL
- */
-
-/*
 	Parametrized curve (x (t), y (t)):
 		two functions (x and y) of one variable (the parameter t).
 	Sampled parametrized curve (x [i], y [j]):
@@ -32,21 +27,19 @@
 		y [i] = y (ty [i]) = y (ty1 + (i - 1) * dty);
 */
 
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
+#include "Sound.h"
+#include "Graphics.h"
 
-#define ParamCurve_members Function_members \
+Thing_declare1cpp (ParamCurve);
+struct structParamCurve : public structFunction {
 	Sound x, y;
-#define ParamCurve_methods Function_methods
-class_create (ParamCurve, Function);
+};
+#define ParamCurve__methods(klas) Function__methods(klas)
+Thing_declare2cpp (ParamCurve, Function);
 
-int ParamCurve_init (I, Any x, Any y);
+void ParamCurve_init (I, Any x, Any y);
 
-Any ParamCurve_create (Any x, Any y);
+ParamCurve ParamCurve_create (Any x, Any y);
 /*
 	Return value:
 		a newly created ParamCurve object,
@@ -61,7 +54,7 @@ Any ParamCurve_create (Any x, Any y);
 		result -> xmax = min (x -> xmax, y -> xmax);
 */
 
-int ParamCurve_draw (I, Graphics g, double t1, double t2, double dt,
+void ParamCurve_draw (I, Graphics g, double t1, double t2, double dt,
 	double x1, double x2, double y1, double y2, int garnish);
 /*
 	Function:

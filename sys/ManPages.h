@@ -19,32 +19,22 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
+#include "ManPage.h"
+#include "Collection.h"
 
-#ifndef _ManPage_h_
-	#include "ManPage.h"
-#endif
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
-
-#ifdef __cplusplus
-	extern "C" {
-#endif
-
-#define ManPages_members Data_members \
-	Ordered pages; \
-	const wchar_t **titles; \
-	int ground, dynamic, executable; \
+Thing_declare1cpp (ManPages);
+struct structManPages : public structData {
+	Ordered pages;
+	const wchar **titles;
+	int ground, dynamic, executable;
 	structMelderDir rootDirectory;
-#define ManPages_methods Data_methods
-class_create (ManPages, Data);
+};
+#define ManPages__methods(klas) Data__methods(klas)
+Thing_declare2cpp (ManPages, Data);
 
 ManPages ManPages_create (void);
 
-int ManPages_addPage (ManPages me, const wchar_t *title, const wchar_t *author, long date,
+void ManPages_addPage (ManPages me, const wchar *title, const wchar *author, long date,
 	struct structManPage_Paragraph paragraphs []);
 /*
 	All string and struct arguments must be statically allocated
@@ -53,15 +43,11 @@ int ManPages_addPage (ManPages me, const wchar_t *title, const wchar_t *author, 
 
 long ManPages_lookUp (ManPages me, const wchar_t *title);
 
-int ManPages_writeOneToHtmlFile (ManPages me, long ipage, MelderFile file);
-int ManPages_writeAllToHtmlDir (ManPages me, const wchar_t *dirPath);
+void ManPages_writeOneToHtmlFile (ManPages me, long ipage, MelderFile file);
+void ManPages_writeAllToHtmlDir (ManPages me, const wchar *dirPath);
 
 long ManPages_uniqueLinksHither (ManPages me, long ipage);
-const wchar_t **ManPages_getTitles (ManPages me, long *numberOfTitles);
-
-#ifdef __cplusplus
-	}
-#endif
+const wchar **ManPages_getTitles (ManPages me, long *numberOfTitles);
 
 /* End of file ManPages.h */
 #endif

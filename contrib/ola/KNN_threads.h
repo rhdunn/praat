@@ -22,6 +22,7 @@
 
 /*
  * os 20090123 First version
+ * pb 2011/03/08 C++
  */
 
 /////////////////////////////////////////////////////
@@ -57,5 +58,5 @@ void * KNN_threadTestAux
     void * dummy
 );
 
-
-#endif /* _KNN_threads_h_ */
+/* End of file KNN_threads.h */
+#endif

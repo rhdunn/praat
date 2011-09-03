@@ -2,7 +2,7 @@
 #define _DurationTierEditor_h_
 /* DurationTierEditor.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,29 +19,31 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/06/10
- */
+#include "RealTierEditor.h"
+#include "DurationTier.h"
+#include "Sound.h"
 
-#ifndef _RealTierEditor_h_
-	#include "RealTierEditor.h"
-#endif
-#ifndef _DurationTier_h_
-	#include "DurationTier.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
+Thing_define (DurationTierEditor, RealTierEditor) {
+	// overridden methods:
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_play (double tmin, double tmax);
+		virtual double v_minimumLegalValue () { return 0.0; }
+		virtual const wchar * v_quantityText () { return L"Relative duration"; }
+		virtual const wchar * v_quantityKey () { return L"Relative duration"; }
+		virtual const wchar * v_rightTickUnits () { return L""; }
+		virtual double v_defaultYmin () { return 0.25; }
+		virtual double v_defaultYmax () { return 3.0; }
+		virtual const wchar * v_setRangeTitle () { return L"Set duration range..."; }
+		virtual const wchar * v_defaultYminText () { return L"0.25"; }
+		virtual const wchar * v_defaultYmaxText () { return L"3.0"; }
+		virtual const wchar * v_yminText () { return L"Minimum duration"; }
+		virtual const wchar * v_ymaxText () { return L"Maximum duration"; }
+		virtual const wchar * v_yminKey () { return L"Minimum duration"; }
+		virtual const wchar * v_ymaxKey () { return L"Maximum duration"; }
+};
 
-#define DurationTierEditor__parents(Klas) RealTierEditor__parents(Klas) Thing_inherit (Klas, RealTierEditor)
-Thing_declare1 (DurationTierEditor);
-
-#define DurationTierEditor__members(Klas) RealTierEditor__members(Klas)
-#define DurationTierEditor__methods(Klas) RealTierEditor__methods(Klas)
-Thing_declare2 (DurationTierEditor, RealTierEditor);
-
-DurationTierEditor DurationTierEditor_create (GuiObject parent, const wchar_t *title,
-	DurationTier duration, Sound sound, int ownSound);
+DurationTierEditor DurationTierEditor_create (GuiObject parent, const wchar *title,
+	DurationTier duration, Sound sound, bool ownSound);
 /*
 	'sound' may be NULL.
 */

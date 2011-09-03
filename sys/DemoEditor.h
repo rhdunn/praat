@@ -19,30 +19,41 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/02
- */
+#include "Editor.h"
 
-#ifndef _Editor_h_
-	#include "Editor.h"
-#endif
+Thing_define (DemoEditor, Editor) {
+	// new data:
+		GuiObject drawingArea;
+		Graphics graphics;
+		void *praatPicture;
+		bool clicked, keyPressed, shiftKeyPressed, commandKeyPressed, optionKeyPressed, extraControlKeyPressed;
+		long x, y;
+		wchar key;
+		bool waitingForInput, userWantsToClose, fullScreen;
+	// overridden methods:
+		virtual void v_destroy ();
+		virtual void v_info ();
+		virtual void v_goAway ();
+		virtual bool v_hasMenuBar () { return false; }
+		virtual bool v_canFullScreen () { return true; }
+		virtual bool v_scriptable () { return false; }
+		virtual void v_createChildren ();
+		virtual void v_createMenus ();
+};
 
-#ifdef __cplusplus
-	extern "C" {
-#endif
-
-#define DemoEditor__parents(Klas) Editor__parents(Klas) Thing_inherit (Klas, Editor)
-Thing_declare1 (DemoEditor);
-
-int DemoEditor_init (DemoEditor me, GuiObject parent);
+void DemoEditor_init (DemoEditor me, GuiObject parent);
 DemoEditor DemoEditor_create (GuiObject parent);
 
-int Demo_open (void);
+void Demo_open (void);
 void Demo_close (void);
+struct autoDemoOpen {
+	autoDemoOpen () { Demo_open (); }
+	~autoDemoOpen () { Demo_close (); }
+};
 
 int Demo_windowTitle (const wchar_t *title);
 int Demo_show (void);
-bool Demo_waitForInput (Interpreter interpreter);
+void Demo_waitForInput (Interpreter interpreter);
 bool Demo_clicked (void);
 double Demo_x (void);
 double Demo_y (void);
@@ -55,10 +66,6 @@ bool Demo_extraControlKeyPressed (void);
 /* Shortcuts: */
 bool Demo_input (const wchar_t *keys);
 bool Demo_clickedIn (double left, double right, double bottom, double top);
-
-#ifdef __cplusplus
-	}
-#endif
 
 /* End of file DemoEditor.h */
 #endif

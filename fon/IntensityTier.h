@@ -2,7 +2,7 @@
 #define _IntensityTier_h_
 /* IntensityTier.h
  *
- * Copyright (C) 1992-2010 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,33 +19,21 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2010/10/19
- */
+#include "RealTier.h"
+#include "Intensity.h"
+#include "TableOfReal.h"
+#include "Sound.h"
 
-#ifndef _RealTier_h_
-	#include "RealTier.h"
-#endif
-#ifndef _Intensity_h_
-	#include "Intensity.h"
-#endif
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-
-/********** class IntensityTier **********/
-
-#define IntensityTier_members RealTier_members
-#define IntensityTier_methods RealTier_methods
-class_create (IntensityTier, RealTier);
+Thing_declare1cpp (IntensityTier);
+struct structIntensityTier : public structRealTier {
+};
+#define IntensityTier__methods(klas) RealTier__methods(klas)
+Thing_declare2cpp (IntensityTier, RealTier);
 
 IntensityTier IntensityTier_create (double tmin, double tmax);
 
 void IntensityTier_draw (IntensityTier me, Graphics g, double tmin, double tmax,
-	double ymin, double ymax, const wchar_t *method, int garnish);
+	double ymin, double ymax, const wchar *method, int garnish);
 
 IntensityTier PointProcess_upto_IntensityTier (PointProcess me, double intensity);
 IntensityTier Intensity_downto_IntensityTier (Intensity me);

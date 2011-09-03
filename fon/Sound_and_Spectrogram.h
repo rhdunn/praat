@@ -2,7 +2,7 @@
 #define _Sound_and_Spectrogram_h_
 /* Sound_and_Spectrogram.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,16 +19,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2007/12/06
- */
-
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _Spectrogram_h_
-	#include "Spectrogram.h"
-#endif
+#include "Sound.h"
+#include "Spectrogram.h"
 
 #include "Sound_and_Spectrogram_enums.h"
 

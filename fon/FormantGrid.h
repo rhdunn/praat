@@ -19,30 +19,17 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/03/01
- */
+#include "RealTier.h"
+#include "Sound.h"
+#include "Formant.h"
 
-#ifndef _RealTier_h_
-	#include "RealTier.h"
-#endif
-#ifndef _Sound_h_
-	#include "Sound.h"
-#endif
-#ifndef _Formant_h_
-	#include "Formant.h"
-#endif
-#ifndef _Interpreter_decl_h_
-	#include "Interpreter_decl.h"
-#endif
+Thing_declare (Interpreter);
 
 #include "FormantGrid_def.h"
-#define FormantGrid_members Function_members \
-	Ordered formants, bandwidths;
-#define FormantGrid_methods Function_methods
+#define FormantGrid__methods(klas) Function__methods(klas)
 oo_CLASS_CREATE (FormantGrid, Function);
 
-int FormantGrid_init (I, double tmin, double tmax, long numberOfFormants);
+void FormantGrid_init (I, double tmin, double tmax, long numberOfFormants);
 FormantGrid FormantGrid_createEmpty (double tmin, double tmax, long numberOfFormants);
 
 FormantGrid FormantGrid_create (double tmin, double tmax, long numberOfFormants,
@@ -52,8 +39,8 @@ FormantGrid FormantGrid_create (double tmin, double tmax, long numberOfFormants,
 double FormantGrid_getFormantAtTime (FormantGrid me, long iformant, double t);
 double FormantGrid_getBandwidthAtTime (FormantGrid me, long iformant, double t);
 
-int FormantGrid_addFormantPoint (FormantGrid me, long iformant, double t, double value);
-int FormantGrid_addBandwidthPoint (FormantGrid me, long iformant, double t, double value);
+void FormantGrid_addFormantPoint (FormantGrid me, long iformant, double t, double value);
+void FormantGrid_addBandwidthPoint (FormantGrid me, long iformant, double t, double value);
 void FormantGrid_removeFormantPointsBetween (FormantGrid me, long iformant, double tmin, double tmax);
 void FormantGrid_removeBandwidthPointsBetween (FormantGrid me, long iformant, double tmin, double tmax);
 
@@ -64,13 +51,13 @@ Sound Sound_FormantGrid_filter_noscale (Sound me, FormantGrid formantGrid);
 Sound FormantGrid_to_Sound (FormantGrid me, double samplingFrequency,
 	double tStart, double f0Start, double tMid, double f0Mid, double tEnd, double f0End,
 	double adaptFactor, double maximumPeriod, double openPhase, double collisionPhase, double power1, double power2);
-int FormantGrid_playPart (FormantGrid me, double tmin, double tmax, double samplingFrequency,
+void FormantGrid_playPart (FormantGrid me, double tmin, double tmax, double samplingFrequency,
 	double tStart, double f0Start, double tMid, double f0Mid, double tEnd, double f0End,
 	double adaptFactor, double maximumPeriod, double openPhase, double collisionPhase, double power1, double power2,
 	int (*playCallback) (void *playClosure, int phase, double tmin, double tmax, double t), void *playClosure);
 
-int FormantGrid_formula_frequencies (I, const wchar_t *expression, Interpreter interpreter, thou);
-int FormantGrid_formula_bandwidths (I, const wchar_t *expression, Interpreter interpreter, thou);
+void FormantGrid_formula_frequencies (FormantGrid me, const wchar *expression, Interpreter interpreter, FormantGrid thee);
+void FormantGrid_formula_bandwidths (FormantGrid me, const wchar *expression, Interpreter interpreter, FormantGrid thee);
 
 FormantGrid Formant_downto_FormantGrid (Formant me);
 Formant FormantGrid_to_Formant (FormantGrid me, double dt, double intensity);

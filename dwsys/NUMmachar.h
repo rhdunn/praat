@@ -2,7 +2,7 @@
 #define _NUMmachar_h_
 /* NUMmachar.h
  *
- * Copyright (C) 1994-2002 David Weenink
+ * Copyright (C) 1994-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,9 +21,14 @@
 
 /*
  djmw 20020812 GPL header
+ djmw 20110308 Latest modification
 */
 
-struct machar_Table
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
+struct structmachar_Table
 {
 	int base;		/* Radix in which numbers are presented. */
 	int t;			/* Number of base digits in mantissa*/
@@ -33,12 +38,18 @@ struct machar_Table
 	double prec;	/* Quantization step (eps*base) */
 	double eps;		/* Quantization error (relative machine precision) */
 	double rmin;	/* Underflow threshold - base**(emin-1) */
-	double sfmin;	/* Safe minimum, such that 1/sfmin does not overflow */	
-	double rmax;	/* Overflow threshold  - (base**emax)*(1-eps)*/	
+	double sfmin;	/* Safe minimum, such that 1/sfmin does not overflow */
+	double rmax;	/* Overflow threshold  - (base**emax)*(1-eps)*/
 };
 
-typedef struct machar_Table *machar_Table;
+typedef struct structmachar_Table *machar_Table;
+
+extern machar_Table NUMfpp;
 
 void NUMmachar (void);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _NUMmachar_h_ */

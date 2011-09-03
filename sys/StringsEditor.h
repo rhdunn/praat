@@ -19,34 +19,20 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * 2011/03/02
-*/
+#include "Editor.h"
+#include "Strings.h"
 
-#ifndef _Editor_h_
-	#include "Editor.h"
-#endif
-#ifndef _Strings_h_
-	#include "Strings.h"
-#endif
+Thing_define (StringsEditor, Editor) {
+	// new data:
+		GuiObject list, text;
+	// overridden methods:
+		virtual void v_destroy ();
+		virtual void v_createChildren ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual void v_dataChanged ();
+};
 
-#ifdef __cplusplus
-	extern "C" {
-#endif
-
-#define StringsEditor__parents(Klas) Editor__parents(Klas) Thing_inherit (Klas, Editor)
-Thing_declare1 (StringsEditor);
-
-#define StringsEditor__members(Klas) Editor__members(Klas) \
-	GuiObject list, text;
-#define StringsEditor__methods(Klas) Editor__methods(Klas)
-Thing_declare2 (StringsEditor, Editor);
-
-StringsEditor StringsEditor_create (GuiObject parent, const wchar_t *title, Any data);
-
-#ifdef __cplusplus
-	}
-#endif
+StringsEditor StringsEditor_create (GuiObject parent, const wchar *title, Strings data);
 
 /* End of file StringsEditor.h */
 #endif

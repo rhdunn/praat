@@ -19,10 +19,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * 2011/03/02
- */
-
 #if defined (UNIX)
 	#define gtk 1
 	#define motif 0
@@ -31,9 +27,7 @@
 	#define motif 1
 #endif
 
-#ifndef _Collection_h_
-	#include "Collection.h"
-#endif
+#include "Collection.h"
 
 #if gtk
 	#include <gtk/gtk.h>
@@ -48,10 +42,6 @@
 	#include <windows.h>
 	#include <windowsx.h>
 	#undef Polygon
-#endif
-
-#ifdef __cplusplus
-	extern "C" {
 #endif
 
 #define GUI_ARGS  GuiObject w, XtPointer void_me, XtPointer call
@@ -123,8 +113,6 @@
 	 */
 	typedef void *XtPointer;
 	typedef GuiObject *GuiObjectList;
-	typedef void *XtAppContext;
-	typedef XtAppContext Context;
 	typedef long XtWorkProcId, XtIntervalId;
 	typedef void (*XtCallbackProc) (GuiObject w, XtPointer client_data, XtPointer call_data);
 	typedef Boolean (*XtWorkProc) (XtPointer client_data);
@@ -137,18 +125,17 @@
 	 * Declarations of Xt functions.
 	 */
 	void XtAddCallback (GuiObject w, int kind, XtCallbackProc proc, XtPointer closure);
-	XtIntervalId XtAppAddTimeOut (XtAppContext appContext, unsigned long interval,
+	XtIntervalId GuiAddTimeOut (unsigned long interval,
 		XtTimerCallbackProc timerProc, XtPointer closure);
-	XtWorkProcId XtAppAddWorkProc (XtAppContext appContext, XtWorkProc workProc, XtPointer closure);
-	void XtAppMainLoop (XtAppContext appContext);
-	void XtAppNextEvent (XtAppContext appContext, XEvent *event);
+	XtWorkProcId GuiAddWorkProc (XtWorkProc workProc, XtPointer closure);
+	void GuiMainLoop ();
+	void GuiNextEvent (XEvent *event);
 	#define XtCalloc  Melder_calloc
 	#define XtClass(w)  (w) -> widgetClass
 	void XtDestroyWidget (GuiObject w);
 	void XtDispatchEvent (XEvent *event);
 	#define XtDisplay(w)  0
-	GuiObject XtInitialize (void *dum1, const char *name,
-		void *dum2, int dum3, unsigned int *argc, char **argv);
+	GuiObject GuiInitialize (const char *name, unsigned int *argc, char **argv);
 	Boolean XtIsManaged (GuiObject w);
 	Boolean XtIsShell (GuiObject w);
 	void XtManageChild (GuiObject w);
@@ -161,7 +148,7 @@
 	void XtSetSensitive (GuiObject w, Boolean value);
 	void XtUnmanageChild (GuiObject self);
 	void XtUnmanageChildren (GuiObjectList children, Cardinal num_children);
-	GuiObject XtVaAppInitialize (XtAppContext *appContext, const char *name,
+	GuiObject GuiAppInitialize (const char *name,
 		void *dum1, int dum2, unsigned int *argc, char **argv, void *dum3, void *dum4);
 	GuiObject XtVaCreateWidget (const char *name, int widgetClass, GuiObject parent, ...);
 	GuiObject XtVaCreateManagedWidget (const char *name, int widgetClass, GuiObject parent, ...);
@@ -224,7 +211,6 @@
 	 * Declarations of Xm functions.
 	 */
 	void XmAddWMProtocolCallback (GuiObject shell, Atom protocol, XtCallbackProc callback, char *closure);
-	void XmAddWMProtocols (GuiObject shell, Atom *protocols, Cardinal num_protocols);   /* does nothing */
 	GuiObject XmCreateBulletinBoard (GuiObject, const char *, ArgList, int);  
 	GuiObject XmCreateBulletinBoardDialog (GuiObject, const char *, ArgList, int);  
 	GuiObject XmCreateCascadeButton (GuiObject, const char *, ArgList, int);
@@ -244,7 +230,6 @@
 	GuiObject XmCreateShell (GuiObject, const char *, ArgList, int);
 	GuiObject XmCreateToggleButton (GuiObject, const char *, ArgList, int);
 	GuiObject XmCreateToggleButtonGadget (GuiObject, const char *, ArgList, int);   
-	Atom XmInternAtom (Display *display, String name, Boolean only_if_exists);
 	void XmScaleGetValue (GuiObject widget, int *value_return);
 	void XmScaleSetValue (GuiObject widget, int value);
 	void XmScrollBarGetValues (GuiObject me, int *value, int *sliderSize, int *increment, int *pageIncrement);
@@ -525,12 +510,8 @@ void GuiObject_size (GuiObject me, long width, long height);
 
 /********** EVENTS **********/
 
-void Gui_setOpenDocumentCallback (int (*openDocumentCallback) (MelderFile file));
+void Gui_setOpenDocumentCallback (void (*openDocumentCallback) (MelderFile file));
 void Gui_setQuitApplicationCallback (int (*quitApplicationCallback) (void));
-
-#ifdef __cplusplus
-	}
-#endif
 
 /* End of file Gui.h */
 #endif

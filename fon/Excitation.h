@@ -2,7 +2,7 @@
 #define _Excitation_h_
 /* Excitation.h
  *
- * Copyright (C) 1992-2002 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,27 +19,20 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2002/06/04
- * pb 2002/07/16 GPL
- */
+#include "Vector.h"
+#include "Graphics.h"
+
+Thing_declare1cpp (Excitation);
+struct structExcitation : public structVector {
+};
+#define Excitation__methods(klas)  Vector__methods(klas)
+Thing_declare2cpp (Excitation, Vector);
 
 double Excitation_hertzToBark (double hertz);
 double Excitation_barkToHertz (double bark);
 double Excitation_phonToDifferenceLimens (double phon);
 double Excitation_differenceLimensToPhon (double ndli);
 double Excitation_soundPressureToPhon (double soundPressure, double bark);
-
-#ifndef _Vector_h_
-	#include "Vector.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-
-#define Excitation_members  Vector_members
-#define Excitation_methods  Vector_methods
-class_create (Excitation, Vector);
 
 Excitation Excitation_create (double df, long nf);
 double Excitation_getDistance (Excitation me, Excitation thee);

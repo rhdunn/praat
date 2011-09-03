@@ -2,7 +2,7 @@
 #define _Categories_h_
 /* Categories.h
  * 
- * Copyright (C) 1993-2007 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,24 +24,18 @@
   djmw 20070620 Latest modification.
 */
 
-#ifndef _Collection_extensions_h_
-	#include "Collection_extensions.h"
-#endif
-#ifndef _Simple_extensions_h_
-	#include "Simple_extensions.h"
-#endif
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
-#ifndef _Graphics_h_
-	#include "Graphics.h"
+#include "Collection_extensions.h"
+#include "Simple_extensions.h"
+#include "TableOfReal.h"
+#include "Graphics.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
-#define Categories_members OrderedOfString_members
-#define Categories_methods OrderedOfString_methods
-class_create (Categories, OrderedOfString);
+Thing_declare1cpp (Categories);
 
-int Categories_init (Categories me, long size);
+void Categories_init (Categories me, long size);
 
 Categories Categories_create (void);
 Categories Categories_sequentialNumbers (long n);
@@ -57,5 +51,15 @@ long Categories_getSize (Categories me);
 
 Categories TableOfReal_to_CategoriesRow (I);
 Categories TableOfReal_to_CategoriesColumn (I);
+
+#ifdef __cplusplus
+	}
+
+	struct structCategories : public structOrderedOfString {
+	};
+	#define Categories__methods(klas) OrderedOfString__methods(klas)
+	Thing_declare2cpp (Categories, OrderedOfString);
+
+#endif
 
 #endif /* _Categories_h_ */

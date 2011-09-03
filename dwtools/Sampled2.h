@@ -2,7 +2,7 @@
 #define _Sampled2_h_
 /* Sampled2.h
  *
- * Copyright (C) 1993-2007 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,25 +22,29 @@
 /*
  djmw 19970408
  djmw 20020813 GPL header
- djmw 20070620 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _Data_h_
-	#include "Data.h"
+#include "Data.h"
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
-#define Sampled2_members Data_members	\
-	double xmin, xmax;					\
-	long nx;							\
-	double dx, x1;						\
-	double ymin, ymax;					\
-	long ny;							\
+Thing_declare1cpp (Sampled2);
+struct structSampled2 : public structData {
+	double xmin, xmax;
+	long nx;
+	double dx, x1;
+	double ymin, ymax;
+	long ny;
 	double dy, y1;
-#define Sampled2_methods Data_methods
-class_create (Sampled2, Data);
+};
+#define Sampled2__methods(klas) Data__methods(klas)
+Thing_declare2cpp (Sampled2, Data);
 
-int Sampled2_init (I, double xmin, double xmax, long nx, double dx, double x1,
-		double ymin, double ymax, long ny, double dy, double y1);
+void Sampled2_init (I, double xmin, double xmax, long nx, double dx, double x1,
+	double ymin, double ymax, long ny, double dy, double y1);
 
 long Sampled2_getWindowSamplesX (I, double xmin, double xmax, long *ixmin, long *ixmax);
 /*
@@ -94,5 +98,9 @@ long Sampled2_getWindowExtrema_f (I, float **z, long ixmin, long ixmax,
 	Postconditions:
 		if result == 0, *minimum and *maximum are not changed;
 */
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Sampled2_h_ */

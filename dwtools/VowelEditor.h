@@ -2,7 +2,7 @@
 #define _VowelEditor_h_
 /* VowelEditor.h
  *
- * Copyright (C) 2008-2009 David Weenink
+ * Copyright (C) 2008-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,33 +21,23 @@
 
 /*
  djmw 20070130 First
- djmw 20090114 Latest modification.
+ djmw 20110306 Latest modification.
 */
 
-#ifndef _FormantTier_h_
-	#include "FormantTier.h"
-#endif
-#ifndef _PitchTier_h_
-	#include "PitchTier.h"
-#endif
+#include "FormantTier.h"
+#include "PitchTier.h"
+#include "TableOfReal.h"
+#include "Editor.h"
 
-#ifndef _Graphics_h_
-	#include "Graphics.h"
-#endif
-#ifndef _TableOfReal_h_
-	#include "TableOfReal.h"
-#endif
-#ifndef _Editor_h_
-	#include "Editor.h"
-#endif
-
-#define Vowel_members Function_members \
-	PitchTier pt; \
+Thing_declare1cpp (Vowel);
+struct structVowel : public structFunction {
+	PitchTier pt;
 	FormantTier ft;
-#define Vowel_methods Function_methods
-class_create (Vowel, Function);
+};
+#define Vowel__methods(klas) Function__methods(klas)
+Thing_declare2cpp (Vowel, Function);
 
-struct structF0 
+struct structVowelEditor_F0
 {
 	double start;
 	double slopeOctPerSec;
@@ -56,39 +46,42 @@ struct structF0
 	long interpolationDepth;
 };
 
-struct structF1F2Grid
+struct structVowelEditor_F1F2Grid
 {
 	double df1, df2;
 	int text_left, text_right, text_bottom, text_top;
 	double grey;
 };
 
-#define VowelEditor__parents(Klas) Editor__parents(Klas) Thing_inherit (Klas, Editor)
-Thing_declare1 (VowelEditor);
-#define VowelEditor__members(Klas) Editor__members(Klas) \
-	int soundFollowsMouse, shiftKeyPressed; \
-	double f1min, f1max, f2min, f2max; /* Domain of graphics F1-F2 area */ \
-	Matrix f3, b3, f4, b4; \
-	int frequencyScale; /* 0: lin, 1: log, 2: bark, 3: mel */ \
-	int axisOrientation; /* 0: origin topright + f1 down + f2 to left, 0: origin lb + f1 right +f2 up */ \
-	int speakerType; /* 1 male, 2 female, 3 child */ \
-	Graphics g; /* the drawing */ \
-	short width, height; /* Size of drawing area in pixels. */ \
-	Table marks; /* Vowel, F1, F2, Colour... */ \
-	Vowel vowel; \
-	double markTraceEvery; \
-	struct structF0 f0; \
-	double maximumDuration, extendDuration; \
-	Sound source, target; \
-	GuiObject drawingArea, playButton, reverseButton, publishButton; \
-	GuiObject f0Label, f0TextField, f0SlopeLabel, f0SlopeTextField; \
-	GuiObject durationLabel, durationTextField, extendLabel, extendTextField; \
-	GuiObject startInfo, endInfo; \
-	struct structF1F2Grid grid;
-#define VowelEditor__methods(Klas) Editor__methods(Klas)
-Thing_declare2 (VowelEditor, Editor);
+Thing_define (VowelEditor, Editor) {
+	// new data:
+		int soundFollowsMouse, shiftKeyPressed;
+		double f1min, f1max, f2min, f2max;   // domain of graphics F1-F2 area
+		Matrix f3, b3, f4, b4;
+		int frequencyScale;   // 0: lin, 1: log, 2: bark, 3: mel
+		int axisOrientation;  // 0: origin topright + f1 down + f2 to left, 0: origin lb + f1 right +f2 up
+		int speakerType;   // 1 = male, 2 = female, 3 = child
+		Graphics g;   // the drawing
+		short width, height;  // size of drawing area in pixels
+		Table marks;   // Vowel, F1, F2, Colour...
+		Vowel vowel;
+		double markTraceEvery;
+		structVowelEditor_F0 f0;
+		double maximumDuration, extendDuration;
+		Sound source, target;
+		GuiObject drawingArea, playButton, reverseButton, publishButton;
+		GuiObject f0Label, f0TextField, f0SlopeLabel, f0SlopeTextField;
+		GuiObject durationLabel, durationTextField, extendLabel, extendTextField;
+		GuiObject startInfo, endInfo;
+		structVowelEditor_F1F2Grid grid;
+	// overridden methods:
+		void v_destroy ();
+		void v_createChildren ();
+		void v_createMenus ();
+		void v_createHelpMenuItems (EditorMenu menu);
+};
 
-VowelEditor VowelEditor_create (GuiObject parent, const wchar_t *title, Any data);
+VowelEditor VowelEditor_create (GuiObject parent, const wchar *title, Data data);
 
 void VowelEditor_prefs (void);
 

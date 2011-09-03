@@ -3,7 +3,7 @@
 
 /* Eigen_and_Matrix.h
  *
- * Copyright (C) 1993-2002 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 /*
  djmw 20020327
  djmw 20020813 GPL header
+ djmw 20110307 Latest modification
 */
 
 #ifndef _Eigen_h_
@@ -33,17 +34,25 @@
 	#include "Matrix.h"
 #endif
 
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
 Matrix Eigen_and_Matrix_project (I, thou, long numberOfComponents);
 /*
 	Purpose: project the columns of the matrix (thou) on the 
 	eigenspace (me). 
 */
 
-int Eigen_and_Matrix_project_into (I, thou, Any void_pointer_to_him);
+void Eigen_and_Matrix_project_into (I, thou, Any void_pointer_to_him);
 /*
 	Purpose: project the columns of the Matrix (thou) on the 
 	eigenspace (me). Result in existing Matrix (him). 
 
 */
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif /* _Eigen_and_Matrix_h_ */

@@ -2,7 +2,7 @@
 #define _Formant_h_
 /* Formant.h
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,22 +19,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2008/06/01
- */
-
-#ifndef _Matrix_h_
-	#include "Matrix.h"
-#endif
-#ifndef _Table_h_
-	#include "Table.h"
-#endif
-#ifndef _Interpreter_decl_h_
-	#include "Interpreter_decl.h"
-#endif
+#include "Matrix.h"
+#include "Table.h"
+#include "Interpreter_decl.h"
 
 #include "Formant_def.h"
-#define Formant_methods Sampled_methods
+#define Formant__methods(klas) Sampled__methods(klas)
 oo_CLASS_CREATE (Formant, Sampled);
 
 Formant Formant_create (double tmin, double tmax, long nt, double dt, double t1, int maxnFormants);
@@ -87,12 +77,12 @@ void Formant_drawSpeckles (Formant me, Graphics g, double tmin, double tmax, dou
 	double suppress_dB, int garnish);
 void Formant_scatterPlot (Formant me, Graphics g, double tmin, double tmax,
 	int iformant1, double fmin1, double fmax1, int iformant2, double fmin2, double fmax2,
-	double size_mm, const wchar_t *mark, int garnish);
+	double size_mm, const wchar *mark, int garnish);
 
 Matrix Formant_to_Matrix (Formant me, int iformant);
 Matrix Formant_to_Matrix_bandwidths (Formant me, int iformant);
-int Formant_formula_frequencies (Formant me, const wchar_t *formula, Interpreter interpreter);
-int Formant_formula_bandwidths (Formant me, const wchar_t *formula, Interpreter interpreter);
+void Formant_formula_frequencies (Formant me, const wchar *formula, Interpreter interpreter);
+void Formant_formula_bandwidths (Formant me, const wchar *formula, Interpreter interpreter);
 
 Formant Formant_tracker (Formant me, int numberOfTracks,
 	double refF1, double refF2, double refF3, double refF4, double refF5,
