@@ -1470,7 +1470,7 @@ END
 
 /***** INTERVALTIER, rest in praat_TextGrid_init.c *****/
 
-FORM_READ (IntervalTier_readFromXwaves, L"Read IntervalTier from Xwaves", 0)
+FORM_READ (IntervalTier_readFromXwaves, L"Read IntervalTier from Xwaves", 0, true)
 	if (! praat_new1 (IntervalTier_readFromXwaves (file), MelderFile_name (file))) return 0;
 END
 
@@ -2144,11 +2144,11 @@ DO
 	EVERY_TO (Matrix_power (OBJECT, GET_INTEGER (L"Power")))
 END
 
-FORM_READ (Matrix_readFromRawTextFile, L"Read Matrix from raw text file", 0)
+FORM_READ (Matrix_readFromRawTextFile, L"Read Matrix from raw text file", 0, true)
 	if (! praat_new1 (Matrix_readFromRawTextFile (file), MelderFile_name (file))) return 0;
 END
 
-FORM_READ (Matrix_readAP, L"Read Matrix from LVS AP file", 0)
+FORM_READ (Matrix_readAP, L"Read Matrix from LVS AP file", 0, true)
 	if (! praat_new1 (Matrix_readAP (file), MelderFile_name (file))) return 0;
 END
 
@@ -3537,14 +3537,14 @@ END
 DIRECT (Polygon_help) Melder_help (L"Polygon"); END
 
 FORM (Polygon_paint, L"Polygon: Paint", 0)
-	COLOUR (L"Colour (0-1 or name)", L"0.5")
+	COLOUR (L"Colour (0-1, name, or {r,g,b})", L"0.5")
 	REAL (L"Xmin", L"0.0")
 	REAL (L"Xmax", L"0.0 (= all)")
 	REAL (L"Ymin", L"0.0")
 	REAL (L"Ymax", L"0.0 (= all)")
 	OK
 DO
-	EVERY_DRAW (Polygon_paint (OBJECT, GRAPHICS, GET_REAL (L"Colour"),
+	EVERY_DRAW (Polygon_paint (OBJECT, GRAPHICS, GET_COLOUR (L"Colour"),
 		GET_REAL (L"Xmin"), GET_REAL (L"Xmax"), GET_REAL (L"Ymin"), GET_REAL (L"Ymax")))
 END
 
@@ -4040,7 +4040,7 @@ DIRECT (Strings_randomize)
 	}
 END
 
-FORM_READ (Strings_readFromRawTextFile, L"Read Strings from raw text file", 0)
+FORM_READ (Strings_readFromRawTextFile, L"Read Strings from raw text file", 0, true)
 	if (! praat_new1 (Strings_readFromRawTextFile (file), MelderFile_name (file))) return 0;
 END
 
@@ -4088,7 +4088,7 @@ END
 
 /***** TEXTTIER, rest in praat_TextGrid_init.c *****/
 
-FORM_READ (TextTier_readFromXwaves, L"Read TextTier from Xwaves", 0)
+FORM_READ (TextTier_readFromXwaves, L"Read TextTier from Xwaves", 0, true)
 	if (! praat_new1 (TextTier_readFromXwaves (file), MelderFile_name (file))) return 0;
 END
 

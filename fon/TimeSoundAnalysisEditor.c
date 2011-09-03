@@ -1,6 +1,6 @@
 /* TimeSoundAnalysisEditor.c
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,8 @@
  * pb 2007/09/21 split Query menu
  * pb 2007/11/01 direct intensity, formants, and pulses drawing
  * pb 2007/11/30 erased Graphics_printf
+ * pb 2009/11/30 Move frequency cursor to...
+ * pb 2010/01/15 corrected checking of "Show pitch" menu item (and so on) when the command is called from a script
  */
 
 #include <time.h>
@@ -565,6 +567,9 @@ static int menu_cb_timeStepSettings (EDITOR_ARGS) {
 static int menu_cb_showSpectrogram (EDITOR_ARGS) {
 	EDITOR_IAM (TimeSoundAnalysisEditor);
 	preferences.spectrogram.show = my spectrogram.show = ! my spectrogram.show;
+	#if motif
+		XmToggleButtonGadgetSetState (my spectrogramToggle, my spectrogram.show, False);   // in case we're called from a script
+	#endif
 	FunctionEditor_redraw (TimeSoundAnalysisEditor_as_FunctionEditor (me));
 	return 1;
 }
@@ -668,6 +673,21 @@ static int menu_cb_getSpectralPowerAtCursorCross (EDITOR_ARGS) {
 	return 1;
 }
 
+static int menu_cb_moveFrequencyCursorTo (EDITOR_ARGS) {
+	EDITOR_IAM (TimeSoundAnalysisEditor);
+	if (! my spectrogram.show)
+		return Melder_error1 (L"No spectrogram is visible.\nFirst choose \"Show spectrogram\" from the Spectrum menu.");
+	EDITOR_FORM (L"Move frequency cursor to", 0)
+		REAL (L"Frequency (Hz)", L"0.0")
+	EDITOR_OK
+		SET_REAL (L"Frequency", my spectrogram.cursor)
+	EDITOR_DO
+		double frequency = GET_REAL (L"Frequency");
+		my spectrogram.cursor = frequency;
+		FunctionEditor_redraw (TimeSoundAnalysisEditor_as_FunctionEditor (me));
+	EDITOR_END
+}
+
 static Sound extractSound (TimeSoundAnalysisEditor me, double tmin, double tmax) {
 	Sound sound = NULL;
 	if (my longSound.data) {
@@ -766,6 +786,9 @@ static int menu_cb_paintVisibleSpectrogram (EDITOR_ARGS) {
 static int menu_cb_showPitch (EDITOR_ARGS) {
 	EDITOR_IAM (TimeSoundAnalysisEditor);
 	preferences.pitch.show = my pitch.show = ! my pitch.show;
+	#if motif
+		XmToggleButtonGadgetSetState (my pitchToggle, my pitch.show, False);   // in case we're called from a script
+	#endif
 	FunctionEditor_redraw (TimeSoundAnalysisEditor_as_FunctionEditor (me));
 	return 1;
 }
@@ -1051,6 +1074,9 @@ static int menu_cb_drawVisiblePitchContour (EDITOR_ARGS) {
 static int menu_cb_showIntensity (EDITOR_ARGS) {
 	EDITOR_IAM (TimeSoundAnalysisEditor);
 	preferences.intensity.show = my intensity.show = ! my intensity.show;
+	#if motif
+		XmToggleButtonGadgetSetState (my intensityToggle, my intensity.show, False);   // in case we're called from a script
+	#endif
 	FunctionEditor_redraw (TimeSoundAnalysisEditor_as_FunctionEditor (me));
 	return 1;
 }
@@ -1183,11 +1209,44 @@ static int menu_cb_getIntensity (EDITOR_ARGS) {
 	return 1;
 }
 
+static int menu_cb_getMinimumIntensity (EDITOR_ARGS) {
+	EDITOR_IAM (TimeSoundAnalysisEditor);
+	double tmin, tmax;
+	int part = makeQueriable (me, FALSE, & tmin, & tmax); iferror return 0;
+	if (! my intensity.show)
+		return Melder_error1 (L"No intensity contour is visible.\nFirst choose \"Show intensity\" from the Intensity menu.");
+	if (! my intensity.data) {
+		TimeSoundAnalysisEditor_computeIntensity (me);
+		if (! my intensity.data) return Melder_error1 (theMessage_Cannot_compute_intensity);
+	}
+	double intensity = Vector_getMinimum (my intensity.data, tmin, tmax, NUM_PEAK_INTERPOLATE_PARABOLIC);
+	Melder_information4 (Melder_double (intensity), L" dB (minimum intensity ", FunctionEditor_partString_locative (part), L")");
+	return 1;
+}
+
+static int menu_cb_getMaximumIntensity (EDITOR_ARGS) {
+	EDITOR_IAM (TimeSoundAnalysisEditor);
+	double tmin, tmax;
+	int part = makeQueriable (me, FALSE, & tmin, & tmax); iferror return 0;
+	if (! my intensity.show)
+		return Melder_error1 (L"No intensity contour is visible.\nFirst choose \"Show intensity\" from the Intensity menu.");
+	if (! my intensity.data) {
+		TimeSoundAnalysisEditor_computeIntensity (me);
+		if (! my intensity.data) return Melder_error1 (theMessage_Cannot_compute_intensity);
+	}
+	double intensity = Vector_getMaximum (my intensity.data, tmin, tmax, NUM_PEAK_INTERPOLATE_PARABOLIC);
+	Melder_information4 (Melder_double (intensity), L" dB (maximum intensity ", FunctionEditor_partString_locative (part), L")");
+	return 1;
+}
+
 /***** FORMANT MENU *****/
 
 static int menu_cb_showFormants (EDITOR_ARGS) {
 	EDITOR_IAM (TimeSoundAnalysisEditor);
 	preferences.formant.show = my formant.show = ! my formant.show;
+	#if motif
+		XmToggleButtonGadgetSetState (my formantToggle, my formant.show, False);   // in case we're called from a script
+	#endif
 	FunctionEditor_redraw (TimeSoundAnalysisEditor_as_FunctionEditor (me));
 	return 1;
 }
@@ -1408,6 +1467,9 @@ static int menu_cb_getBandwidth (EDITOR_ARGS) {
 static int menu_cb_showPulses (EDITOR_ARGS) {
 	EDITOR_IAM (TimeSoundAnalysisEditor);
 	preferences.pulses.show = my pulses.show = ! my pulses.show;
+	#if motif
+		XmToggleButtonGadgetSetState (my pulsesToggle, my pulses.show, False);   // in case we're called from a script
+	#endif
 	FunctionEditor_redraw (TimeSoundAnalysisEditor_as_FunctionEditor (me));
 	return 1;
 }
@@ -1619,6 +1681,9 @@ static void createMenus_analysis (TimeSoundAnalysisEditor me) {
 	EditorMenu_addCommand (menu, L"Query:", GuiMenu_INSENSITIVE, menu_cb_getFrequency /* dummy */);
 	EditorMenu_addCommand (menu, L"Get frequency at frequency cursor", 0, menu_cb_getFrequency);
 	EditorMenu_addCommand (menu, L"Get spectral power at cursor cross", GuiMenu_F7, menu_cb_getSpectralPowerAtCursorCross);
+	EditorMenu_addCommand (menu, L"-- spectrum select --", 0, NULL);
+	EditorMenu_addCommand (menu, L"Select:", GuiMenu_INSENSITIVE, menu_cb_moveFrequencyCursorTo/* dummy */);
+	EditorMenu_addCommand (menu, L"Move frequency cursor to...", 0, menu_cb_moveFrequencyCursorTo);
 	our createMenuItems_spectrum_picture (me, menu);
 	EditorMenu_addCommand (menu, L"-- spectrum extract --", 0, NULL);
 	EditorMenu_addCommand (menu, L"Extract to objects window:", GuiMenu_INSENSITIVE, menu_cb_extractVisibleSpectrogram /* dummy */);
@@ -1653,6 +1718,8 @@ static void createMenus_analysis (TimeSoundAnalysisEditor me) {
 	EditorMenu_addCommand (menu, L"Query:", GuiMenu_INSENSITIVE, menu_cb_getFrequency /* dummy */);
 	EditorMenu_addCommand (menu, L"Intensity listing", 0, menu_cb_intensityListing);
 	EditorMenu_addCommand (menu, L"Get intensity", GuiMenu_F8, menu_cb_getIntensity);
+	EditorMenu_addCommand (menu, L"Get minimum intensity", GuiMenu_F8 + GuiMenu_COMMAND, menu_cb_getMinimumIntensity);
+	EditorMenu_addCommand (menu, L"Get maximum intensity", GuiMenu_F8 + GuiMenu_SHIFT, menu_cb_getMaximumIntensity);
 	our createMenuItems_intensity_picture (me, menu);
 	EditorMenu_addCommand (menu, L"-- intensity extract --", 0, NULL);
 	EditorMenu_addCommand (menu, L"Extract to objects window:", GuiMenu_INSENSITIVE, menu_cb_extractVisibleIntensityContour /* dummy */);
@@ -1997,7 +2064,8 @@ static void draw_analysis (TimeSoundAnalysisEditor me) {
 	if (my intensity.show) {
 		double intensityCursor = NUMundefined;
 		int intensityCursorVisible;
-		int textColour, alignment;
+		Graphics_Colour textColour;
+		int alignment;
 		double y;
 		if (! my pitch.show) textColour = Graphics_GREEN, alignment = Graphics_LEFT, y = my endWindow;
 		else if (! my spectrogram.show && ! my formant.show) textColour = Graphics_GREEN, alignment = Graphics_RIGHT, y = my startWindow;

@@ -20,7 +20,7 @@
  */
 
 /*
- * pb 2009/07/24
+ * pb 2009/12/20
  */
 
 #ifndef _Graphics_h_
@@ -94,7 +94,8 @@ typedef struct {
 		/* Current coordinate transformation. */ \
 	/* Graphics state. */ \
 	int lineType; \
-	double red, green, blue, lineWidth, arrowSize; \
+	Graphics_Colour colour; \
+	double lineWidth, arrowSize; \
 	int horizontalTextAlignment, verticalTextAlignment; \
 	double textRotation, wrapWidth, secondIndent, textX, textY; \
 	enum kGraphics_font font; \
@@ -151,7 +152,7 @@ int Graphics_init (I);
 	#define xwin 1
 	#define cairo 0
 	#define pango 0
-	extern unsigned long xwinColours [1+Graphics_MAX_COLOUR], xwinGreys [101];
+	extern unsigned long xwinColour_BLACK, xwinColour_WHITE, xwinColour_PINK, xwinColour_BLUE, xwinGreys [101];
 #elif defined (_WIN32)
 	#include <windowsx.h>
 	#define GraphicsScreen_members Graphics_members \
@@ -216,7 +217,7 @@ enum opcode { SET_VIEWPORT = 101, SET_INNER, UNSET_INNER, SET_WINDOW,
 	/* 119 */ SET_FONT, SET_FONT_SIZE, SET_FONT_STYLE,
 	/* 122 */ SET_TEXT_ALIGNMENT, SET_TEXT_ROTATION,
 	/* 124 */ SET_LINE_TYPE, SET_LINE_WIDTH,
-	/* 126 */ SET_COLOUR, SET_GREY,
+	/* 126 */ SET_STANDARD_COLOUR, SET_GREY,
 	/* 128 */ MARK_GROUP, ELLIPSE, FILL_ELLIPSE, CIRCLE_MM, FILL_CIRCLE_MM, IMAGE8,
 	/* 134 */ UNHIGHLIGHT, XOR_ON, XOR_OFF, RECTANGLE_MM, FILL_RECTANGLE_MM,
 	/* 139 */ SET_WS_WINDOW, SET_WRAP_WIDTH, SET_SECOND_INDENT,
@@ -230,7 +231,7 @@ enum opcode { SET_VIEWPORT = 101, SET_INNER, UNSET_INNER, SET_WINDOW,
 
 void _Graphics_text_init (I);
 void _Graphics_fillRectangle (I, short x1DC, short x2DC, short y1DC, short y2DC);
-void _Graphics_setRGBColour (I, double red, double green, double blue);
+void _Graphics_setColour (I, Graphics_Colour colour);
 void _Graphics_setGrey (I, double grey);
 void _Graphics_colour_init (I);
 bool _GraphicsMac_tryToInitializeAtsuiFonts (void);

@@ -1,6 +1,6 @@
 /* praat_David_init.c
  *
- * Copyright (C) 1993-2009 David Weenink
+ * Copyright (C) 1993-2010 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@
  djmw 20090914 Excitation to Excitations crashed because of NULL reference
  djmw 20090927 TableOfReal_drawRow(s)asHistogram
  djmw 20091023 Sound_draw_selectedIntervals
+ djmw 20091230 Covariance_and_TableOfReal_mahalanobis
 */
 
 #include "praat.h"
@@ -813,6 +814,14 @@ DIRECT (Covariance_to_PCA)
 	EVERY_TO (SSCP_to_PCA (OBJECT))
 END
 
+FORM (Covariance_and_TableOfReal_mahalanobis, L"Covariance & TableOfReal: To TableOfReal (mahalanobis)", L"Covariance & TableOfReal: To TableOfReal (mahalanobis)...")
+	BOOLEAN (L"Centroid from table", 0)
+	OK
+DO
+	NEW (Covariance_and_TableOfReal_mahalanobis (ONLY (classCovariance), ONLY (classTableOfReal),
+		GET_INTEGER (L"Centroid from table")))
+END
+
 /********************** Discriminant **********************************/
 
 DIRECT (Discriminant_help)
@@ -861,6 +870,18 @@ DO
 		(d,	t, GET_INTEGER (L"Pool covariance matrices"),
 		GET_INTEGER (L"Use apriori probabilities")),
 		Thing_getName (d), L"_", Thing_getName (t))) return 0;
+END
+
+FORM (Discriminant_and_TableOfReal_mahalanobis, L"Discriminant & TableOfReal: To TableOfReal (mahalanobis)", L"Discriminant & TableOfReal: To TableOfReal (mahalanobis)...")
+	SENTENCE (L"Group label", L"")
+	BOOLEAN (L"Pool covariance matrices", 0)
+	OK
+DO
+	Discriminant d = ONLY (classDiscriminant);
+	long group = Discriminant_groupLabelToIndex (d, GET_STRING (L"Group label"));
+	REQUIRE (group > 0, L"Group label does not exist.")
+	NEW (Discriminant_and_TableOfReal_mahalanobis (d, ONLY(classTableOfReal), group,
+		GET_INTEGER (L"Pool covariance matrices")))
 END
 
 FORM (Discriminant_getWilksLambda, L"Discriminant: Get Wilks' lambda", L"Discriminant: Get Wilks' lambda...")
@@ -2125,7 +2146,7 @@ DIRECT (LegendreSeries_to_Polynomial)
 END
 /********************* LongSound **************************************/
 
-FORM_READ (LongSounds_appendToExistingSoundFile, L"LongSound: Append to existing sound file", 0)
+FORM_READ (LongSounds_appendToExistingSoundFile, L"LongSound: Append to existing sound file", 0, false)
 	if (! pr_LongSounds_appendToExistingSoundFile (file)) return 0;
 END
 
@@ -3249,7 +3270,7 @@ DO
 END
 
 
-FORM (Sound_drawParts, L"Sound: Draw parts", L"Sound: Draw parts...")
+FORM (Sound_drawWhere, L"Sound: Draw where", L"Sound: Draw where...")
 	REAL (L"left Time range (s)", L"0.0")
 	REAL (L"right Time range", L"0.0 (= all)")
 	REAL (L"left Vertical range", L"0.0")
@@ -3261,16 +3282,12 @@ FORM (Sound_drawParts, L"Sound: Draw parts", L"Sound: Draw parts...")
 		OPTION (L"Bars")
 		OPTION (L"Poles")
 		OPTION (L"Speckles")
-	LABEL (L"", L"Precision at interval borders")
-	INTEGER (L"Number of bisections (0-16)", L"10")
-	LABEL (L"", L"Formula:")
+	LABEL (L"", L"Draw only those parts where the following condition holds:")
 	TEXTFIELD (L"Formula", L"x < xmin + (xmax - xmin) / 2; first half")
 	OK
 DO
-	long numberOfBisections = GET_INTEGER (L"Number of bisections");
-	if (numberOfBisections < 0) numberOfBisections = 0;
-	if (numberOfBisections > 16) numberOfBisections = 16;
-	EVERY_DRAW (Sound_drawParts (OBJECT, GRAPHICS, GET_REAL (L"left Time range"), GET_REAL (L"right Time range"), GET_REAL (L"left Vertical range"), GET_REAL (L"right Vertical range"), GET_INTEGER (L"Garnish"),
+	long numberOfBisections = 10;
+	EVERY_DRAW (Sound_drawWhere (OBJECT, GRAPHICS, GET_REAL (L"left Time range"), GET_REAL (L"right Time range"), GET_REAL (L"left Vertical range"), GET_REAL (L"right Vertical range"), GET_INTEGER (L"Garnish"),
 	GET_STRING (L"Drawing method"), numberOfBisections, GET_STRING (L"Formula"), interpreter))
 END
 
@@ -3496,17 +3513,17 @@ DO
 		pitchrf, GET_REAL (L"Duration factor")))
 END
 
-FORM_READ (Sound_readFromRawFileLE, L"Read Sound from raw Little Endian file", 0)
+FORM_READ (Sound_readFromRawFileLE, L"Read Sound from raw Little Endian file", 0, true)
 	if (! praat_new1 (Sound_readFromRawFile (file, NULL, 16, 1, 0, 0,
 		16000), MelderFile_name (file))) return 0;
 END
 
-FORM_READ (Sound_readFromRawFileBE, L"Read Sound from raw 16-bit Little Endian file", 0)
+FORM_READ (Sound_readFromRawFileBE, L"Read Sound from raw 16-bit Little Endian file", 0, true)
 	if (! praat_new1 (Sound_readFromRawFile (file, NULL, 16, 0, 0, 0,
 		16000), MelderFile_name (file))) return 0;
 END
 
-FORM_READ (KlattTable_readFromRawTextFile, L"KlattTable_readFromRawTextFile", 0)
+FORM_READ (KlattTable_readFromRawTextFile, L"KlattTable_readFromRawTextFile", 0, true)
 	if (! praat_new1 (KlattTable_readFromRawTextFile (file), MelderFile_name (file))) return 0;
 END
 
@@ -4650,6 +4667,8 @@ void praat_uvafon_David_init (void)
 	praat_addAction1 (classCovariance, 0, L"To Correlation", 0, 0, DO_Covariance_to_Correlation);
 	praat_addAction1 (classCovariance, 0, L"To PCA", 0, 0, DO_Covariance_to_PCA);
 
+	praat_addAction2 (classCovariance, 1, classTableOfReal, 1, L"To TableOfReal (mahalanobis)...", 0, 0, DO_Covariance_and_TableOfReal_mahalanobis);
+
 	praat_addAction1 (classClassificationTable, 0, L"ClassificationTable help", 0, 0, DO_ClassificationTable_help);
 	praat_TableOfReal_init (classClassificationTable);
 	praat_addAction1 (classClassificationTable, 0, L"To Confusion", 0, 0, DO_ClassificationTable_to_Confusion);
@@ -4725,6 +4744,8 @@ void praat_uvafon_David_init (void)
 	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, L"To Configuration...", 0, 0, DO_Discriminant_and_TableOfReal_to_Configuration);
 	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, L"To ClassificationTable...", 0, 0,
 		DO_Discriminant_and_TableOfReal_to_ClassificationTable);
+	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, L"To TableOfReal (mahalanobis)...", 0, 0, DO_Discriminant_and_TableOfReal_mahalanobis);
+
 
 	praat_addAction1 (classDTW, 0, L"DTW help", 0, 0, DO_DTW_help);
 	praat_addAction1 (classDTW, 0, L"Draw", 0, 0, 0);
@@ -4936,7 +4957,7 @@ void praat_uvafon_David_init (void)
 
 	praat_addAction1 (classSound, 0, L"To TextGrid (silences)...", L"To IntervalTier", 1, DO_Sound_to_TextGrid_detectSilences);
 
-	praat_addAction1 (classSound, 0, L"Draw parts...", L"Draw...", praat_HIDDEN, DO_Sound_drawParts);
+	praat_addAction1 (classSound, 0, L"Draw where...", L"Draw...", 1, DO_Sound_drawWhere);
 
 	praat_addAction1 (classSound, 0, L"To Pitch (shs)...", L"To Pitch (cc)...", 1, DO_Sound_to_Pitch_shs);
 	praat_addAction1 (classSound, 0, L"Fade in...", L"Multiply by window...", praat_HIDDEN + praat_DEPTH_1, DO_Sound_fadeIn);
