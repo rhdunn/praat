@@ -1101,7 +1101,7 @@ static int initialize (SoundRecorder me) {
 					return Melder_error1 (L"(SoundRecorder:) Audio device already in use.");
 				else
 					return Melder_error1 (L"(SoundRecorder:) Cannot open audio device.\n"
-						"Consult /usr/doc/HOWTO/Sound-HOWTO.");
+						"Please switch on PortAudio in the Sound Recording Preferences.");
 			}
 			ioctl (my fd, SNDCTL_DSP_RESET, NULL);
 			ioctl (my fd, SNDCTL_DSP_SPEED, & sampleRate);
@@ -1232,15 +1232,9 @@ end:
 static void gui_drawingarea_cb_resize (I, GuiDrawingAreaResizeEvent event) {
 	iam (SoundRecorder);
 	if (my graphics == NULL) return;   // Could be the case in the very beginning.
-	Dimension marginWidth = 10, marginHeight = 10;
-	#if motif
-	XtVaGetValues (event -> widget, XmNmarginWidth, & marginWidth, XmNmarginHeight, & marginHeight, NULL);
-	#endif
-	Graphics_setWsViewport (my graphics, marginWidth, event -> width - marginWidth, marginHeight, event -> height - marginHeight);
-	long width = event -> width - marginWidth - marginWidth;
-	long height = event -> height - marginHeight - marginHeight;
-	Graphics_setWsWindow (my graphics, 0, width, 0, height);
-	Graphics_setViewport (my graphics, 0, width, 0, height);
+	Graphics_setWsViewport (my graphics, 0, event -> width, 0, event -> height);
+	Graphics_setWsWindow (my graphics, 0, event -> width, 0, event -> height);
+	Graphics_setViewport (my graphics, 0, event -> width, 0, event -> height);
 	Graphics_updateWs (my graphics);
 }
 
