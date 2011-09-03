@@ -1,0 +1,8 @@
+*~
+.*.swp
+
+makefile.defs
+*.o
+*.a
+
+praat
