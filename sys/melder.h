@@ -20,7 +20,7 @@
  */
 
 /*
- * pb 2010/03/08
+ * pb 2010/06/10
  */
 
 #include <stdio.h>
@@ -38,6 +38,7 @@
 #include <stddef.h>
 #include <wchar.h>
 #include <stdbool.h>
+#include <stdint.h>
 bool Melder_wcsequ_firstCharacterCaseInsensitive (const wchar_t *string1, const wchar_t *string2);
 #include "enums.h"
 
@@ -278,8 +279,8 @@ int Melder_getOutputEncoding (void);
 #define kMelder_textOutputEncoding_ISO_LATIN1  0x4C415401
 #define kMelder_textOutputEncoding_FLAC  0x464C4143
 
-typedef unsigned short MelderUtf16;
-typedef unsigned int MelderUtf32;
+typedef uint16_t MelderUtf16;
+typedef uint32_t MelderUtf32;
 
 bool Melder_isValidAscii (const wchar_t *string);
 bool Melder_strIsValidUtf8 (const char *string);

@@ -1,6 +1,6 @@
 /* manual_spectrum.c
  *
- * Copyright (C) 1992-2006 Paul Boersma
+ * Copyright (C) 1992-2008 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ void manual_spectrum_init (ManPages me);
 void manual_spectrum_init (ManPages me) {
 
 MAN_BEGIN (L"Ltas", L"ppgb", 20070320)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. "
+INTRO (L"One of the @@types of objects@ in Praat. "
 	"#Ltas is short for Long-Term Average Spectrum.")
 NORMAL (L"An object of class Ltas represents the logarithmic @@power spectral density@ as a function of frequency, "
 	"expressed in dB/Hz relative to 2\\.c10^^-5^ Pa. ")
@@ -147,7 +147,7 @@ MAN_BEGIN (L"Ltas: Get frequency of maximum...", L"ppgb", 20030916)
 INTRO (L"A @query to the selected @Ltas object.")
 ENTRY (L"Return value")
 NORMAL (L"the frequency (in Hertz) associated with the maximum energy density.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%From frequency% (s), %%To frequency% (s)")
 DEFINITION (L"the selected frequency domain. Values outside this domain are ignored. "
 	"If %%To frequency% is not greater than %%From frequency%, "
@@ -222,7 +222,7 @@ MAN_BEGIN (L"Ltas: Get minimum...", L"ppgb", 20030916)
 INTRO (L"A @query to the selected @Ltas object.")
 ENTRY (L"Return value")
 NORMAL (L"the minimum value (in dB) within a specified frequency range.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%From frequency% (s), %%To frequency% (s)")
 DEFINITION (L"the selected frequency domain. Values outside this domain are ignored. "
 	"If %%To frequency% is not greater than %%From frequency%, "
@@ -244,7 +244,7 @@ MAN_BEGIN (L"Ltas: Get standard deviation...", L"ppgb", 19991016)
 INTRO (L"A @query to the selected @Ltas object.")
 ENTRY (L"Return value")
 NORMAL (L"the standard deviation (in dB) of the LTAS within a specified frequency domain.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%From frequency% (s), %%To frequency% (s)")
 DEFINITION (L"the frequency window. Values outside this domain are ignored. "
 	"If %%To frequency% is not greater than %%From frequency%, the entire frequency domain of the Ltas is considered.")
@@ -262,7 +262,7 @@ INTRO (L"A @query to the selected @Ltas object.")
 ENTRY (L"Return value")
 NORMAL (L"the value (in dB) at a specified frequency. "
 	"If %frequency is outside the bands of the Ltas, the result is 0.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%Frequency (s)")
 DEFINITION (L"the time at which the value is to be evaluated.")
 TAG (L"%%Interpolation")
@@ -286,7 +286,7 @@ INTRO (L"A command that creates a @Spectrogram from every selected @Sound object
 	"It performs a %%short-term spectral analysis%, which means that for a number of time points in the Sound, "
 	"Praat computes an approximation of the spectrum at that time. Each such spectrum is called an %%analysis frame%.")
 NORMAL (L"For tutorial information, see @@Intro 3. Spectral analysis@.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Window length")
 DEFINITION (L"the duration of the analysis window. If this is 0.005 seconds, Praat uses for each frame "
 	"the part of the sound that lies between 0.0025 seconds before and 0.0025 seconds after the centre of that frame "
@@ -400,7 +400,7 @@ TAG (L"%Fast")
 DEFINITION (L"determines whether zeroes are appended to the sound such that the number of samples is a power of two. "
 	"This can appreciably speed up the Fourier transform.")
 ENTRY (L"Mathematical procedure")
-NORMAL (L"For the Fourier transform, the P\\s{RAAT}-defined @@time domain@ of the @Sound is ignored. "
+NORMAL (L"For the Fourier transform, the Praat-defined @@time domain@ of the @Sound is ignored. "
 	"Instead, its time domain is considered to run from %t=0 to %t=%T, "
 	"where %t=0 is supposed to be aligned with the first sample, "
 	"and %T is the total duration of the samples, i.e. %%N%\\De%t, "
@@ -431,7 +431,7 @@ NORMAL (L"If %N is even, there will be %N+1 frequency samples. For instance, if 
 	"Together, the frequency samples again span the frequency domain of the spectrum, "
 	"which runs from -%F to +%F, where %F = 16,384\\De%f = 0.5/\\De%t, the Nyquist frequency.")
 ENTRY (L"Storage")
-NORMAL (L"In a @Spectrum object, P\\s{RAAT} stores the real and imaginary parts of the complex spectrum separately. "
+NORMAL (L"In a @Spectrum object, Praat stores the real and imaginary parts of the complex spectrum separately. "
 	"The real part is equal to the cosine transform:")
 FORMULA (L"re %X(%f) = \\in__0_^^%T^ %x(%t) cos (2%%\\pift%) %dt")
 NORMAL (L"The imaginary part is equal to the reverse of the sine transform:")
@@ -483,7 +483,7 @@ it removes the contour. I tested it. It works.
 MAN_END
 
 MAN_BEGIN (L"Spectrogram", L"ppgb", 20070321)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. For tutorial information, see @@Intro 3. Spectral analysis@.")
+INTRO (L"One of the @@types of objects@ in Praat. For tutorial information, see @@Intro 3. Spectral analysis@.")
 NORMAL (L"A Spectrogram object represents  an acoustic time-frequency representation of a sound: "
 	"the @@power spectral density@ %PSD (%f, %t), expressed in Pa^2/Hz. "
 	"It is sampled into a number of points centred around equally spaced times %t__%i_ "
@@ -526,7 +526,7 @@ MAN_END
 
 MAN_BEGIN (L"Spectrogram: Paint...", L"ppgb", 20030916)
 INTRO (L"A command to draw the selected @Spectrogram object(s) into the @@Picture window@ in shades of grey.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%From time%, %%To time% (seconds)")
 DEFINITION (L"the time domain along the %x axis.")
 TAG (L"%%From frequency%, %%To frequency% (Hertz)")
@@ -562,7 +562,7 @@ NORMAL (L"The Spectrum will be constructed from one frame of the Spectrogram, "
 MAN_END
 
 MAN_BEGIN (L"Spectrum", L"ppgb", 20041123)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. A Spectrum object represents "
+INTRO (L"One of the @@types of objects@ in Praat. A Spectrum object represents "
 	"the complex spectrum as a function of frequency. "
 	"If the spectrum was created from a sound (which is expressed in units of Pascal), "
 	"the complex values are expressed in units Pa/Hz (Pascal per Hertz). "
@@ -591,7 +591,7 @@ MAN_BEGIN (L"Spectrum: Filter (pass Hann band)...", L"ppgb", 20030916)
 INTRO (L"A command to modify every selected @Spectrum object.")
 NORMAL (L"The complex values in the #Spectrum are multiplied by real-valued sine shapes and straight lines, according to the following figure:")
 PICTURE (5, 3, draw_SpectrumPassHann)
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%From frequency% (standard value: 500 Hz)")
 DEFINITION (L"the lower edge of the pass band (%f__1_ in the figure). The value zero is special: the filter then acts as a low-pass filter.")
 TAG (L"%%To frequency% (standard value: 1000 Hz)")
@@ -611,7 +611,7 @@ MAN_BEGIN (L"Spectrum: Filter (stop Hann band)...", L"ppgb", 20030916)
 INTRO (L"A command to modify every selected @Spectrum object.")
 NORMAL (L"The complex values in the #Spectrum are multiplied by real-valued sine shapes and straight lines, according to the following figure:")
 PICTURE (5, 3, draw_SpectrumStopHann)
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%From frequency% (standard value: 500 Hz)")
 DEFINITION (L"the lower edge of the stop band (%f__1_ in the figure). The value zero is special: the filter then acts as a high-pass filter.")
 TAG (L"%%To frequency% (standard value: 1000 Hz)")
@@ -641,7 +641,7 @@ NORMAL (L"In this formula, %f__%c_ is the spectral centre of gravity (see @@Spec
 	"Thus, the %%n%th central moment is the average of (%f \\-- %f__%c_)^%n over the entire frequency domain, "
 	"weighted by |%S(%f)|^%p. For %p = 2, the weighting is done by the power spectrum, and for %p = 1, "
 	"the weighting is done by the absolute spectrum. A value of %p = 2/3 has been seen as well.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%Moment")
 DEFINITION (L"the number %n in the formulas above. A number of 3 gives you the third central spectral moment. "
 	"It is not impossible to ask for fractional moments, e.g. %n = 1.5.")
@@ -778,7 +778,7 @@ NORMAL (L"The values are computed as the sum of the squares of the real and imag
 MAN_END
 
 MAN_BEGIN (L"SpectrumEditor", L"ppgb", 20030316)
-INTRO (L"One of the @editors in P\\s{RAAT}. It allows you to view, "
+INTRO (L"One of the @editors in Praat. It allows you to view, "
 	"zoom, and play a @Spectrum object.")
 NORMAL (L"Clicking on one of the (maximally) 8 rectangles above or below the drawing area "
 	"lets you play a @Sound that is synthesized from a band-filtered part of the @Spectrum. "

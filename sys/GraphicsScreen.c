@@ -25,6 +25,8 @@
  * sdk 2008/05/09 cairo
  * pb 2009/07/24 quartz
  * fb 2010/02/23 cairo & clipping on updateWs()
+ * pb 2010/05/13 support XOR mode
+ * pb 2010/07/13 split erasure of recording off from Graphics_clearWs
  */
 
 #include "GraphicsP.h"
@@ -52,19 +54,33 @@
 static void destroy (I) {
 	iam (GraphicsScreen);
 	#if cairo
-		if (my cr) {
+		if (my gc != NULL) {
+			g_object_unref (my gc);			
+			my gc = NULL;
+		}
+		if (my cr != NULL) {
 			cairo_destroy (my cr);
 			my cr = NULL;
 		}
 	#elif xwin
-		XFreeGC (my display, my gc);
+		if (my gc != NULL) {
+			XFreeGC (my display, my gc);
+			my gc = NULL;
+		}
 	#elif win
-		if (my dc) {
+		if (my dc != NULL) {
 			SelectPen (my dc, GetStockPen (BLACK_PEN));
 			SelectBrush (my dc, GetStockBrush (NULL_BRUSH));
+			my dc = NULL;
 		}
-		if (my pen) DeleteObject (my pen);
-		if (my brush) DeleteObject (my brush);
+		if (my pen != NULL) {
+			DeleteObject (my pen);
+			my pen = NULL;
+		}
+		if (my brush != NULL) {
+			DeleteObject (my brush);
+			my brush = NULL;
+		}
 		/*
 		 * No ReleaseDC here, because we have not created it ourselves,
 		 * not even with GetDC.
@@ -100,39 +116,34 @@ void Graphics_flushWs (I) {
 
 void Graphics_clearWs (I) {
 	iam (Graphics);
-
-	/* Suggestie: voor screen plaatsen, dan kan gtk gewoon 'updaten' */
-	if (my record) { Melder_free (my record); my irecord = 0; my nrecord = 0; }
-	
 	if (my screen) {
 		iam (GraphicsScreen);
 		#if cairo
-			if (my cr == NULL) {
-				Graphics_updateWs (me);
-				return;
+			GdkRectangle rect;
+			if (my x1DC < my x2DC) {
+				rect.x = my x1DC;
+				rect.width = my x2DC - my x1DC;
 			} else {
-				GdkRectangle rect;
-
-				if (my x1DC < my x2DC) {
-					rect.x = my x1DC;
-					rect.width = my x2DC - my x1DC;
-				} else {
-					rect.x = my x2DC;
-					rect.width = my x1DC - my x2DC;
-				}
-
-				if (my y1DC < my y2DC) {
-					rect.y = my y1DC;
-					rect.height = my y2DC - my y1DC;
-				} else {
-					rect.y = my y2DC;
-					rect.height = my y1DC - my y2DC;
-				}
-
+				rect.x = my x2DC;
+				rect.width = my x1DC - my x2DC;
+			}
+			if (my y1DC < my y2DC) {
+				rect.y = my y1DC;
+				rect.height = my y2DC - my y1DC;
+			} else {
+				rect.y = my y2DC;
+				rect.height = my y1DC - my y2DC;
+			}
+			if (my cr == NULL) {
+				//Melder_casual("Clear and null");
+				//gdk_window_clear (my window);
+				//gdk_window_invalidate_rect (my window, & rect, true);   // BUG: it seems weird that this is necessary.
+			} else {
+				//Melder_casual("Clear and not null");
 				cairo_set_source_rgb (my cr, 1.0, 1.0, 1.0);
-				// TODO: cairo_rectangle (my gc, 0, 0, GTK_WIDGET(I)->allocation.width, GTK_WIDGET(I)->allocation.height); ?
 				cairo_rectangle (my cr, rect.x, rect.y, rect.width, rect.height);
 				cairo_fill (my cr);
+				cairo_set_source_rgb (my cr, 0.0, 0.0, 0.0);
 			}
 		#elif xwin
 			XClearArea (my display, my window, 0, 0, 0, 0, False);
@@ -180,7 +191,7 @@ void Graphics_updateWs (I) {
 	if (me && my screen) {
 		iam (GraphicsScreen);
 		#if gtk
-			GdkWindow *window = gtk_widget_get_parent_window (my drawingArea);
+			//GdkWindow *window = gtk_widget_get_parent_window (my drawingArea);
 			GdkRectangle rect;
 
 			if (my x1DC < my x2DC) {
@@ -200,13 +211,13 @@ void Graphics_updateWs (I) {
 			}
 
 			if (my cr && my drawingArea) {  // update clipping rectangle to new graphics size
-				cairo_reset_clip(my cr);
-				cairo_rectangle(my cr, rect.x, rect.y, rect.width, rect.height);
-				cairo_clip(my cr);
+				cairo_reset_clip (my cr);
+				cairo_rectangle (my cr, rect.x, rect.y, rect.width, rect.height);
+				cairo_clip (my cr);
 			}
-			
-			gdk_window_invalidate_rect (window, & rect, true);
-			gdk_window_process_updates (window, true);
+			gdk_window_clear (my window);
+			gdk_window_invalidate_rect (my window, & rect, true);
+			//gdk_window_process_updates (window, true);
 		#elif xwin
 			XClearArea (my display, my window, 0, 0, 0, 0, True);
 		#elif win
@@ -233,9 +244,12 @@ static int GraphicsScreen_init (GraphicsScreen me, void *voidDisplay, unsigned l
 	/* Fill in new members. */
 
 	#if cairo
+		my display = (GdkDisplay *) gdk_display_get_default ();
 		_Graphics_text_init (me);
 		my resolution = 100;
-		my cr = gdk_cairo_create(GDK_DRAWABLE(GTK_WIDGET(voidDisplay)->window));
+		my window = GDK_DRAWABLE (GTK_WIDGET (voidDisplay) -> window);
+		my gc = gdk_gc_new (my window);
+		my cr = gdk_cairo_create (my window);
 	#elif xwin
 		if (! inited) {
 			display = (Display *) voidDisplay;
@@ -246,7 +260,7 @@ static int GraphicsScreen_init (GraphicsScreen me, void *voidDisplay, unsigned l
 			colourMap = DefaultColormap (display, xscreen);
 			double width_pixels = DisplayWidth (display, xscreen);
 			double width_mm = DisplayWidthMM (display, xscreen);
-			resolution = floor (25.4 * width_pixels / width_mm + 0.5);
+			//resolution = floor (25.4 * width_pixels / width_mm + 0.5);
 			//Melder_casual ("display width %g %g %d", width_pixels, width_mm, resolution);
 			//resolution = 100;
 			/*if (resolution >= 90) resolution = 100; else resolution = 75;*/
@@ -452,6 +466,7 @@ Graphics Graphics_create_pdffile (MelderFile file, int resolution,
 			& kCFTypeDictionaryKeyCallBacks, & kCFTypeDictionaryValueCallBacks);
 		my macGraphicsContext = CGPDFContextCreateWithURL (url, & rect, dictionary);
 		CFRelease (url);
+		CFRelease (dictionary);
 		my x1DC = my x1DCmin = 0;
 		my x2DC = my x2DCmax = 7.5 * resolution;
 		my y1DC = my y1DCmin = 0;

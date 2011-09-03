@@ -1,6 +1,6 @@
 /* manual_Exp.c
  *
- * Copyright (C) 2001-2006 Paul Boersma
+ * Copyright (C) 2001-2009 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ void manual_Exp_init (ManPages me);
 void manual_Exp_init (ManPages me) {
 
 MAN_BEGIN (L"ExperimentMFC", L"ppgb", 20051205)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}, "
+INTRO (L"One of the @@types of objects@ in Praat, "
 	"for running a Multiple Forced Choice listening experiment.")
 LIST_ITEM (L"@@ExperimentMFC 1. When to use Praat")
 LIST_ITEM (L"@@ExperimentMFC 2. The first example")
@@ -687,7 +687,7 @@ NORMAL (L"The participant will see 16 squares on the screen. First she will have
 	"A silence of 0.3 seconds is played just before each response sound.")
 MAN_END
 
-MAN_BEGIN (L"ExperimentMFC 7. Running multiple experiments", L"ppgb", 20070926)
+MAN_BEGIN (L"ExperimentMFC 7. Running multiple experiments", L"ppgb", 20100518)
 INTRO (L"In all the earlier examples, either the set of stimulus sounds or the set of response sounds stayed "
 	"the same throughout the experiment. If you want more than one set of stimuli, or more than one set of responses, "
 	"you can run several experiments after each other, simply by selecting more than one experiment, then clicking #Run.")
@@ -727,7 +727,7 @@ CODE1 (L"0.6 0.7 0.7 0.8 \"\" 10 \"\" \"i5\"")
 CODE1 (L"0.7 0.8 0.7 0.8 \"\" 10 \"\" \"i6\"")
 CODE (L"numberOfGoodnessCategories = 0")
 CODE (L"")
-CODE (L"\"ExperimentMFC 4\" \"u\"")
+CODE (L"\"ExperimentMFC 5\" \"u\"")
 CODE (L"stimuliAreSounds? <no> \"\" \"\" \"\" \"\" 0 0")
 CODE (L"numberOfDifferentStimuli = 1")
 CODE1 (L"\"u\"  \"Choose the best \\% \\% oo\\% .\"")

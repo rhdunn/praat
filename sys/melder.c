@@ -1,6 +1,6 @@
 /* melder.c
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,8 +38,8 @@
  * pb 2007/12/18 Gui
  * sdk 2008/01/22 GTK
  * pb 2009/01/20 removed pause
- * pb 2009/07/31
  * fb 2010/02/26 GTK
+ * pb 2010/06/22 GTK: correct hiding and showing again
  */
 
 #include <math.h>
@@ -173,9 +173,9 @@ static int waitWhileProgress (double progress, const wchar_t *message, Widget di
 		// Wait for all pending events to be processed. If someone knows how to inspect GTK's
 		// event queue for specific events, dump the code here, please.
 		// Until then, the button click attaches a g_object data key named "pressed" to the cancelButton
-		// which is this function reads out in order to tell whether interruption has occured
-		while (gtk_events_pending())
-			gtk_main_iteration();
+		// which this function reads out in order to tell whether interruption has occurred
+		while (gtk_events_pending ())
+			gtk_main_iteration ();
 	#elif defined (macintosh)
 	{
 		EventRecord event;
@@ -233,7 +233,7 @@ static int waitWhileProgress (double progress, const wchar_t *message, Widget di
 		GuiObject_hide (dia);
 	} else {
 		if (progress <= 0.0) progress = 0.0;
-		GuiObject_show (dia);   // TODO: prevent raising to the front
+		GuiDialog_show (dia);   // TODO: prevent raising to the front
 		wchar_t *newline = wcschr (message, '\n');
 		if (newline != NULL) {
 			static MelderString buffer = { 0 };
@@ -248,11 +248,11 @@ static int waitWhileProgress (double progress, const wchar_t *message, Widget di
 		}
 		#if gtk
 			// update progress bar
-			gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(scale), progress);
-			while (gtk_events_pending())
-				gtk_main_iteration();
+			gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (scale), progress);
+			while (gtk_events_pending ())
+				gtk_main_iteration ();
 			// check whether cancelButton has the "pressed" key set
-			if (g_object_steal_data(G_OBJECT(cancelButton), "pressed"))
+			if (g_object_steal_data (G_OBJECT (cancelButton), "pressed"))
 				return 0;
 		#else
 			XmScaleSetValue (scale, floor (progress * 1000.0));
@@ -263,12 +263,12 @@ static int waitWhileProgress (double progress, const wchar_t *message, Widget di
 }
 
 #if gtk
-static void progress_dia_close(void *wid) {
-	g_object_set_data(G_OBJECT(*(Widget *)wid), "pressed", (gpointer)1);
+static void progress_dia_close (void *wid) {
+	g_object_set_data (G_OBJECT (* (Widget *) wid), "pressed", (gpointer) 1);
 }
-static void progress_cancel_btn_press(void *wid, GuiButtonEvent event) {
-	(void)event;
-	g_object_set_data(G_OBJECT(*(Widget *)wid), "pressed", (gpointer)1);
+static void progress_cancel_btn_press (void *wid, GuiButtonEvent event) {
+	(void) event;
+	g_object_set_data (G_OBJECT (* (Widget *) wid), "pressed", (gpointer) 1);
 }
 #endif
 
@@ -281,21 +281,16 @@ static void _Melder_dia_init (Widget *dia, Widget *scale, Widget *label1, Widget
 		#endif
 		0);
 	
-	#if gtk
-		Widget form = GTK_DIALOG (*dia) -> vbox;
-		Widget buttons = GTK_DIALOG (*dia) -> action_area;
-	#elif motif
-		Widget form = *dia;    /* TODO: Kan dit ook met een define? */
-		Widget buttons = *dia;
-	#endif
+	Widget form = *dia;
+	Widget buttons = GuiDialog_getButtonArea (*dia);
 	
 	*label1 = GuiLabel_createShown (form, 3, 403, 0, Gui_AUTOMATIC, L"label1", 0);
 	*label2 = GuiLabel_createShown (form, 3, 403, 30, Gui_AUTOMATIC, L"label2", 0);
 	
 	#if gtk
-		*scale = gtk_progress_bar_new();
-		gtk_container_add(GTK_CONTAINER(form), *scale);
-		GuiObject_show(*scale);
+		*scale = gtk_progress_bar_new ();
+		gtk_container_add (GTK_CONTAINER (form), *scale);
+		GuiObject_show (*scale);
 	#elif motif
 		*scale = XmCreateScale (*dia, "scale", NULL, 0);
 		XtVaSetValues (*scale, XmNy, 70, XmNwidth, 400, XmNminimum, 0, XmNmaximum, 1000,
@@ -330,8 +325,9 @@ static int _Melder_progress (double progress, const wchar_t *message) {
 		if (progress <= 0.0 || progress >= 1.0 ||
 			now - lastTime > CLOCKS_PER_SEC / 4)   /* This time step must be much longer than the null-event waiting time. */
 		{
-			if (dia == NULL)
-				_Melder_dia_init(&dia, &scale, &label1, &label2, &cancelButton);
+			if (dia == NULL) {
+				_Melder_dia_init (& dia, & scale, & label1, & label2, & cancelButton);
+			}
 			bool interruption = waitWhileProgress (progress, message, dia, scale, label1, label2, cancelButton);
 			if (! interruption) Melder_error1 (L"Interrupted!");
 			lastTime = now;
@@ -402,9 +398,9 @@ static void * _Melder_monitor (double progress, const wchar_t *message) {
 			now - lastTime > CLOCKS_PER_SEC / 4)   /* This time step must be much longer than the null-event waiting time. */
 		{
 			if (dia == NULL) {
-				_Melder_dia_init(&dia, &scale, &label1, &label2, &cancelButton);
+				_Melder_dia_init (& dia, & scale, & label1, & label2, & cancelButton);
 				drawingArea = GuiDrawingArea_createShown (dia, 0, 400, 230, 430, NULL, NULL, NULL, NULL, NULL, 0);
-				GuiObject_show (dia);
+				GuiDialog_show (dia);
 				graphics = Graphics_create_xmdrawingarea (drawingArea);
 			}
 			bool interruption = waitWhileProgress (progress, message, dia, scale, label1, label2, cancelButton);
@@ -616,7 +612,7 @@ int _Melder_assert (const char *condition, const char *fileName, int lineNumber)
 
 #if gtk
 static void gtk_error (wchar_t *message) {
-	Widget dialog = gtk_message_dialog_new (GTK_WINDOW(Melder_topShell),
+	Widget dialog = gtk_message_dialog_new (GTK_WINDOW (Melder_topShell),
 					 GTK_DIALOG_DESTROY_WITH_PARENT,
 					 GTK_MESSAGE_ERROR,
 					 GTK_BUTTONS_OK,
@@ -627,7 +623,7 @@ static void gtk_error (wchar_t *message) {
 }
 
 static void gtk_warning (wchar_t *message) {
-	Widget dialog = gtk_message_dialog_new (GTK_WINDOW(Melder_topShell),
+	Widget dialog = gtk_message_dialog_new (GTK_WINDOW (Melder_topShell),
 					 GTK_DIALOG_DESTROY_WITH_PARENT,
 					 GTK_MESSAGE_WARNING,
 					 GTK_BUTTONS_OK,
@@ -747,11 +743,7 @@ static void motif_warning (wchar_t *message) {
 void MelderGui_create (void *appContext, void *parent) {
 	extern void gui_information (wchar_t *);
 	Melder_appContext = appContext;
-	#if gtk
-		Melder_topShell = (Widget) GuiObject_parent (parent);
-	#else
-		Melder_topShell = (Widget) parent;
-	#endif
+	Melder_topShell = (Widget) parent;
 	Melder_setInformationProc (gui_information);
 	#if gtk
 		Melder_setWarningProc (gtk_warning);

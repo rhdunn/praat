@@ -1,6 +1,6 @@
 /* manual_Script.c
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ MAN_END
 MAN_BEGIN (L"Add action command...", L"ppgb", 20060920)
 INTRO (L"One of the hidden commands in the Praat menu of the @@Object window@. "
 	"With this command, you add a button to the dynamic menu in the Object window.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 NORMAL (L"See @@Add to dynamic menu...@.")
 ENTRY (L"Usage")
 NORMAL (L"You can use this command in your @@initialization script@ or in @@plug-ins@.")
@@ -43,7 +43,7 @@ MAN_END
 MAN_BEGIN (L"Add menu command...", L"ppgb", 20060920)
 INTRO (L"One of the hidden commands in the Praat menu of the @@Object window@. "
 	"With this command, you add a button to any of the fixed menus in the Object or Picture window.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 NORMAL (L"See @@Add to fixed menu...@.")
 ENTRY (L"Usage")
 NORMAL (L"You can use this command in your @@initialization script@ or in @@plug-ins@.")
@@ -56,7 +56,7 @@ INTRO (L"A command in the File menu of the @ScriptEditor.")
 NORMAL (L"With this command, you add a button to the dynamic menu in the @@Object window@. "
 	"This button will only be visible if the specified combination of objects is selected. "
 	"Clicking the button will invoke the specified @@Praat script@.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Class 1")
 DEFINITION (L"the name of the class of the object to be selected. "
 	"For instance, if a button should only appear if the user selects a Sound, this would be \"Sound\".")
@@ -112,7 +112,7 @@ MAN_BEGIN (L"Add to fixed menu...", L"ppgb", 20060920)
 INTRO (L"A command in the File menu of the @ScriptEditor.")
 NORMAL (L"With this command, you add a button to any fixed menu in the @@Object window@ or in the @@Picture window@. "
 	"Clicking the added button will invoke the specified @@Praat script@.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%Window")
 DEFINITION (L"the name of the window (\"Objects\" or \"Picture\") that contains the menu that you want to change.")
 TAG (L"%Menu")
@@ -186,7 +186,7 @@ MAN_END
 
 MAN_BEGIN (L"ButtonEditor", L"ppgb", 20060920)
 INTRO (L"An editor for viewing, hiding, showing, removing, and executing the commands "
-	"in the fixed and dynamic menus of the P\\s{RAAT} program. To open it, choose ##Buttons...# "
+	"in the fixed and dynamic menus of the Praat program. To open it, choose ##Buttons...# "
 	"from the #Praat menu of the @@Object window@.")
 ENTRY (L"What the button editor shows")
 NORMAL (L"The button editor gives a list of:")
@@ -1130,7 +1130,7 @@ NORMAL (L"The first version, which accesses the contents directly, is not only t
 MAN_END
 
 MAN_BEGIN (L"Hidden commands", L"ppgb", 20060920)
-NORMAL (L"Some commands in P\\s{RAAT}'s fixed and dynamic menus are hidden by default. "
+NORMAL (L"Some commands in Praat's fixed and dynamic menus are hidden by default. "
 	"You can still call hidden commands from scripts, run them by clicking on them in a @ButtonEditor, "
 	"or make them visible with the help of the @ButtonEditor.")
 NORMAL (L"To hide commands that are visible by default, use the @ButtonEditor.")
@@ -1146,7 +1146,7 @@ LIST_ITEM (L"2. The command ##Read from old Praat picture file...# in the #File 
 LIST_ITEM (L"3. In the Praat program, the action ##Sound: Write to Sesam file...#. Writes a file format in common use "
 	"in the Netherlands on Vax machines. In the Dutch phonetics departments, the plugs were pulled from the Vaxes in 1994.")
 LIST_ITEM (L"4. In the Praat program, the action ##Sound: To Cochleagram (edb)...#. Needed by one person in 1994. "
-	"An interesting, but undocumented procedure (De Boer's gamma-tone filter bank plus Meddis & Hewitt's "
+	"An interesting, but undocumented procedure (De Boer's gammatone filter bank plus Meddis & Hewitt's "
 	"synapse model), which does not create a normally interpretable Cochleagram object.")
 MAN_END
 
@@ -2303,10 +2303,10 @@ CODE (L"#execute \"fill attributes.praat\" \"Navy blue\" With holes")
 NORMAL (L"You can pass values for #boolean either as \"yes\" and \"no\" or 1 and 0.")
 MAN_END
 
-MAN_BEGIN (L"Scripting 6.2. Writing to the Info window", L"ppgb", 20081207)
+MAN_BEGIN (L"Scripting 6.2. Writing to the Info window", L"ppgb", 20100613)
 NORMAL (L"With the @Info button and several commands in the #Query menus, "
-	"you write to the @@Info window@ (if your program is run from the @@Scripting 6.9. Calling from the command line|command line@, "
-	"the text goes to %stdout instead).")
+	"you write to the @@Info window@ (if your program is run from the command line, "
+	"the text goes to the console window or to %stdout instead; see @@Scripting 6.9. Calling from the command line|\\SS6.9).")
 NORMAL (L"The following commands allow you to write to the Info window from a script only:")
 TAG (L"#echo %text")
 DEFINITION (L"clears the Info window and writes some text to it:")
@@ -2352,12 +2352,19 @@ NORMAL (L"The string variable \"mean\\$ \" now contains the entire string \"150 
 NORMAL (L"This works for every command that would otherwise write into the Info window.")
 MAN_END
 
-MAN_BEGIN (L"Scripting 6.4. Files", L"ppgb", 20090809)
+MAN_BEGIN (L"Scripting 6.4. Files", L"ppgb", 20100314)
 INTRO (L"You can read from and write to text files from a Praat script.")
 ENTRY (L"Reading a file")
 NORMAL (L"You can check the availability of a file for reading with the function")
-CODE (L"#fileReadable (fileName\\$ )")
-NORMAL (L"which returns #true if the file exists and can be read, and #false otherwise.")
+CODE (L"#fileReadable (%%fileName\\$ %)")
+NORMAL (L"which returns 1 (true) if the file exists and can be read, and 0 (false) otherwise. "
+	"Note that %%fileName\\$ % is taken relatively to the directory where the script is saved; "
+	"for instance, if your script is in the directory ##Paolo/project1#, then the file name "
+	"\"hello.wav\" refers to ##Paolo/project1/hello.wav#, the file name \"yesterday/hello.wav\" "
+	"refers to ##Paolo/project1/yesterday/hello.wav#, and the file name \"../project2/hello.wav\" "
+	"refers to ##Paola/project2/hello.wav# (\"..\" goes one directory up). "
+	"You can also use full path names such as \"C:/Documents and Settings/Paolo/project1/hello.wav\" "
+	"on Windows and \"/Users/Paolo/project1/hello.wav\" on the Mac.")
 NORMAL (L"To read the contents of an existing text file into a string variable, you use")
 CODE (L"text\\$  ##<# %fileName")
 NORMAL (L"where $$text\\$ $ is any string variable and $$%fileName$ is an unquoted string. "
@@ -2372,10 +2379,10 @@ NORMAL (L"However, this script will fail if the file ##height.inf# does not exis
 	"value in case the file does not exist:")
 CODE (L"fileName\\$  = \"height.inf\"")
 CODE (L"if fileReadable (fileName\\$ )")
-CODE (L"   height\\$  < 'fileName\\$ '")
-CODE (L"   height = 'height\\$ '")
+CODE1 (L"height\\$  < 'fileName\\$ '")
+CODE1 (L"height = 'height\\$ '")
 CODE (L"else")
-CODE (L"   height = 180")
+CODE1 (L"height = 180")
 CODE (L"endif")
 ENTRY (L"Writing a file")
 NORMAL (L"To write the contents of an existing string into a new text file, you use")
@@ -2386,10 +2393,14 @@ NORMAL (L"To append the contents of an existing string at the end of an existing
 CODE (L"text\\$  ##>># %fileName")
 NORMAL (L"If the file does not yet exist, it is created first.")
 NORMAL (L"You can create a directory with")
-CODE (L"#createDirectory (%directoryName\\$ )")
-NORMAL (L"If the directory already exists, this command does nothing.")
+CODE (L"#createDirectory (%%directoryName\\$ %)")
+NORMAL (L"where, as with file names, %%directoryName\\$ % can be relative to the directory of the script "
+	"(e.g. \"data\", or \"yesterday/data\", or \"../project2/yesterday/data\") "
+	"or an absolute path (e.g. \"C:/Documents and Settings/Paolo/project1/yesterday/data\" on Windows "
+	"or \"/Users/Paolo/project1/yesterday/data\" on the Mac). "
+	"If the directory already exists, this command does nothing.")
 NORMAL (L"You can delete an existing file with the function")
-CODE (L"#deleteFile (%fileName\\$ )")
+CODE (L"#deleteFile (%%fileName\\$ %)")
 NORMAL (L"or with the directive")
 CODE (L"#filedelete %fileName")
 NORMAL (L"If the file does not exist, these commands do nothing.")
@@ -2405,15 +2416,15 @@ CODE (L"The square of 100 is 10000")
 NORMAL (L"We can do this by collecting each line in a variable:")
 CODE (L"deleteFile (\"squares.txt\")")
 CODE (L"for i to 100")
-CODE (L"   square = i * i")
-CODE (L"   fileappend squares.txt The square of 'i' is 'square''newline\\$ '")
+CODE1 (L"square = i * i")
+CODE1 (L"fileappend squares.txt The square of 'i' is 'square''newline\\$ '")
 CODE (L"endfor")
 NORMAL (L"Note that we delete the file before appending to it, "
 	"in order that we do not append to an already existing file.")
 NORMAL (L"If you put the name of the file into a variable, make sure to surround it "
 	"with double quotes when using #fileappend, since the file name may contain spaces "
 	"and is not at the end of the line:")
-CODE (L"name\\$  = \"Hard disk:Desktop Folder:squares.text\"")
+CODE (L"name\\$  = \"C:/Documents and Settings/Paul Boersma/Desktop/squares.text\"")
 CODE (L"filedelete 'name\\$ '")
 CODE (L"for i to 100")
 CODE1 (L"square = i * i")
@@ -2462,7 +2473,7 @@ CODE (L"time = stopwatch")
 CODE (L"echo 'a' 'time:3'")
 MAN_END
 
-MAN_BEGIN (L"Scripting 6.6. Controlling the user", L"ppgb", 20080121)
+MAN_BEGIN (L"Scripting 6.6. Controlling the user", L"ppgb", 20100726)
 INTRO (L"You can temporarily halt a Praat script:")
 TAG (L"#pause %text")
 DEFINITION (L"suspends execution of the script, and allows the user to interrupt it. "
@@ -2550,6 +2561,20 @@ CODE (L"for i to 20")
 	CODE1 (L"printline 'quality'")
 CODE (L"endfor")
 NORMAL (L"In this example, the 0 at the end of #endPause means that there is no default button.")
+ENTRY (L"File selection")
+NORMAL (L"If you want the user to choose a file name for opening or saving, do")
+CODE (L"fileName\\$  = ##chooseReadFile\\$ # (\"Open a table file\")")
+CODE (L"if fileName\\$  <> \"\"")
+	CODE1 (L"table = Read Table from tab-separated file... \'fileName\\$ \'")
+CODE (L"endif")
+NORMAL (L"or")
+CODE (L"select mySound")
+CODE (L"fileName\\$  = ##chooseWriteFile\\$ # (\"Save as a WAV file\", \"mySound.wav\")")
+CODE (L"if fileName\\$  <> \"\"")
+	CODE1 (L"Write to WAV file... \'fileName\\$ \'")
+CODE (L"endif")
+NORMAL (L"In these examples, the first argument is the title of the file selector window "
+	"and the second argument is the default file name that will appear in the text field of the file selector window.")
 MAN_END
 
 MAN_BEGIN (L"Scripting 6.7. Sending a message to another program", L"ppgb", 20021218)
@@ -2571,7 +2596,7 @@ MAN_END
 
 MAN_BEGIN (L"Scripting 6.8. Messages to the user", L"ppgb", 20041027)
 NORMAL (L"If the user makes a mistake (e.g. types conflicting settings into your form window), "
-	"you can use the #exit directive (@@Scripting 5.8. Quitting|\\SS5.7@) "
+	"you can use the #exit directive (@@Scripting 5.8. Quitting|\\SS5.8@) "
 	"to stop the execution of the script with an error message:")
 CODE (L"form My analysis")
 CODE1 (L"real Starting_time_(s) 0.0")
@@ -2602,7 +2627,7 @@ CODE (L"nocheck Remove")
 NORMAL (L"This would cause the script to continue even if there is nothing to remove.")
 MAN_END
 
-MAN_BEGIN (L"Scripting 6.9. Calling from the command line", L"ppgb", 20081207)
+MAN_BEGIN (L"Scripting 6.9. Calling from the command line", L"ppgb", 20100613)
 INTRO (L"Previous sections of this tutorial have shown you how to run a Praat script from the Script window. "
 	"However, you can also call a Praat script from the command line (text console) instead. "
 	"Information that would normally show up in the Info window, then goes to %stdout, "
@@ -2613,8 +2638,8 @@ NORMAL (L"On Unix or MacOS X, you call Praat scripts from the command line like 
 CODE (L"> /people/mietta/praat doit.praat 50 hallo")
 NORMAL (L"or")
 CODE (L"> /Applications/Praat.app/Contents/MacOS/Praat doit.praat 50 hallo")
-NORMAL (L"This opens P\\s{RAAT}, runs the script ##doit.praat# with arguments \"50\" and \"hallo\", "
-	"and closes P\\s{RAAT}.")
+NORMAL (L"This opens Praat, runs the script ##doit.praat# with arguments \"50\" and \"hallo\", "
+	"and closes Praat.")
 NORMAL (L"You also have the possibility of running the program interactively from the command line:")
 CODE (L"> /people/mietta/praat -")
 NORMAL (L"You can then type in any of the fixed and dynamic commands, and commands that handle object selection, "
@@ -2624,8 +2649,8 @@ ENTRY (L"Command lines on Windows")
 NORMAL (L"On Windows, you call Praat scripts from the command line like this:")
 CODE (L"e:\\bspraatcon.exe e:\\bsdoit.praat 50 hallo")
 NORMAL (L"Note that you use the program ##praatcon.exe# instead of ##praat.exe#. "
-	"The script will write to the console output, and its output "
-	"can be used in pipes (in UTF-16 Little Endian encoding; use ##praatcon -a# if you want to use ISO Latin-1 encoding instead).")
+	"The script will write to the console output in UTF-16 Little Endian encoding. "
+	"If you want to use ISO Latin-1 encoding instead, or if you want to use praatcon's output in a pipe or redirect it to a file, use ##praatcon -a# instead.")
 ENTRY (L"How to get arguments into the script")
 NORMAL (L"In the above example, the script ##doit.praat# requires two arguments. In the script ##doit.praat#, "
 	"you use #form and #endform to receive these arguments. See @@Scripting 6.1. Arguments to the script@. "
@@ -2761,7 +2786,7 @@ LIST_ITEM (L"@@Scripting 8.3. The sendpraat directive")
 MAN_END
 
 MAN_BEGIN (L"Scripting 8.1. The sendpraat subroutine", L"ppgb", 20091020)
-INTRO (L"A subroutine for sending messages to a %running P\\s{RAAT}. "
+INTRO (L"A subroutine for sending messages to a %running Praat. "
 	"Also a Unix, MacOS, or DOS console program with the same purpose.")
 ENTRY (L"Syntax")
 LIST_ITEM (L"##sendpraat (void *#%display##, const char *#%program##, long #%timeOut##, char *#%text##);")
@@ -2818,7 +2843,7 @@ NORMAL (L"To start a program from the command line instead and sending it a mess
 MAN_END
 
 MAN_BEGIN (L"Scripting 8.2. The sendpraat program", L"ppgb", 20050822)
-INTRO (L"A Unix or DOS console program for sending messages to a %running P\\s{RAAT} program.")
+INTRO (L"A Unix or DOS console program for sending messages to a %running Praat program.")
 ENTRY (L"Syntax")
 CODE (L"#sendpraat [%timeOut] %program %message...")
 NORMAL (L"For the meaning of the arguments, see @@Scripting 8.1. The sendpraat subroutine|the sendpraat subroutine@.")

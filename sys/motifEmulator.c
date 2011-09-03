@@ -43,6 +43,7 @@
  * pb 2008/10/05 better tab navigation
  * pb 2010/01/04 Mac: implement forward delete
  * pb 2010/01/08 Mac: support Command-`
+ * pb 2010/06/14 Mac: live scrolling
  */
 #ifndef UNIX
 
@@ -86,7 +87,7 @@
 #if mac
 	void motif_mac_defaultFont (void) {
 		TextFont (systemFont);
-		TextSize (12);
+		TextSize (13);
 		TextFace (0);
 	}
 	static BitMap theScreenBits;
@@ -322,7 +323,7 @@ static int NativeToggleButton_preferredWidth (Widget me) {
 
 static int NativeButton_preferredHeight (Widget me) {
 	(void) me;
-	return win ? 22 : ( my parent -> rowColumnType == XmMENU_BAR ? 26 : 20 );
+	return win ? 22 : ( my parent -> rowColumnType == XmMENU_BAR ? 28 : 20 );
 }
 
 /***** WIDGET *****/
@@ -1138,7 +1139,7 @@ static void _GuiNativizeWidget (Widget me) {
 						Melder_assert (my nat.control.handle != NULL);
 						SetControlReference (my nat.control.handle, (long) me);
 						my isControl = TRUE;
-						_GuiNativeControl_setFont (me, 12);
+						_GuiNativeControl_setFont (me, 13);
 						_GuiNativeControl_setTitle (me);
 					} else {
 						my nat.control.isPopup = true;
@@ -1174,7 +1175,7 @@ static void _GuiNativizeWidget (Widget me) {
 				NativeScrollBar_set (me);
 			#elif mac
 				my nat.control.handle = NewControl (my macWindow, & my rect,
-					"\000", false, 0, 0, 0, scrollBarProc, (long) me);
+					"\000", false, 0, 0, 0, kControlScrollBarLiveProc, (long) me);
 				Melder_assert (my nat.control.handle);
 				my isControl = TRUE;
 			#endif
@@ -1219,7 +1220,9 @@ static void _GuiNativizeWidget (Widget me) {
 				XmNtopAttachment, XmATTACH_FORM, XmNtopOffset, 1,   /* For border. */
 				XmNbottomAttachment, XmATTACH_FORM, XmNbottomOffset, 16, NULL);   /* For scroll bar. */
 			XtAddCallback (my motiff.scrolledWindow.verticalBar, XmNvalueChangedCallback, cb_scroll, (XtPointer) me);
+			XtAddCallback (my motiff.scrolledWindow.verticalBar, XmNdragCallback, cb_scroll, (XtPointer) me);
 			XtAddCallback (my motiff.scrolledWindow.horizontalBar, XmNvalueChangedCallback, cb_scroll, (XtPointer) me);
+			XtAddCallback (my motiff.scrolledWindow.horizontalBar, XmNdragCallback, cb_scroll, (XtPointer) me);
 		} break;
 		case xmShellWidgetClass: {
 			#if win
@@ -3534,10 +3537,11 @@ static pascal void _motif_scrollBarAction (ControlHandle maccontrol, short part)
 	if (my value < my minimum) my value = my minimum;
 	if (my value > my maximum - my sliderSize) my value = my maximum - my sliderSize;
 	SetControl32BitValue (maccontrol, my value);
-	if (part == kControlIndicatorPart)
+	if (part == kControlIndicatorPart) {
 		_Gui_callCallbacks (me, & my motiff.scrollBar.dragCallbacks, (XtPointer) (long) part);
-	else
+	} else {
 		_Gui_callCallbacks (me, & my motiff.scrollBar.valueChangedCallbacks, (XtPointer) (long) part);
+	}
 }
 #endif
 
@@ -4142,19 +4146,14 @@ static void _motif_processMouseDownEvent (EventRecord *event) {
 								_GuiMacCheckButton_handleClick (control, event);
 							}
 						} break;
+						case kControlIndicatorPart:   // live scrolling
 						case kControlUpButtonPart:
 						case kControlDownButtonPart:
 						case kControlPageUpPart:
 						case kControlPageDownPart: {
 							static ControlActionUPP theControlActionUPP;
 							if (! theControlActionUPP) theControlActionUPP = NewControlActionUPP (_motif_scrollBarAction);
-							TrackControl (maccontrol, event -> where, theControlActionUPP);
-						} break;
-						case kControlIndicatorPart: {
-							if (TrackControl (maccontrol, event -> where, NULL)) {
-								control -> value = GetControl32BitValue (maccontrol);
-								_Gui_callCallbacks (control, & control -> motiff.scrollBar.valueChangedCallbacks, (XtPointer) (long) controlPart);
-							}
+							HandleControlClick (maccontrol, event -> where, event -> modifiers, theControlActionUPP);
 						} break;
 						case kControlEditTextPart: _GuiMacText_handleClick (control, event); break;
 						default: break;

@@ -106,7 +106,7 @@ MAN_END
 MAN_BEGIN (L"Remove points between...", L"ppgb", 20080427)
 INTRO (L"A command to remove some points from every selected time-based tier object "
 	"(@DurationTier, @IntensityTier, @PitchTier, @TextTier).")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%From time% (s), %%To time% (s)")
 DEFINITION (L"the times between which you want to remove all points.")
 ENTRY (L"Behaviour")
@@ -114,7 +114,7 @@ NORMAL (L"Any points between %tmin and %tmax (inclusive) are removed from the ti
 MAN_END
 
 MAN_BEGIN (L"AmplitudeTier", L"ppgb", 20070825)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. "
+INTRO (L"One of the @@types of objects@ in Praat. "
 	"An AmplitudeTier object represents a time-stamped amplitude contour, i.e., it contains a series of (%time, %amplitude) points. "
 	"The amplitude values are in Pascal. To see some applications, consult the @IntensityTier information; "
 	"the difference between an AmplitudeTier and an IntensityTier is that the former has values in Pascal "
@@ -123,7 +123,7 @@ INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. "
 MAN_END
 
 MAN_BEGIN (L"Cochleagram", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. It represents the excitation pattern "
+INTRO (L"One of the @@types of objects@ in Praat. It represents the excitation pattern "
 	"of the basilar membrane in the inner ear (see @Excitation) as a function of time.")
 MAN_END
 
@@ -242,14 +242,14 @@ NORMAL (L"To get a list of directories instead of files, use @@Create Strings as
 MAN_END
 
 MAN_BEGIN (L"Distributions", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. Inherits most actions from @TableOfReal.")
+INTRO (L"One of the @@types of objects@ in Praat. Inherits most actions from @TableOfReal.")
 ENTRY (L"Actions")
 LIST_ITEM (L"@@Distributions: To Strings...@")
 MAN_END
 
 MAN_BEGIN (L"Distributions: To Strings...", L"ppgb", 19971022)
 INTRO (L"A command to create a @Strings object from every selected @Distributions object.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Column number")
 DEFINITION (L"the column (in the #Distributions object) that contains the distribution that you are "
 	"interested in. Often the #Distributions object will only contain a single distribution, "
@@ -280,7 +280,7 @@ NORMAL (L"If you set %Column to 1 and %%Number of strings% to 1000, "
 MAN_END
 
 MAN_BEGIN (L"DurationTier", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. "
+INTRO (L"One of the @@types of objects@ in Praat. "
 	"A DurationTier object contains a number of (%time, %duration) points, "
 	"where %duration is to be interpreted as a relative duration (e.g. the duration of a manipulated sound "
 	"as compared to the duration of the original). For instance, "
@@ -296,7 +296,7 @@ MAN_END
 MAN_BEGIN (L"DurationTier: Add point...", L"ppgb", 20030216)
 INTRO (L"A command to add a point to each selected @DurationTier. "
 	"For an example, see @@Create DurationTier...@.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%Time (s)")
 DEFINITION (L"the time at which a point is to be added.")
 TAG (L"%%Relative duration")
@@ -308,7 +308,7 @@ MAN_END
 
 MAN_BEGIN (L"DurationTier: Get target duration...", L"ppgb", 19991016)
 INTRO (L"A @query to the selected @DurationTier for the target duration of a specified time range.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%From time% (s), %%To time% (s)")
 DEFINITION (L"the start and end of the time range. If %fromTime or %toTime is outside the time domain "
 	"of the Duration object, there will be .")
@@ -322,7 +322,7 @@ INTRO (L"One of the @editors in the Praat program, for viewing and editing a @Du
 MAN_END
 
 MAN_BEGIN (L"Editors", L"ppgb", 20041110)
-INTRO (L"Many @@types of objects@ in P\\s{RAAT} can be viewed and edited in their own windows.")
+INTRO (L"Many @@types of objects@ in Praat can be viewed and edited in their own windows.")
 ENTRY (L"Editor windows")
 LIST_ITEM (L"\\bu @SoundEditor")
 LIST_ITEM (L"\\bu @LongSoundEditor")
@@ -363,7 +363,7 @@ LIST_ITEM (L"\\bu @@Keyboard shortcuts")
 MAN_END
 
 MAN_BEGIN (L"Excitation", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. It represents the excitation pattern "
+INTRO (L"One of the @@types of objects@ in Praat. It represents the excitation pattern "
 	"of the basilar membrane in the inner ear.")
 ENTRY (L"Inside an Excitation object")
 NORMAL (L"With @Inspect, you will see the following attributes.")
@@ -491,7 +491,7 @@ FORMULA (L"1/2 (%f__1_ + %f__2_) (%t__2_ \\-- %t__1_)")
 MAN_END
 
 MAN_BEGIN (L"Intensity", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}.")
+INTRO (L"One of the @@types of objects@ in Praat.")
 NORMAL (L"An Intensity object represents an intensity contour at linearly spaced time points "
 	"%t__%i_ = %t__1_ + (%i \\-- 1) %dt, with values in dB SPL, i.e. dB relative to 2\\.c10^^-5^ Pascal, "
 	"which is the normative auditory threshold for a 1000-Hz sine wave.")
@@ -601,7 +601,7 @@ MAN_BEGIN (L"Intensity: Get value at time...", L"ppgb", 20030916)
 INTRO (L"A @query to the selected @Intensity object.")
 ENTRY (L"Return value")
 NORMAL (L"the intensity (in dB) at a specified time. If %time is outside the frames of the Intensity, the result is 0.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%Time (s)")
 DEFINITION (L"the time at which the value is to be evaluated.")
 TAG (L"%%Interpolation")
@@ -647,7 +647,7 @@ NORMAL (L"For all the times of the points in the TextTier, an intensity is compu
 MAN_END
 
 MAN_BEGIN (L"IntensityTier", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. "
+INTRO (L"One of the @@types of objects@ in Praat. "
 	"An IntensityTier object represents a time-stamped intensity contour, i.e., it contains a series of (%time, %intensity) points. "
 	"The intensity values are in dB.")
 NORMAL (L"For examples, see @@Source-filter synthesis@.")
@@ -679,7 +679,7 @@ MAN_END
 
 MAN_BEGIN (L"IntensityTier: Add point...", L"ppgb", 20010410)
 INTRO (L"A command to add a point to each selected @IntensityTier.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%Time (s)")
 DEFINITION (L"the time at which a point is to be added.")
 TAG (L"%Intensity (dB)")
@@ -701,7 +701,7 @@ INTRO (L"One of the @editors in the Praat program, for viewing and editing an @I
 MAN_END
 
 MAN_BEGIN (L"Keyboard shortcuts", L"ppgb", 20071016)
-INTRO (L"A way to accelerate the control of @Editors in P\\s{RAAT}.")
+INTRO (L"A way to accelerate the control of @Editors in Praat.")
 ENTRY (L"Purpose")
 NORMAL (L"to choose a menu command with the keyboard. All of these commands can also be chosen "
 	"from a menu.")
@@ -877,7 +877,7 @@ NORMAL (L"Beware of the following pitfall: because of the nature of scripts, you
 MAN_END
 
 MAN_BEGIN (L"Manipulation", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}, for changing the pitch and duration contours of a sound.")
+INTRO (L"One of the @@types of objects@ in Praat, for changing the pitch and duration contours of a sound.")
 ENTRY (L"Inside a manipulation object")
 NORMAL (L"With @Inspect, you will see the following attributes:")
 TAG (L"%%timeStep%")
@@ -956,7 +956,7 @@ INTRO (L"A command to replace the original sound in the selected @Manipulation o
 MAN_END
 
 MAN_BEGIN (L"ManipulationEditor", L"ppgb", 20030316)
-	INTRO (L"One of the @Editors in P\\s{RAAT}, for viewing and manipulating a @Manipulation object.")
+	INTRO (L"One of the @Editors in Praat, for viewing and manipulating a @Manipulation object.")
 ENTRY (L"Objects")
 	NORMAL (L"The editor shows:")
 	LIST_ITEM (L"\\bu The original @Sound.")
@@ -1007,7 +1007,7 @@ ENTRY (L"Stylization")
 MAN_END
 
 MAN_BEGIN (L"Matrix", L"ppgb", 20030216)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. "
+INTRO (L"One of the @@types of objects@ in Praat. "
 	"A Matrix object represents a function %z (%x, %y) "
 	"on the domain [%x__%min_, %x__%max_] \\xx [%y__%min_, %y__%max_]. "
 	"The domain has been sampled in the %x and %y directions "
@@ -1079,7 +1079,7 @@ MAN_END
 
 MAN_BEGIN (L"Matrix: Draw as squares...", L"ppgb", 19980319)
 INTRO (L"A command to draw a @Matrix object into the @@Picture window@.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%Xmin, %Xmax")
 DEFINITION (L"the windowing domain in the %x direction. Elements outside will not be drawn. "
 	"%Autowindowing: if (%Xmin \\>_ %Xmax), the entire %x domain [%x__%min_, %x__%max_] of the Matrix is used.")
@@ -1153,7 +1153,7 @@ Dit staat allemaal in de on-line handleiding, dus je hoeft niet te gokken!
 
 MAN_BEGIN (L"Matrix: Set value...", L"ppgb", 19980319)
 INTRO (L"A command to change the value of one cell in each selected @Matrix object.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Row number")
 DEFINITION (L"the number of the row of the cell whose value you want to change.")
 TAG (L"%%Column number")
@@ -1315,7 +1315,7 @@ INTRO (L"The title of a submenu of the @@dynamic menu@ for many object types. "
 MAN_END
 
 MAN_BEGIN (L"PairDistribution", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. A "
+INTRO (L"One of the @@types of objects@ in Praat. A "
 	"PairDistribution object represents the relative probabilities with which "
 	"the specified pairs of strings occur.")
 ENTRY (L"Class description")
@@ -1332,7 +1332,7 @@ MAN_END
 MAN_BEGIN (L"PairDistribution: To Stringses...", L"ppgb", 20030916)
 INTRO (L"A command to generate a number of string pairs from the selected @PairDistribution object. "
 	"This command will create two aligned @Strings objects of equal size.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%Number (standard: 1000)")
 DEFINITION (L"the number of the strings in either resulting Strings object.")
 TAG (L"%%Name of first Strings% (standard: \"input\")")
@@ -1353,13 +1353,13 @@ FORMULA (L"atma,  ampa,  ampa,  atma,  atma,  ampa,  anpa,  ampa,  ampa,  atma, 
 MAN_END
 
 MAN_BEGIN (L"ParamCurve", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}.")
+INTRO (L"One of the @@types of objects@ in Praat.")
 NORMAL (L"An object of class #ParamCurve represents a sequence of time-stamped points (%x (%%t__i_), %y (%%t__i_)) "
 	"in a two-dimensional space.")
 MAN_END
 
 MAN_BEGIN (L"PointEditor", L"ppgb", 20030316)
-INTRO (L"One of the @Editors in P\\s{RAAT}, for viewing and manipulating a @PointProcess object, "
+INTRO (L"One of the @Editors in Praat, for viewing and manipulating a @PointProcess object, "
 	"which is optionally shown together with a @Sound object.")
 ENTRY (L"Objects")
 NORMAL (L"The editor shows:")
@@ -1379,7 +1379,7 @@ NORMAL (L"To remove one or more points, "
 MAN_END
 
 MAN_BEGIN (L"PointProcess", L"ppgb", 20030521)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}.")
+INTRO (L"One of the @@types of objects@ in Praat.")
 NORMAL (L"A PointProcess object represents a %%point process%, "
 	"which is a sequence of %points %t__%i_ in time, defined on a domain [%t__%min_, %t__%max_]. "
 	"The index %i runs from 1 to the number of points. The points are sorted by time, i.e. %t__%i+1_ > %t__%i_.")
@@ -1513,7 +1513,7 @@ FORMULA (L"%jitter = \\su__%i=2_^^%N-1^ |2%T__%i_ - %T__%i-1_ - %T__%i+1_|  /  \
 NORMAL (L"where %T__%i_ is the %%i%th interval and %N is the number of intervals. "
 	"If no sequences of three intervals can be found whose durations "
 	"are between %%Shortest period% and %%Longest period%, the result is @undefined.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Shortest period% (seconds)")
 DEFINITION (L"the shortest possible interval that will be considered. For intervals %T__%i_ shorter than this, "
 	"the (%i-1)st, %%i%th, and (%i+1)st terms in the formula are taken as zero. "
@@ -1584,7 +1584,7 @@ MAN_END
 
 MAN_BEGIN (L"PointProcess: Remove point...", L"ppgb", 20021212)
 INTRO (L"A command to remove a point from every selected @PointProcess.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%Index")
 DEFINITION (L"the index of the point that is to be removed.")
 ENTRY (L"Behaviour")
@@ -1594,7 +1594,7 @@ MAN_END
 
 MAN_BEGIN (L"PointProcess: Remove point near...", L"ppgb", 20021212)
 INTRO (L"A command to remove a point from every selected @PointProcess.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%Time (seconds)")
 DEFINITION (L"the time around which a point is to be removed.")
 ENTRY (L"Behaviour")
@@ -1604,7 +1604,7 @@ MAN_END
 
 MAN_BEGIN (L"PointProcess: Remove points...", L"ppgb", 20021212)
 INTRO (L"A command to remove a range of points from every selected @PointProcess.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%From index% (\\>_ 1)")
 DEFINITION (L"the first index of the range of points that are to be removed.")
 TAG (L"%%To index%")
@@ -1615,7 +1615,7 @@ MAN_END
 
 MAN_BEGIN (L"PointProcess: Remove points between...", L"ppgb", 20021212)
 INTRO (L"A command to remove a range of points from every selected @PointProcess.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%From time% (seconds)")
 DEFINITION (L"the start of the domain from which all points are to be removed.")
 TAG (L"%%To time% (seconds)")
@@ -1763,7 +1763,7 @@ SCRIPT (4.5, 2.5,
 NORMAL (L"These curves have moved 2.646 percent of a period to the right. At time 1, "
 	"the glottal flow curve turns from a convex polynomial into a concave exponential, "
 	"and the derivative still has its minimum there.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Sampling frequency")
 DEFINITION (L"the sampling frequency of the resulting Sound object, e.g. 44100 Hertz.")
 TAG (L"%%Adaptation factor")
@@ -1783,7 +1783,7 @@ INTRO (L"A command to convert every selected @PointProcess into a @Sound.")
 ENTRY (L"Algorithm")
 NORMAL (L"A pulse is generated at every point in the point process. This pulse is filtered at the Nyquist frequency "
 	"of the resulting #Sound by converting it into a sampled #sinc function.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Sampling frequency")
 DEFINITION (L"the sampling frequency of the resulting Sound object, e.g. 44100 Hertz.")
 TAG (L"%%Adaptation factor")
@@ -1829,7 +1829,7 @@ NORMAL (L"The times of all the points are trivially copied, and so is the time d
 MAN_END
 
 MAN_BEGIN (L"Polygon", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}.")
+INTRO (L"One of the @@types of objects@ in Praat.")
 NORMAL (L"A Polygon object represents a sequence of points (%%x__i_, %%y__i_) in a two-dimensional space.")
 MAN_END
 
@@ -1853,11 +1853,11 @@ INTRO (L"A command to read a @Strings object from a simple text file. "
 	"Each line is read as a separate string. See @Strings for an example.")
 MAN_END
 
-MAN_BEGIN (L"Sound: To Intensity...", L"ppgb", 20050830)
+MAN_BEGIN (L"Sound: To Intensity...", L"ppgb", 20100605)
 INTRO (L"A command to create an @Intensity object from every selected @Sound.")
 ENTRY (L"Settings")
 TAG (L"%%Minimum pitch% (Hz)")
-DEFINITION (L"specifies the minimum periodicity frequency in your signal. If you set the minimum pitch too high, "
+DEFINITION (L"the minimum periodicity frequency in your signal. If you set it too high, "
 	"you will end up with a pitch-synchronous intensity modulation. If you set it too low, "
 	"your intensity contour may appear smeared, so you should set it as high as allowed by the signal "
 	"if you want a sharp contour.")
@@ -1869,7 +1869,7 @@ DEFINITION (L"See @@Intro 6.2. Configuring the intensity contour@.")
 ENTRY (L"Algorithm")
 NORMAL (L"The values in the sound are first squared, then convolved with a Gaussian analysis window (Kaiser-20; sidelobes below -190 dB). "
 	"The effective duration of this analysis window is 3.2 / (%minimum_pitch), which will guarantee that a periodic signal is analysed as having a "
-	"pitch-synchronous intensity ripple not greater than our 4-byte floating-point precision (i.e., < 0.00001 dB).")
+	"pitch-synchronous intensity ripple not greater than 0.00001 dB.")
 MAN_END
 
 MAN_BEGIN (L"Sound & IntensityTier: Multiply", L"ppgb", 20000724)
@@ -1879,7 +1879,7 @@ NORMAL (L"The resulting Sound equals the original sound, multiplied by a linear 
 MAN_END
 
 MAN_BEGIN (L"Strings", L"ppgb", 20041110)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. Represents an ordered list of strings.")
+INTRO (L"One of the @@types of objects@ in Praat. Represents an ordered list of strings.")
 ENTRY (L"Creation")
 NORMAL (L"The difficult way is to create a #Strings object from a generic Praat text file:")
 CODE (L"\"ooTextFile\"")
@@ -1940,11 +1940,11 @@ CODE (L"\"tot morgen\"    2")
 MAN_END
 
 MAN_BEGIN (L"Table", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}. See the @Statistics tutorial.")
+INTRO (L"One of the @@types of objects@ in Praat. See the @Statistics tutorial.")
 MAN_END
 
 MAN_BEGIN (L"TableOfReal", L"ppgb", 20030316)
-INTRO (L"One of the @@types of objects@ in P\\s{RAAT}.")
+INTRO (L"One of the @@types of objects@ in Praat.")
 NORMAL (L"A TableOfReal object contains a number of %cells. Each cell belongs to a %row and a %column. "
 	"For instance, a TableOfReal with 10 rows and 3 columns has 30 cells.")
 NORMAL (L"Each row and each column may be labeled with a %title.")
@@ -1978,7 +1978,7 @@ MAN_END
 
 MAN_BEGIN (L"TableOfReal: Set value...", L"ppgb", 19980105)
 INTRO (L"A command to change the value of one table cell in each selected @TableOfReal object.")
-ENTRY (L"Arguments")
+ENTRY (L"Settings")
 TAG (L"%%Row number")
 DEFINITION (L"the number of the row of the cell whose value you want to change.")
 TAG (L"%%Column number")

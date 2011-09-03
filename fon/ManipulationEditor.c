@@ -87,17 +87,15 @@ void ManipulationEditor_prefs (void) {
 }
 
 static void updateMenus (ManipulationEditor me) {
-	#if motif
-	XmToggleButtonSetState (my synthPulsesButton, my synthesisMethod == Manipulation_PULSES, False);
-	XmToggleButtonSetState (my synthPulsesHumButton, my synthesisMethod == Manipulation_PULSES_HUM, False);
-	XmToggleButtonSetState (my synthPulsesLpcButton, my synthesisMethod == Manipulation_PULSES_LPC, False);
-	XmToggleButtonSetState (my synthPitchButton, my synthesisMethod == Manipulation_PITCH, False);
-	XmToggleButtonSetState (my synthPitchHumButton, my synthesisMethod == Manipulation_PITCH_HUM, False);
-	XmToggleButtonSetState (my synthPulsesPitchButton, my synthesisMethod == Manipulation_PULSES_PITCH, False);
-	XmToggleButtonSetState (my synthPulsesPitchHumButton, my synthesisMethod == Manipulation_PULSES_PITCH_HUM, False);
-	XmToggleButtonSetState (my synthOverlapAddButton, my synthesisMethod == Manipulation_OVERLAPADD, False);
-	XmToggleButtonSetState (my synthPitchLpcButton, my synthesisMethod == Manipulation_PITCH_LPC, False);
-	#endif
+	GuiMenuItem_check (my synthPulsesButton, my synthesisMethod == Manipulation_PULSES);
+	GuiMenuItem_check (my synthPulsesHumButton, my synthesisMethod == Manipulation_PULSES_HUM);
+	GuiMenuItem_check (my synthPulsesLpcButton, my synthesisMethod == Manipulation_PULSES_LPC);
+	GuiMenuItem_check (my synthPitchButton, my synthesisMethod == Manipulation_PITCH);
+	GuiMenuItem_check (my synthPitchHumButton, my synthesisMethod == Manipulation_PITCH_HUM);
+	GuiMenuItem_check (my synthPulsesPitchButton, my synthesisMethod == Manipulation_PULSES_PITCH);
+	GuiMenuItem_check (my synthPulsesPitchHumButton, my synthesisMethod == Manipulation_PULSES_PITCH_HUM);
+	GuiMenuItem_check (my synthOverlapAddButton, my synthesisMethod == Manipulation_OVERLAPADD);
+	GuiMenuItem_check (my synthPitchLpcButton, my synthesisMethod == Manipulation_PITCH_LPC);
 }
 
 /*
@@ -933,13 +931,13 @@ static void draw (ManipulationEditor me) {
 	if (hasDurationArea) drawDurationArea (me, ydurationmin, ydurationmax);
 
 	Graphics_setWindow (my graphics, 0.0, 1.0, 0.0, 1.0);
-	Graphics_setGrey (my graphics, 0.75);
+	Graphics_setGrey (my graphics, 0.85);
 	Graphics_fillRectangle (my graphics, -0.001, 1.001, ypitchmax, ysoundmin);
 	Graphics_setGrey (my graphics, 0.00);
 	Graphics_line (my graphics, 0, ysoundmin, 1, ysoundmin);
 	Graphics_line (my graphics, 0, ypitchmax, 1, ypitchmax);
 	if (hasDurationArea) {
-		Graphics_setGrey (my graphics, 0.75);
+		Graphics_setGrey (my graphics, 0.85);
 		Graphics_fillRectangle (my graphics, -0.001, 1.001, ydurationmax, ypitchmin);
 		Graphics_setGrey (my graphics, 0.00);
 		Graphics_line (my graphics, 0, ypitchmin, 1, ypitchmin);
@@ -1033,7 +1031,6 @@ static int clickPitch (ManipulationEditor me, double xWC, double yWC, int shiftK
 	  * Since some systems do double buffering,
 	  * the undrawing at the old position and redrawing at the new have to be bracketed by Graphics_mouseStillDown ().
 	  */
-	#if motif
 	Graphics_xorOn (my graphics, Graphics_MAGENTA);
 	drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
 	dragHorizontal = my pitchTier.draggingStrategy != kManipulationEditor_draggingStrategy_VERTICAL &&
@@ -1048,7 +1045,6 @@ static int clickPitch (ManipulationEditor me, double xWC, double yWC, int shiftK
 		drawWhileDragging (me, xWC_new, yWC_new, ifirstSelected, ilastSelected, dt, df);
 	}
 	Graphics_xorOff (my graphics);
-	#endif
 
 	/*
 	 * Dragged inside window?
@@ -1184,7 +1180,6 @@ static int clickDuration (ManipulationEditor me, double xWC, double yWC, int shi
 	/*
 	 * Drag.
 	 */
-	#if motif
 	Graphics_xorOn (my graphics, Graphics_MAGENTA);
 	drawDurationWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
 	while (Graphics_mouseStillDown (my graphics)) {
@@ -1196,7 +1191,6 @@ static int clickDuration (ManipulationEditor me, double xWC, double yWC, int shi
 		drawDurationWhileDragging (me, xWC_new, yWC_new, ifirstSelected, ilastSelected, dt, df);
 	}
 	Graphics_xorOff (my graphics);
-	#endif
 
 	/*
 	 * Dragged inside window?

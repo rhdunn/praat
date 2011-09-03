@@ -1,8 +1,0 @@
-"Praat chronological TextGrid text file"
-0 1   ! Time domain.
-1   ! Number of tiers.
-"IntervalTier" "test" 0 1
-1 0 0.5051115439848715
-"ad""ta"""
-1 0.5051115439848715 1
-"sd"

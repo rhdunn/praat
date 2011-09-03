@@ -23,9 +23,86 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (L"What's new?", L"ppgb", 20100311)
+MAN_BEGIN (L"What's new?", L"ppgb", 20100726)
 INTRO (L"Latest changes in Praat.")
 /*LIST_ITEM (L"\\bu Manual page about @@drawing a vowel triangle@.")*/
+NORMAL (L"##5.1.42# (26 July 2010)")
+LIST_ITEM (L"\\bu Scripting: allow file selector windows; see @@Scripting 6.6. Controlling the user@.")
+LIST_ITEM (L"\\bu Linux: multiple file selection.")
+NORMAL (L"##5.1.41# (15 July 2010)")
+LIST_ITEM (L"\\bu OTGrammar: ##Compare candidates...#")
+LIST_ITEM (L"\\bu GTK: support for the Doulos SIL and Charis SIL fonts.")
+LIST_ITEM (L"\\bu GTK: working vowel editor.")
+LIST_ITEM (L"\\bu Vowel editor: repaired memory leak.")
+//LIST_ITEM (L"\\bu GTK: Picture window: front when drawing.")
+//LIST_ITEM (L"\\bu GTK: correct scrolling in manuals.")
+NORMAL (L"##5.1.40# (13 July 2010)")
+LIST_ITEM (L"\\bu GTK: working Demo window (drawing, clicks, keys).")
+LIST_ITEM (L"\\bu GTK: pause forms.")
+LIST_ITEM (L"\\bu GTK: manual pages: receive a white background, for compatibility with dark-background themes.")
+LIST_ITEM (L"\\bu GTK: in settings windows, better alignment of labels to radio groups.")
+LIST_ITEM (L"\\bu GTK: rotated text.")
+NORMAL (L"##5.1.39# (10 July 2010)")
+LIST_ITEM (L"\\bu GTK beta version.")
+LIST_ITEM (L"\\bu Linux: made ##Sound: Record fixed time...# work correctly (the sampling frequency was wrong).")
+LIST_ITEM (L"\\bu GTK: list of objects: multiple selection, working Rename button.")
+LIST_ITEM (L"\\bu GTK: running a script no longer deselects all objects at the start.")
+LIST_ITEM (L"\\bu GTK: working Buttons editor.")
+LIST_ITEM (L"\\bu GTK: correctly laid out settings windows.")
+NORMAL (L"##5.1.38# (2 July 2010)")
+LIST_ITEM (L"\\bu Linux: made ##Sound: Record fixed time...# work correctly (the sampling frequency was wrong).")
+LIST_ITEM (L"\\bu Mac: repaired a bug introduced in 5.1.35 that could cause Praat to crash if neither Doulos SIL nor Charis SIL were installed.")
+LIST_ITEM (L"\\bu Mac: correct live scrolling in Picture window and DataEditor.")
+NORMAL (L"##5.1.37# (23 June 2010)")
+LIST_ITEM (L"\\bu PitchTier window and similar windows: can drag multiple points simultaneously.")
+LIST_ITEM (L"\\bu Table: %t-tests report the number of degrees of freedom.")
+LIST_ITEM (L"\\bu GTK: correct progress bar again.")
+LIST_ITEM (L"\\bu GTK: correct behaviour of Synth menu in manipulation window.")
+NORMAL (L"##5.1.36# (18 June 2010)")
+LIST_ITEM (L"\\bu Mac: live scrolling.")
+LIST_ITEM (L"\\bu Demo window: the Demo window can now run from the command line.")
+LIST_ITEM (L"\\bu Motif: corrected a bug introduced in 5.1.33 whereby things in the Picture window could be placed incorrectly.")
+LIST_ITEM (L"\\bu GTK: script window accepts Unicode again.")
+NORMAL (L"##5.1.35# (10 June 2010)")
+LIST_ITEM (L"\\bu TextGrid window: removed a very old bug that could lead to reversed intervals and to crashes when you inserted a boundary after using Shift-arrow and Command-arrow.")
+LIST_ITEM (L"\\bu Graphics: Praat now uses Doulos SIL instead of Charis SIL if your font setting is \"Times\" and the font is nonbold and nonitalic, "
+	"because Doulos SIL matches Times New Roman better.")
+LIST_ITEM (L"\\bu kNN: made Ola S\\o\"der's k-nearest-neighbours classification compatible with Windows.")
+NORMAL (L"##5.1.34# (31 May 2010)")
+LIST_ITEM (L"\\bu Sound window: corrected a bug that caused Praat to crash if the analysis window was shorter than 2 samples.")
+LIST_ITEM (L"\\bu GTK: scrolling in the Info window and script window.")
+LIST_ITEM (L"\\bu GTK: script editor: implemented searching, replacing, and change dialogs.")
+NORMAL (L"##5.1.33# (24 May 2010)")
+LIST_ITEM (L"\\bu GTK alpha version.")
+LIST_ITEM (L"\\bu Abolished resolution independence: the Sound window now looks the same on all platforms, "
+	"and the Demo window has the same relative font size on your screen and on the video projector.")
+LIST_ITEM (L"\\bu GTK: support for asynchronous audio output.")
+LIST_ITEM (L"\\bu GTK: sound plays once rather than three times in Sound and other windows.")
+LIST_ITEM (L"\\bu GTK: can click more than once in the manual.")
+LIST_ITEM (L"\\bu GTK: correct pink selections in Sound and other windows.")
+LIST_ITEM (L"\\bu GTK: correct dragging in TextGrid, Manipulation, and tier windows.")
+LIST_ITEM (L"\\bu GTK: a working TextGrid window.")
+LIST_ITEM (L"\\bu GTK: no automatic triple click in the manual (and many other windows).")
+LIST_ITEM (L"\\bu GTK: moving cursor while sound is playing in Sound and other windows.")
+LIST_ITEM (L"\\bu GTK: correct colours of the rectangles in Sound and other windows.")
+LIST_ITEM (L"\\bu GTK: a working Group button.")
+LIST_ITEM (L"\\bu GTK: correct font menus, font size menus, colour menus, line type menus.")
+LIST_ITEM (L"\\bu GTK: scrolling in the manual (and many other windows).")
+LIST_ITEM (L"\\bu GTK: erase old texts in manual windows.")
+LIST_ITEM (L"\\bu GTK: made Picture window come back when drawing.")
+LIST_ITEM (L"\\bu GTK: Info window is fronted automatically.")
+LIST_ITEM (L"\\bu GTK: support sendpraat.")
+NORMAL (L"##5.1.32# (30 April 2010)")
+LIST_ITEM (L"\\bu Scripting: command ##Expand include files#.")
+LIST_ITEM (L"\\bu Scripting: accept lines that start with non-breaking spaces (as may occur in scripts copied from the web manual).")
+LIST_ITEM (L"\\bu Sound files: accept MP3 files with extension written in capitals.")
+LIST_ITEM (L"\\bu Linux audio recording: corrected input choice (microphone, line).")
+NORMAL (L"##5.1.31# (4 April 2010)")
+LIST_ITEM (L"\\bu @@Sounds: Convolve...@, @@Sounds: Cross-correlate...@, @@Sound: Autocorrelate...@, with full documentation.")
+LIST_ITEM (L"\\bu More query commands for IntensityTier.")
+NORMAL (L"##5.1.30# (25 March 2010)")
+LIST_ITEM (L"\\bu Scripting: $$createDirectory ()$ can now work with absolute paths.")
+LIST_ITEM (L"\\bu PointProcess: made it impossible to add a point where there is already a point.")
 NORMAL (L"##5.1.29# (11 March 2010)")
 LIST_ITEM (L"\\bu Full support for unicode values above 0xFFFF on Macintosh.")
 NORMAL (L"##5.1.28# (10 March 2010)")
@@ -601,7 +678,7 @@ NORMAL (L"##4.3.22# (8 September 2005)")
 LIST_ITEM (L"\\bu Macintosh: variable scroll bar size (finally, 7 years since System 8.5).")
 NORMAL (L"##4.3.21# (1 September 2005)")
 LIST_ITEM (L"\\bu Macintosh: error message if any of the fonts Times, Helvetica, Courier and Symbol are unavailable at start-up.")
-LIST_ITEM (L"\\bu Renamed \"Control\" menu to \"Praat\" on all systems (as on the Mac), "
+LIST_ITEM (L"\\bu Renamed \"Control\" menu to \"Praat\" on all platforms (as on the Mac), "
 	"to reflect the fact that no other programs than Praat have used the Praat shell for five years.")
 LIST_ITEM (L"\\bu Script editor: Undo and Redo buttons (only on the Mac for now).")
 LIST_ITEM (L"\\bu Manual: corrected a bug that sometimes caused Praat to crash when trying to print.")
@@ -878,7 +955,7 @@ ENTRY (L"Praat 3.9, 18 October 2000")
 	LIST_ITEM (L"\\bu SoundRecorder writes to 16-bit AIFC, WAV, NeXT/Sun, and NIST mono and stereo files.")
 	LIST_ITEM (L"\\bu Sound & LongSound: write part or whole to mono or stereo audio file.")
 	LIST_ITEM (L"\\bu Read Sound from raw Alaw file.")
-	LIST_ITEM (L"\\bu Artword & Speaker (& Sound) movie: real time on all systems.")
+	LIST_ITEM (L"\\bu Artword & Speaker (& Sound) movie: real time on all platforms.")
 	NORMAL (L"Scripting:")
 	LIST_ITEM (L"\\bu @@Formulas 4. Mathematical functions@: added statistical functions: %\\ci^2, Student T, Fisher F, binomial, "
 		"and their inverse functions.")
@@ -907,7 +984,7 @@ ENTRY (L"Praat 3.8, 12 January 1999")
 	NORMAL (L"Phonology library")
 	LIST_ITEM (L"\\bu 25-page OT learning tutorial.")
 	LIST_ITEM (L"\\bu Made the OT learner 14 times as fast.")
-	NORMAL (L"Systems")
+	NORMAL (L"Platforms")
 	LIST_ITEM (L"\\bu May 23: Windows beta version.")
 	LIST_ITEM (L"\\bu April 24: Windows alpha version.")
 	NORMAL (L"Files")
@@ -989,7 +1066,7 @@ ENTRY (L"Praat 3.6, 27 October 1997")
 	NORMAL (L"Scripting:")
 	LIST_ITEM (L"\\bu Programmable @@Praat script@ language: variables, expressions, control structures, "
 		"procedures, complete dialog box, exchange of information with Info window, continuation lines.")
-	LIST_ITEM (L"\\bu Use system-independent relative file paths in @@Praat script@.")
+	LIST_ITEM (L"\\bu Use platform-independent relative file paths in @@Praat script@.")
 	LIST_ITEM (L"\\bu @ScriptEditor: Run selection.")
 	NORMAL (L"Graphics:")
 	LIST_ITEM (L"\\bu Rotation and scaling while printing the @@Picture window@.")
@@ -1097,13 +1174,6 @@ ENTRY (L"To do")
 	LIST_ITEM (L"\\bu Improve scrolling and add selection in hyperpages.")
 	LIST_ITEM (L"\\bu Segment spectrograph?") /* Ton Wempe, Jul 16 1996 */
 	LIST_ITEM (L"\\bu Phoneme-to-articulation conversion??") /* Mirjam Ernestus, Jul 1 1996 */
-ENTRY (L"Known bugs in all editions")
-	LIST_ITEM (L"\\bu (small) No navigation by tabs.")
-	LIST_ITEM (L"\\bu (small) Tabs in texts should be considered spaces.")
-ENTRY (L"Known bugs in the Macintosh version")
-	LIST_ITEM (L"\\bu (small) Pause window modal.")
-	LIST_ITEM (L"\\bu (small) Cascade buttons grey after suspend+resume during progress window.")
-	LIST_ITEM (L"\\bu Movie window cannot be closed.")
 ENTRY (L"Known bugs in the Windows version")
 	LIST_ITEM (L"\\bu Cannot stand infinitesimal zooming in SpectrogramEditor.")
 	LIST_ITEM (L"\\bu Clipboards with greys sometimes become black-and-white after use of colour.")
@@ -1132,7 +1202,7 @@ MAN_END
 >lines (and is WAY too wide).
 */
  
-MAN_BEGIN (L"Acknowledgments", L"ppgb", 20100225)
+MAN_BEGIN (L"Acknowledgments", L"ppgb", 20100523)
 NORMAL (L"The following people contributed source code to Praat:")
 LIST_ITEM (L"Paul Boersma: user interface, graphics, @printing, @@Intro|sound@, "
 	"@@Intro 3. Spectral analysis|spectral analysis@, @@Intro 4. Pitch analysis|pitch analysis@, "
@@ -1145,11 +1215,11 @@ LIST_ITEM (L"David Weenink: "
 	"@@feedforward neural networks@, @@principal component analysis@, @@multidimensional scaling@, @@discriminant analysis@, @LPC, "
 	"@VowelEditor, "
 	"and adaptation of GSL, LAPACK, fftpack, and regular expressions.")
-LIST_ITEM (L"Stefan de Konink and Franz Brau\\sse: port to GTK.")
+LIST_ITEM (L"Stefan de Konink and Franz Brau\\sse: major help in port to GTK.")
 LIST_ITEM (L"Erez Volk: adaptation of FLAC and MAD.")
 LIST_ITEM (L"Ola S\\o\"der: @@kNN classifiers@, @@k-means clustering@.")
 LIST_ITEM (L"Rafael Laboissi\\e`re: adaptation of XIPA.")
-LIST_ITEM (L"Darryl Purnell from Pretoria created the first version of audio for Praat for Linux.")
+LIST_ITEM (L"Darryl Purnell created the first version of audio for Praat for Linux.")
 NORMAL (L"We included the following freely available software libraries in Praat (sometimes with adaptations):")
 LIST_ITEM (L"IPA font for Unix (XIPA) by Fukui Rei (GPL).")
 LIST_ITEM (L"GNU Scientific Library (GSL) by Gerard Jungman and Brian Gough (GPL).")
@@ -1162,7 +1232,7 @@ LIST_ITEM (L"Public domain LAPACK by Univ. of Tennessee, Univ. of California Ber
 	"Courant Institute, Argonne National Lab, and Rice University.")
 LIST_ITEM (L"Regular expressions by Henry Spencer, Mark Edel, Christopher Conrad, Eddy De Greef (GPL).")
 NORMAL (L"For technical support and advice:")
-LIST_ITEM (L"Ton Wempe, Dirk-Jan Vet.")
+LIST_ITEM (L"Ton Wempe, Dirk Jan Vet.")
 NORMAL (L"For their financial support during the development of Praat:")
 LIST_ITEM (L"Netherlands Organization for Scientific Research (NWO) (1996\\--1999).")
 LIST_ITEM (L"Nederlandse Taalunie (2006\\--2008).")
@@ -1281,7 +1351,7 @@ NORMAL (L"#Question: what algorithm is used for formant analysis?")
 NORMAL (L"Answer: see @@Sound: To Formant (burg)...@.")
 MAN_END
 
-MAN_BEGIN (L"FAQ: How to cite Praat", L"ppgb", 20050227)
+MAN_BEGIN (L"FAQ: How to cite Praat", L"ppgb", 20100401)
 NORMAL (L"#Question: how do I cite Praat in my articles?")
 NORMAL (L"Answer: nowadays most journals allow you to cite computer programs and web sites. "
 	"The style approved by the American Psychological Association, "
@@ -1290,8 +1360,8 @@ NORMAL (L"Answer: nowadays most journals allow you to cite computer programs and
 #define xstr(s) str(s)
 #define str(s) #s
 NORMAL (L"Boersma, Paul & Weenink, David (" xstr(PRAAT_YEAR) "). "
-	"Praat: doing phonetics by computer (Version " xstr(PRAAT_VERSION_STR) ") [Computer program]. "
-	"Retrieved " xstr(PRAAT_MONTH) " " xstr(PRAAT_DAY) ", " xstr(PRAAT_YEAR) ", from http://www.praat.org/")
+	"Praat: doing phonetics by computer [Computer program]. "
+	"Version " xstr(PRAAT_VERSION_STR) ", retrieved " xstr(PRAAT_DAY) " " xstr(PRAAT_MONTH) " " xstr(PRAAT_YEAR) " from http://www.praat.org/")
 NORMAL (L"If the journal does not allow you to cite a web site, then try:")
 NORMAL (L"Boersma, Paul (2001). Praat, a system for doing phonetics by computer. "
 	"%%Glot International% ##5:9/10#, 341-345.")
@@ -1392,8 +1462,8 @@ MAN_BEGIN (L"File menu", L"ppgb", 20021204)
 INTRO (L"One of the menus in all @editors, in the @manual, and in the @@Picture window@.")
 MAN_END
 
-MAN_BEGIN (L"Filtering", L"ppgb", 20080427)
-INTRO (L"This tutorial describes the use of filtering techniques in P\\s{RAAT}. "
+MAN_BEGIN (L"Filtering", L"ppgb", 20100324)
+INTRO (L"This tutorial describes the use of filtering techniques in Praat. "
 	"It assumes you are familiar with the @Intro.")
 ENTRY (L"Frequency-domain filtering")
 NORMAL (L"Modern computer techniques make possible an especially simple batch filtering method: "
@@ -1422,7 +1492,7 @@ LIST_ITEM (L"\\bu @@Sound: De-emphasize (in-line)...@")
 ENTRY (L"Convolution")
 NORMAL (L"A Finite Impulse Response (FIR) filter can be described as a sampled sound. "
 	"Filtering with such a filter amounts to a %#convolution of the original sound and the filter:")
-LIST_ITEM (L"\\bu @@Sounds: Convolve@")
+LIST_ITEM (L"\\bu @@Sounds: Convolve...@")
 ENTRY (L"Described elsewhere")
 NORMAL (L"Described in the @@Source-filter synthesis@ tutorial:")
 LIST_ITEM (L"\\bu @@Sound & Formant: Filter@")
@@ -1494,7 +1564,7 @@ NORMAL (L"Changes that you make to the data with a Data Editor, "
 MAN_END
 
 MAN_BEGIN (L"Intro", L"ppgb", 20090511)
-INTRO (L"This is an introductory tutorial to P\\s{RAAT}, a computer program "
+INTRO (L"This is an introductory tutorial to Praat, a computer program "
 	"with which you can analyse, synthesize, and manipulate speech, "
 	"and create high-quality pictures for your articles and thesis. "
 	"You are advised to work through all of this tutorial.")
@@ -1616,7 +1686,7 @@ MAN_END
 MAN_BEGIN (L"Intro 1.2. Reading a sound from disk", L"ppgb", 20041126)
 INTRO (L"Apart from recording a new sound from a microphone, you could read an existing sound file from your disk.")
 NORMAL (L"With @@Read from file...@ from the Read menu, "
-	"P\\s{RAAT} will be able to read most standard types of sound files, e.g. WAV files. "
+	"Praat will be able to read most standard types of sound files, e.g. WAV files. "
 	"They will appear as @Sound objects in the Object window. For instance, if you open the file ##hello.wav#, "
 	"an object called \"Sound hello\" will appear in the list.")
 NORMAL (L"If you do not have a sound file on your disk, you can download a WAV file (or so) from the Internet, "
@@ -1640,8 +1710,8 @@ MAN_BEGIN (L"Intro 2.1. Writing a sound to disk", L"ppgb", 20041126)
 INTRO (L"There are several ways to write a sound to disk.")
 NORMAL (L"First, the @@File menu@ of the @SoundRecorder window contains commands to save the left "
 	"channel, the right channel, or both channels of the recorded sound to any of four standard types "
-	"of sound files (WAV, AIFC, NeXT/Sun, NIST). These four file types are all equally good for P\\s{RAAT}: "
-	"P\\s{RAAT} will handle them equally well on every computer. The first three of these types will "
+	"of sound files (WAV, AIFC, NeXT/Sun, NIST). These four file types are all equally good for Praat: "
+	"Praat will handle them equally well on every computer. The first three of these types will "
 	"also be recognized by nearly all other sound-playing programs.")
 NORMAL (L"Then, once you have a @Sound object in the @@List of Objects@, "
 	"you can save it in several formats with the commands in the @@Write menu@. "
@@ -1703,8 +1773,8 @@ NORMAL (L"To see what time and frequency a certain part of the spectrogram is as
 	"for fricatives.")
 ENTRY (L"Hey, there are white vertical stripes at the edges!")
 NORMAL (L"This is normal. Spectral analysis requires an %%analysis window% of a certain duration. "
-	"For instance, if P\\s{RAAT} wants to know the spectrum at 1.342 seconds, it needs to include information "
-	"about the signal in a 10-milliseconds window around this time point, i.e., P\\s{RAAT} will use "
+	"For instance, if Praat wants to know the spectrum at 1.342 seconds, it needs to include information "
+	"about the signal in a 10-milliseconds window around this time point, i.e., Praat will use "
 	"signal information about all times between 1.337 and 1.347 seconds. At the very edges of the sound, "
 	"this information is not available: "
 	"if the sound runs from 0 to 1.8 seconds, no spectrum can be computed between 0 and 0.005 "
@@ -1712,14 +1782,14 @@ NORMAL (L"This is normal. Spectral analysis requires an %%analysis window% of a 
 	"immediately when you open the sound, zoom in on the beginning or end of the sound.")
 NORMAL (L"When you zoom in on the middle of the sound (or anywhere not near the edges), the white stripes vanish. "
 	"Suddenly you see only the time stretch between 0.45 and 1.35 seconds, for instance. "
-	"But P\\s{RAAT} did not forget what the signal looks like just outside the edges of this time window. "
-	"To display a spectrogram from 0.45 to 1.35 seconds, P\\s{RAAT} will use information from the wave form "
+	"But Praat did not forget what the signal looks like just outside the edges of this time window. "
+	"To display a spectrogram from 0.45 to 1.35 seconds, Praat will use information from the wave form "
 	"between 0.445 and 1.355 seconds, and if this is available, you will see no white stripes at the edges of the window.")
 ENTRY (L"Hey, it changes when I scroll!")
 NORMAL (L"This is normal as well, especially for long windows. If your visible time window is 20 seconds long, "
 	"and the window takes up 1000 screen pixels horizontally, "
 	"then you might think that every one-pixel-wide vertical line should represent the spectrum of 20 milliseconds of sound. "
-	"But for reasons of computation speed, P\\s{RAAT} will only show the spectrum of the part of the sound "
+	"But for reasons of computation speed, Praat will only show the spectrum of the part of the sound "
 	"that lies around the centre of those 20 milliseconds, "
 	"not the average or sum of all the spectra in those 20 milliseconds. "
 	"This %undersampling of the underlying spectrogram is different from what happens in the drawing of the wave form, "
@@ -1792,12 +1862,12 @@ MAN_END
 MAN_BEGIN (L"Advanced spectrogram settings...", L"ppgb", 20070225)
 ENTRY (L"Optimization")
 TAG (L"%%Number of time steps%")
-DEFINITION (L"the maximum number of points along the time window for which P\\s{RAAT} has to compute "
+DEFINITION (L"the maximum number of points along the time window for which Praat has to compute "
 	"the spectrum. If your screen is not wider than 1200 pixels, then the standard of 1000 is "
 	"appropriate, since there is no point in computing more than one spectrum per one-pixel-wide vertical line. "
 	"If you have a really wide screen, you may see improvement if you raise this number to 1500.")
 TAG (L"%%Number of frequency steps%")
-DEFINITION (L"the maximum number of points along the frequency axis for which P\\s{RAAT} has to compute "
+DEFINITION (L"the maximum number of points along the frequency axis for which Praat has to compute "
 	"the spectrum. If your screen is not taller than 768 pixels, then the standard of 250 is "
 	"appropriate, since there is no point in computing more than one spectrum per one-pixel-height horizontal line. "
 	"If you have a really tall screen, you may see improvement if you raise this number.")
@@ -1842,7 +1912,7 @@ TAG (L"%%Autoscaling%")
 TAG (L"%%Maximum% (dB/Hz)")
 DEFINITION (L"all parts of the spectrogram that have a power above %maximum (after preemphasis) "
 	"will be drawn in black. The standard maximum is 100 dB/Hz, but if %autoscaling is on (which is the standard), "
-	"P\\s{RAAT} will use the maximum of the visible part of the spectrogram instead; "
+	"Praat will use the maximum of the visible part of the spectrogram instead; "
 	"this ensures that the window will always look well, but it also means that the blackness "
 	"of a certain part of the spectrogram will change as you scroll.")
 TAG (L"%%Preemphasis% (dB/octave)")
@@ -1903,35 +1973,35 @@ INTRO (L"With ##View spectral slice# from the #Spectrum menu in the @SoundEditor
 ENTRY (L"Spectral slice at the cursor")
 NORMAL (L"If you click anywhere in the wave form of the SoundEditor or TextGridEditor windows, "
 	"a cursor will appear at that time. If you then choose ##View spectral slice#, "
-	"P\\s{RAAT} will create a @Spectrum object named %slice in the Objects window and show it in a @SpectrumEditor window. "
+	"Praat will create a @Spectrum object named %slice in the Objects window and show it in a @SpectrumEditor window. "
 	"In this way, you can inspect the frequency contents of the signal around the cursor position.")
 ENTRY (L"Spectral slice from a selection")
 NORMAL (L"If you drag the mouse through the wave form of the SoundEditor or TextGridEditor windows, "
 	"a @@time selection@ will appear. If you then choose ##View spectral slice#, "
-	"P\\s{RAAT} will again create a @Spectrum object named %slice in the Objects window and show it in a @SpectrumEditor window. "
+	"Praat will again create a @Spectrum object named %slice in the Objects window and show it in a @SpectrumEditor window. "
 	"In this way, you can inspect the frequency contents of the signal in the selection.")
 MAN_END
 
 
 MAN_BEGIN (L"Intro 3.7. Configuring the spectral slice", L"ppgb", 20030316)
 ENTRY (L"Spectral slice at the cursor")
-NORMAL (L"What P\\s{RAAT} does precisely, depends on your Spectrogram settings. "
+NORMAL (L"What Praat does precisely, depends on your Spectrogram settings. "
 	"Suppose that the %%window length% setting is 0.005 seconds (5 milliseconds). "
-	"If the %%window shape% is not Gaussian, P\\s{RAAT} will extract the part of the sound "
+	"If the %%window shape% is not Gaussian, Praat will extract the part of the sound "
 	"that runs from 2.5 milliseconds before the cursor to 2.5 ms after the cursor. "
-	"P\\s{RAAT} then multiplies this 5 ms long signal by the window shape, then computes a spectrum "
+	"Praat then multiplies this 5 ms long signal by the window shape, then computes a spectrum "
 	"with the method of @@Sound: To Spectrum...@, which is put into the Objects window and opened in an editor window. "
-	"If the window shape is Gaussian, P\\s{RAAT} will extract a part of the sound "
+	"If the window shape is Gaussian, Praat will extract a part of the sound "
 	"that runs from 5 milliseconds before the cursor to 5 ms after the cursor. The spectrum will then be based "
 	"on a `physical' window length of 10 ms, although the `effective' window length is still 5 ms "
 	"(see @@Intro 3.2. Configuring the spectrogram@ for details).")
 ENTRY (L"Spectral slice from a selection")
-NORMAL (L"What P\\s{RAAT} does precisely, again depends on the %%window shape% of your Spectrogram settings. "
-	"Suppose that your selection is 50 ms long. P\\s{RAAT} will extract the entire selection, "
+NORMAL (L"What Praat does precisely, again depends on the %%window shape% of your Spectrogram settings. "
+	"Suppose that your selection is 50 ms long. Praat will extract the entire selection, "
 	"then multiply this 50 ms long signal by the window shape, then compute a spectrum, put it into the Objects window and open it an editor window. "
 	"This procedure is equivalent to choosing ##Extract windowed selection...# (with a %%relative duration% of 1.0), "
 	"followed by ##To Spectrum...# (with %fast switched on), followed by #Edit.")
-NORMAL (L"If the window is Gaussian, P\\s{RAAT} will still only use the selection, without doubling its duration. "
+NORMAL (L"If the window is Gaussian, Praat will still only use the selection, without doubling its duration. "
 	"This means that the spectrum that you see in this case will mainly be based on the centre half of the selection, "
 	"and the signal near the edges will be largely ignored.")
 MAN_END
@@ -1981,7 +2051,7 @@ NORMAL (L"For a male voice, you may want to set the floor to 75 Hz, and the ceil
 NORMAL (L"Here is why you have to supply these settings. If the pitch floor is 75 Hz, "
 	"the pitch analysis method requires a 40-millisecond analysis window, "
 	"i.e., in order to measure the F0 at a time of, say, 0.850 seconds, "
-	"P\\s{RAAT} needs to consider a part of the sound that runs from 0.830 to 0.870 seconds. "
+	"Praat needs to consider a part of the sound that runs from 0.830 to 0.870 seconds. "
 	"These 40 milliseconds correspond to 3 maximum pitch periods (3/75 = 0.040). "
 	"If you set the pitch floor down to 25 Hz, the analysis window will grow to 120 milliseconds "
 	"(which is again 3 maximum pitch periods), i.e., all times between 0.790 and 0.910 seconds will be considered. "
@@ -2274,7 +2344,7 @@ NORMAL (L"For instance, suppose you want to have a pitch that falls from 350 to 
 MAN_END
 
 MAN_BEGIN (L"Intro 8.2. Manipulation of duration", L"ppgb", 20070107)
-INTRO (L"You can use P\\s{RAAT} to modify the relative durations in an existing sound.")
+INTRO (L"You can use Praat to modify the relative durations in an existing sound.")
 NORMAL (L"First, you select a @Sound object and click \"To Manipulation\". "
 	"A @Manipulation object will then appear in the list. "
 	"You can then click @Edit to raise a @ManipulationEditor, "
@@ -2356,7 +2426,7 @@ NORMAL (L"If you select one or more @objects in this list, "
 	"will appear in the @@Dynamic menu@.")
 ENTRY (L"How to select objects")
 NORMAL (L"To select one object (and deselect all the others), click on the object.")
-NORMAL (L"To extend the selection, drag the mouse (Unix, Windows) or use Shift-click (all systems).")
+NORMAL (L"To extend the selection, drag the mouse (Unix, Windows) or use Shift-click (all platforms).")
 NORMAL (L"To change the selection of one object (without changing the others), "
 	"use Control-click (Unix, Windows) or Command-click (Macintosh).")
 MAN_END
@@ -2370,12 +2440,12 @@ NORMAL (L"Most of the %feel is Macintosh: only one window active simultaneously.
 ENTRY (L"The Praat shell on Windows^\\re 95 and NT")
 NORMAL (L"Most of the look and feel is Windows, though all windows are separate overlapping windows, "
 	"instead of children of a large application window.")
-ENTRY (L"The Praat shell on the X Window system")
+ENTRY (L"The Praat shell on the X Window platform")
 NORMAL (L"From every computer with OSF/Motif, you can run the Praat shell on every X server in the world. "
 	"If your program is %praat, you just type:")
 CODE (L"praat -motif")
 NORMAL (L"With this command, you will always get the same old Motif look and feel.")
-NORMAL (L"Many systems, however, have their own favoured look and feel. "
+NORMAL (L"Many platforms, however, have their own favoured look and feel. "
 	"For this reason, the Praat shell recognizes several client computers: if you just type")
 CODE (L"praat")
 NORMAL (L"(or double-click on the %praat icon), "
@@ -2437,7 +2507,7 @@ NORMAL (L"Many X Windows applications work with %%client-side% resource files, "
 	"which describe the fonts etc. that they need. "
 	"However, as the fonts are server-dependent, changing to a different X server "
 	"will often require you to change the resource file %%on the client side%, "
-	"unless you only use fonts that are available on all systems (like Helvetica and Times). "
+	"unless you only use fonts that are available on all platforms (like Helvetica and Times). "
 	"However, your application may not adhere to any native look-and-feel strategy then. "
 	"Incorporating all resource files into the application, as done in the Praat shell, "
 	"solves this problem. Locally, you just type $praat, and across a network you use "
@@ -2455,7 +2525,7 @@ LIST_ITEM (L"\\bu @@Record mono Sound...@")
 LIST_ITEM (L"\\bu @@Record stereo Sound...@")
 LIST_ITEM (L"\\bu @@Create Sound from formula...@")
 LIST_ITEM (L"\\bu @@Create Sound from tone complex...")
-LIST_ITEM (L"\\bu @@Create Sound from gamma-tone...")
+LIST_ITEM (L"\\bu @@Create Sound from gammatone...")
 LIST_ITEM (L"\\bu @@Create Sound from Shepard tone...")
 LIST_ITEM (L"\\bu @@Create Matrix...@ (from a formula)")
 LIST_ITEM (L"\\bu @@Create simple Matrix...@ (from a formula)")
@@ -2474,7 +2544,7 @@ NORMAL (L"To create new objects from files on disk, use the @@Read menu@ instead
 MAN_END
 
 MAN_BEGIN (L"Object window", L"ppgb", 20030528)
-INTRO (L"One of the two main windows in the P\\s{RAAT} program.")
+INTRO (L"One of the two main windows in the Praat program.")
 ENTRY (L"Subdivision")
 LIST_ITEM (L"To the left: the @@List of Objects@.")
 LIST_ITEM (L"To the right: the @@Dynamic menu@.")
@@ -2618,7 +2688,7 @@ MAN_END
 
 MAN_BEGIN (L"Resource fork", L"ppgb", 20030316)
 INTRO (L"One of the two %forks of a Macintosh file (the other is the %%data fork%). "
-	"If a Macintosh file is moved to another system directly, the resource fork is lost. "
+	"If a Macintosh file is moved to another platform directly, the resource fork is lost. "
 	"To backup your Macintosh files, use compression, for instance with #DropStuff\\tm.")
 MAN_END
 
@@ -2652,7 +2722,7 @@ NORMAL (L"See @@Intro 3. Spectral analysis@.")
 MAN_END
 
 MAN_BEGIN (L"Source-filter synthesis", L"ppgb", 20050713)
-INTRO (L"This tutorial describes how you can do acoustic synthesis with P\\s{RAAT}. "
+INTRO (L"This tutorial describes how you can do acoustic synthesis with Praat. "
 	"It assumes that you are familiar with the @Intro.")
 ENTRY (L"1. The source-filter theory of speech production")
 NORMAL (L"The source-filter theory (@@Fant (1960)|Fant 1960@) hypothesizes that an acoustic speech signal can be seen "
@@ -2797,7 +2867,7 @@ NORMAL (L"In this example, filtering was done without automatic scaling, so that
 	"between -1 and +1 Pascal.")
 MAN_END
 
-MAN_BEGIN (L"Source-filter synthesis 4. Using existing sounds", L"ppgb", 20050713)
+MAN_BEGIN (L"Source-filter synthesis 4. Using existing sounds", L"ppgb", 20100407)
 ENTRY (L"1. How to extract the %filter from an existing speech sound")
 NORMAL (L"You can separate source and filter with the help of the technique of %%linear prediction% "
 	"(see @@Sound: LPC analysis@). This technique tries to approximate a given frequency spectrum with "
@@ -2900,10 +2970,12 @@ CODE (L"#select Sound source")
 CODE (L"#plus FormantGrid filter")
 CODE (L"Filter")
 NORMAL (L"Finally, you could just know the %%impulse response% of your filter (in a @Sound object). "
-	"You then select both Sound objects, and choose @@Sounds: Convolve@:")
+	"You then select both Sound objects, and choose @@Sounds: Convolve...@:")
 CODE (L"#select Sound source")
 CODE (L"#plus Sound filter")
-CODE (L"Convolve")
+CODE (L"Convolve... integral zero")
+NORMAL (L"As a last step, you may want to bring the resulting sound within the [-1; +1] range:")
+CODE (L"Scale peak... 0.99")
 ENTRY (L"4. How to manipulate the filter")
 NORMAL (L"You can hardly change the values in an @LPC object in a meaningful way: "
 	"you would have to manually change its rather opaque data with the help of @Inspect.")
@@ -2930,7 +3002,7 @@ INTRO (L"A command in the Spectrogram menu of the @SoundEditor and @TextGridEdit
 MAN_END
 
 MAN_BEGIN (L"Types of objects", L"ppgb", 20080427)
-INTRO (L"P\\s{RAAT} contains the following types of objects and @Editors. "
+INTRO (L"Praat contains the following types of objects and @Editors. "
 	"For an introduction and tutorials, see @Intro.")
 NORMAL (L"General purpose:")
 LIST_ITEM (L"\\bu @Matrix: a sampled real-valued function of two variables")
