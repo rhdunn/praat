@@ -1020,8 +1020,8 @@ static void createMenuItems_view_audio (FunctionEditor me, EditorMenu menu) {
 	EditorMenu_addCommand (menu, L"-- play --", 0, 0);
 	EditorMenu_addCommand (menu, L"Audio:", GuiMenu_INSENSITIVE, menu_cb_play /* dummy */);
 	EditorMenu_addCommand (menu, L"Play...", 0, menu_cb_play);
-	EditorMenu_addCommand (menu, L"Play or stop", GuiMenu_TAB, menu_cb_playOrStop);
-	EditorMenu_addCommand (menu, L"Play window", GuiMenu_SHIFT + GuiMenu_TAB, menu_cb_playWindow);
+	EditorMenu_addCommand (menu, L"Play or stop", gtk ? 0 : GuiMenu_TAB, menu_cb_playOrStop);
+	EditorMenu_addCommand (menu, L"Play window", gtk ? 0 : GuiMenu_SHIFT + GuiMenu_TAB, menu_cb_playWindow);
 	EditorMenu_addCommand (menu, L"Interrupt playing", GuiMenu_ESCAPE, menu_cb_interruptPlaying);
 }
 
@@ -1169,14 +1169,14 @@ static void gui_drawingarea_cb_resize (I, GuiDrawingAreaResizeEvent event) {
 }
 
 static void createChildren (FunctionEditor me) {
-	Widget form;
+	GuiObject form;
 	int x = BUTTON_X;
 
 	#if gtk
 		form = my dialog;
-		Widget hctl_box = gtk_hbox_new (FALSE, BUTTON_SPACING);
+		GuiObject hctl_box = gtk_hbox_new (FALSE, BUTTON_SPACING);
 		gtk_box_pack_end (GTK_BOX (form), hctl_box, FALSE, FALSE, 0);
-		Widget leftbtn_box = gtk_hbox_new (TRUE, 3);
+		GuiObject leftbtn_box = gtk_hbox_new (TRUE, 3);
 		gtk_box_pack_start (GTK_BOX (hctl_box), leftbtn_box, FALSE, FALSE, 0);
 
 		/***** Create zoom buttons. *****/
@@ -1499,7 +1499,8 @@ static int click (FunctionEditor me, double xbegin, double ybegin, int shiftKeyP
 			 * Clip to the visible window. Ideally, we should perform autoscrolling instead, though...
 			 */
 			if (x < my startWindow) x = my startWindow; else if (x > my endWindow) x = my endWindow;
-			if (x == xold) continue;
+			if (x == xold)
+				continue;
 			/*
 			 * Undraw and redraw the text at the top.
 			 */
@@ -1578,7 +1579,7 @@ static int playCallback (Any void_me, int phase, double tmin, double tmax, doubl
 	(void) tmin;
 	Graphics_inqViewport (my graphics, & x1NDC, & x2NDC, & y1NDC, & y2NDC);
 	FunctionEditor_insetViewport (me);
-	Graphics_xorOn (my graphics, Graphics_MAGENTA);
+	Graphics_xorOn (my graphics, Graphics_MAROON);
 	/*
 	 * Undraw the play cursor at its old location.
 	 * BUG: during scrolling, zooming, and exposure, an ugly line may remain.
@@ -1692,7 +1693,7 @@ class_methods (FunctionEditor, Editor) {
 	class_methods_end
 }
 
-int FunctionEditor_init (FunctionEditor me, Widget parent, const wchar_t *title, Any data) {
+int FunctionEditor_init (FunctionEditor me, GuiObject parent, const wchar_t *title, Any data) {
 	my tmin = ((Function) data) -> xmin;   /* Set before adding children (see group button). */
 	my tmax = ((Function) data) -> xmax;
 	Editor_init (FunctionEditor_as_parent (me), parent, 0, 0, preferences.shellWidth, preferences.shellHeight, title, data); cherror

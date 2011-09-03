@@ -2,7 +2,7 @@
 #define _GraphicsP_h_
 /* GraphicsP.h
  *
- * Copyright (C) 1992-2010 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,11 +20,26 @@
  */
 
 /*
- * pb 2010/07/30
+ * pb 2011/03/02
  */
 
 #ifndef _Graphics_h_
 	#include "Graphics.h"
+#endif
+
+#include "Gui.h"
+
+#if defined (_WIN32)
+	#include <windowsx.h>
+#elif defined (macintosh)
+	#include "macport_on.h"
+	#include <Quickdraw.h>
+	#include <MacWindows.h>
+	#include "macport_off.h"
+#endif
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 typedef struct {
@@ -36,8 +51,6 @@ typedef struct {
 	union { long integer; const char *string; } font;
 	int cell, line, run;
 } _Graphics_widechar;
-
-#include "Gui.h"
 
 #define Graphics_members Thing_members \
 	/* Device constants. */ \
@@ -51,17 +64,17 @@ typedef struct {
 		/* A boolean for whether we are a high-resolution metafile or clipboard. */ \
 	bool yIsZeroAtTheTop; \
 		/* A boolean for whether vertical cooordinates increase from top to bottom (as on most screens, but not PostScript). */ \
-	Widget drawingArea; \
+	GuiObject drawingArea; \
 		/* Also used as a boolean. */ \
 	int resolution; \
 		/* Dots per inch. */ \
-	short x1DCmin, x2DCmax, y1DCmin, y2DCmax; \
+	long x1DCmin, x2DCmax, y1DCmin, y2DCmax; \
 		/* Maximum dimensions of the output device. */ \
 		/* x1DCmin < x2DCmax; y1DCmin < y2DCmax; */ \
 		/* The point (x1DCmin, y1DCmin) can be either in the top left */ \
 		/* or in the bottom left, depending on the yIsZeroAtTheTop flag. */ \
 		/* Device variables. */ \
-	short x1DC, x2DC, y1DC, y2DC; \
+	long x1DC, x2DC, y1DC, y2DC; \
 		/* Current dimensions of the output device, or: */ \
 		/* device coordinates of the viewport rectangle. */ \
 		/* x1DCmin <= x1DC < x2DC <= x2DCmax; */ \
@@ -136,7 +149,6 @@ int Graphics_init (I);
 	#define cairo 1
 	#define pango 1
 #elif defined (_WIN32)
-	#include <windowsx.h>
 	#define GraphicsScreen_members Graphics_members \
 		HWND window; \
 		HDC dc; \
@@ -149,10 +161,6 @@ int Graphics_init (I);
 	#define cairo 0
 	#define pango 0
 #elif defined (macintosh)
-	#include "macport_on.h"
-	#include <Quickdraw.h>
-	#include <MacWindows.h>
-	#include "macport_off.h"
 	#define GraphicsScreen_members Graphics_members \
 		GrafPtr macPort; \
 		int macFont, macStyle; \
@@ -210,7 +218,7 @@ enum opcode { SET_VIEWPORT = 101, SET_INNER, UNSET_INNER, SET_WINDOW,
 };
 
 void _Graphics_text_init (I);
-void _Graphics_fillRectangle (I, short x1DC, short x2DC, short y1DC, short y2DC);
+void _Graphics_fillRectangle (I, long x1DC, long x2DC, long y1DC, long y2DC);
 void _Graphics_setColour (I, Graphics_Colour colour);
 void _Graphics_setGrey (I, double grey);
 void _Graphics_colour_init (I);
@@ -219,6 +227,10 @@ bool _GraphicsMac_tryToInitializeAtsuiFonts (void);
 #ifdef macintosh
 	void GraphicsQuartz_initDraw (GraphicsScreen me);
 	void GraphicsQuartz_exitDraw (GraphicsScreen me);
+#endif
+
+#ifdef __cplusplus
+	}
 #endif
 
 /* End of file GraphicsP.h */

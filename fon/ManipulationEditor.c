@@ -87,14 +87,23 @@ void ManipulationEditor_prefs (void) {
 }
 
 static void updateMenus (ManipulationEditor me) {
+	Melder_assert (my synthPulsesButton != NULL);
 	GuiMenuItem_check (my synthPulsesButton, my synthesisMethod == Manipulation_PULSES);
+	Melder_assert (my synthPulsesHumButton != NULL);
 	GuiMenuItem_check (my synthPulsesHumButton, my synthesisMethod == Manipulation_PULSES_HUM);
+	Melder_assert (my synthPulsesLpcButton != NULL);
 	GuiMenuItem_check (my synthPulsesLpcButton, my synthesisMethod == Manipulation_PULSES_LPC);
+	Melder_assert (my synthPitchButton != NULL);
 	GuiMenuItem_check (my synthPitchButton, my synthesisMethod == Manipulation_PITCH);
+	Melder_assert (my synthPitchHumButton != NULL);
 	GuiMenuItem_check (my synthPitchHumButton, my synthesisMethod == Manipulation_PITCH_HUM);
+	Melder_assert (my synthPulsesPitchButton != NULL);
 	GuiMenuItem_check (my synthPulsesPitchButton, my synthesisMethod == Manipulation_PULSES_PITCH);
+	Melder_assert (my synthPulsesPitchHumButton != NULL);
 	GuiMenuItem_check (my synthPulsesPitchHumButton, my synthesisMethod == Manipulation_PULSES_PITCH_HUM);
+	Melder_assert (my synthOverlapAddButton != NULL);
 	GuiMenuItem_check (my synthOverlapAddButton, my synthesisMethod == Manipulation_OVERLAPADD);
+	Melder_assert (my synthPitchLpcButton != NULL);
 	GuiMenuItem_check (my synthPitchLpcButton, my synthesisMethod == Manipulation_PITCH_LPC);
 }
 
@@ -1031,18 +1040,21 @@ static int clickPitch (ManipulationEditor me, double xWC, double yWC, int shiftK
 	  * Since some systems do double buffering,
 	  * the undrawing at the old position and redrawing at the new have to be bracketed by Graphics_mouseStillDown ().
 	  */
-	Graphics_xorOn (my graphics, Graphics_MAGENTA);
+	Graphics_xorOn (my graphics, Graphics_MAROON);
 	drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
 	dragHorizontal = my pitchTier.draggingStrategy != kManipulationEditor_draggingStrategy_VERTICAL &&
 		(! shiftKeyPressed || my pitchTier.draggingStrategy != kManipulationEditor_draggingStrategy_HYBRID);
 	dragVertical = my pitchTier.draggingStrategy != kManipulationEditor_draggingStrategy_HORIZONTAL;
 	while (Graphics_mouseStillDown (my graphics)) {
 		double xWC_new, yWC_new;
-		drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
 		Graphics_getMouseLocation (my graphics, & xWC_new, & yWC_new);
-		if (dragHorizontal) dt += xWC_new - xWC, xWC = xWC_new;
-		if (dragVertical) df += yWC_new - yWC, yWC = yWC_new;
-		drawWhileDragging (me, xWC_new, yWC_new, ifirstSelected, ilastSelected, dt, df);
+		if (xWC_new != xWC || yWC_new != yWC) {
+			drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
+			if (dragHorizontal) dt += xWC_new - xWC;
+			if (dragVertical) df += yWC_new - yWC;
+			xWC = xWC_new, yWC = yWC_new;
+			drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
+		}
 	}
 	Graphics_xorOff (my graphics);
 
@@ -1180,15 +1192,17 @@ static int clickDuration (ManipulationEditor me, double xWC, double yWC, int shi
 	/*
 	 * Drag.
 	 */
-	Graphics_xorOn (my graphics, Graphics_MAGENTA);
+	Graphics_xorOn (my graphics, Graphics_MAROON);
 	drawDurationWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
 	while (Graphics_mouseStillDown (my graphics)) {
 		double xWC_new, yWC_new;
-		drawDurationWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
 		Graphics_getMouseLocation (my graphics, & xWC_new, & yWC_new);
-		dt += xWC_new - xWC, xWC = xWC_new;
-		df += yWC_new - yWC, yWC = yWC_new;
-		drawDurationWhileDragging (me, xWC_new, yWC_new, ifirstSelected, ilastSelected, dt, df);
+		if (xWC_new != xWC || yWC_new != yWC) {
+			drawDurationWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
+			dt += xWC_new - xWC, xWC = xWC_new;
+			df += yWC_new - yWC, yWC = yWC_new;
+			drawDurationWhileDragging (me, xWC_new, yWC_new, ifirstSelected, ilastSelected, dt, df);
+		}
 	}
 	Graphics_xorOff (my graphics);
 
@@ -1281,7 +1295,7 @@ class_methods (ManipulationEditor, FunctionEditor) {
 	class_methods_end
 }
 
-ManipulationEditor ManipulationEditor_create (Widget parent, const wchar_t *title, Manipulation ana) {
+ManipulationEditor ManipulationEditor_create (GuiObject parent, const wchar_t *title, Manipulation ana) {
 	ManipulationEditor me = new (ManipulationEditor);
 	if (! me || ! FunctionEditor_init (ManipulationEditor_as_parent (me), parent, title, ana)) return NULL;
 

@@ -412,15 +412,17 @@ static int click (FormantGridEditor me, double xWC, double yWC, int shiftKeyPres
 	/*
 	 * Drag.
 	 */
-	Graphics_xorOn (my graphics, Graphics_MAGENTA);
+	Graphics_xorOn (my graphics, Graphics_MAROON);
 	drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
 	while (Graphics_mouseStillDown (my graphics)) {
 		double xWC_new, yWC_new;
-		drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
 		Graphics_getMouseLocation (my graphics, & xWC_new, & yWC_new);
-		dt += xWC_new - xWC, df += yWC_new - yWC;
-		xWC = xWC_new, yWC = yWC_new;
-		drawWhileDragging (me, xWC_new, yWC_new, ifirstSelected, ilastSelected, dt, df);
+		if (xWC_new != xWC || yWC_new != yWC) {
+			drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
+			dt += xWC_new - xWC, df += yWC_new - yWC;
+			xWC = xWC_new, yWC = yWC_new;
+			drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
+		}
 	}
 	Graphics_xorOff (my graphics);
 
@@ -496,7 +498,7 @@ class_methods (FormantGridEditor, FunctionEditor) {
 	class_methods_end
 }
 
-int FormantGridEditor_init (FormantGridEditor me, Widget parent, const wchar_t *title, FormantGrid data) {
+int FormantGridEditor_init (FormantGridEditor me, GuiObject parent, const wchar_t *title, FormantGrid data) {
 	Melder_assert (data != NULL);
 	Melder_assert (Thing_member (data, classFormantGrid));
 	FunctionEditor_init (FormantGridEditor_as_FunctionEditor (me), parent, title, data); cherror
@@ -513,7 +515,7 @@ end:
 	return 1;
 }
 
-FormantGridEditor FormantGridEditor_create (Widget parent, const wchar_t *title, FormantGrid data) {
+FormantGridEditor FormantGridEditor_create (GuiObject parent, const wchar_t *title, FormantGrid data) {
 	FormantGridEditor me = new (FormantGridEditor); cherror
 	FormantGridEditor_init (me, parent, title, data); cherror
 end:

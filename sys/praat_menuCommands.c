@@ -1,6 +1,6 @@
 /* praat_menuCommands.c
  *
- * Copyright (C) 1992-2009 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
  * pb 2007/01/26 buttons along top
  * pb 2007/06/09 wchar_t
  * pb 2009/01/17 arguments to UiForm callbacks
+ * pb 2011/01/02 GTK: allow submenus even from scripts
  */
 
 #include "praatP.h"
@@ -35,7 +36,7 @@ static long theNumberOfCommands = 0;
 static struct structPraat_Command *theCommands;
 
 void praat_menuCommands_init (void) {
-	theCommands = Melder_calloc (struct structPraat_Command, praat_MAXNUM_FIXED_COMMANDS + 1);
+	theCommands = Melder_calloc_f (struct structPraat_Command, praat_MAXNUM_FIXED_COMMANDS + 1);
 }
 
 static int compareMenuCommands (const void *void_me, const void *void_thee) {
@@ -145,13 +146,13 @@ static void gui_cb_menu (GUI_ARGS) {
 	do_menu (void_me, modified);
 }
 
-static Widget windowMenuToWidget (const wchar_t *window, const wchar_t *menu) {
+static GuiObject windowMenuToWidget (const wchar_t *window, const wchar_t *menu) {
 	return
 		wcsequ (window, L"Picture") ? praat_picture_resolveMenu (menu) :
 		wcsequ (window, L"Objects") ? praat_objects_resolveMenu (menu) : NULL;
 }
 
-Widget praat_addMenuCommand (const wchar_t *window, const wchar_t *menu, const wchar_t *title,
+GuiObject praat_addMenuCommand (const wchar_t *window, const wchar_t *menu, const wchar_t *title,
 	const wchar_t *after, unsigned long flags, int (*callback) (UiForm, const wchar_t *, Interpreter, const wchar_t *, bool, void *))
 {
 	long position;
@@ -162,9 +163,7 @@ Widget praat_addMenuCommand (const wchar_t *window, const wchar_t *menu, const w
 		unhidable = (flags & praat_UNHIDABLE) != 0;
 		hidden = (flags & praat_HIDDEN) != 0 && ! unhidable;
 		key = flags & 0x000000FF;
-		motifFlags = key ?
-			flags & (0x006000FF | GuiMenu_INSENSITIVE | GuiMenu_CHECKBUTTON | GuiMenu_TOGGLE_ON | GuiMenu_RADIO_FIRST | GuiMenu_RADIO_NEXT) :
-			flags & (GuiMenu_INSENSITIVE | GuiMenu_CHECKBUTTON | GuiMenu_TOGGLE_ON | GuiMenu_RADIO_FIRST | GuiMenu_RADIO_NEXT);
+		motifFlags = key ? flags & (0x006000FF | GuiMenu_BUTTON_STATE_MASK) : flags & GuiMenu_BUTTON_STATE_MASK;
 	}
 	if (callback && ! title) {
 		Melder_error5 (L"praat_addMenuCommand: command with callback has no title. Window \"", window, L"\", menu \"", menu, L"\".");
@@ -204,9 +203,9 @@ Widget praat_addMenuCommand (const wchar_t *window, const wchar_t *menu, const w
 
 	/* Insert new command.
 	 */
-	theCommands [position]. window = Melder_wcsdup (window);
-	theCommands [position]. menu = Melder_wcsdup (menu);
-	theCommands [position]. title = Melder_wcsdup (title);
+	theCommands [position]. window = Melder_wcsdup_f (window);
+	theCommands [position]. menu = Melder_wcsdup_f (menu);
+	theCommands [position]. title = Melder_wcsdup_f (title);
 	theCommands [position]. depth = depth;
 	theCommands [position]. callback = callback;   /* NULL for a separator or cascade button. */
 	theCommands [position]. executable = callback != NULL;
@@ -215,7 +214,7 @@ Widget praat_addMenuCommand (const wchar_t *window, const wchar_t *menu, const w
 	theCommands [position]. unhidable = unhidable;
 
 	if (! theCurrentPraatApplication -> batch) {
-		Widget parent = NULL;
+		GuiObject parent = NULL;
 
 		/* WHERE TO PUT IT?
 		 * Determine parent menu widget.
@@ -229,8 +228,6 @@ Widget praat_addMenuCommand (const wchar_t *window, const wchar_t *menu, const w
 				if (theCommands [i]. depth == depth - 1) {
 					if (theCommands [i]. callback == NULL && theCommands [i]. title != NULL && theCommands [i]. title [0] != '-')   /* Cascade button? */
 						#if gtk
-							// TODO: Is dit de bedoeling? Tja, wie zal het zeggen? De GTK-menuhierarchie?
-//						parent = gtk_widget_get_parent (theCommands [i]. button);
 							parent = gtk_menu_item_get_submenu (GTK_MENU_ITEM (theCommands [i]. button));
 						#elif motif
 							XtVaGetValues (theCommands [i]. button, XmNsubMenuId, & parent, NULL);   /* The relevant menu title. */
@@ -295,27 +292,27 @@ int praat_addMenuCommandScript (const wchar_t *window, const wchar_t *menu, cons
 
 	/* Insert new command.
 	 */
-	theCommands [position]. window = Melder_wcsdup (window);
-	theCommands [position]. menu = Melder_wcsdup (menu);
-	theCommands [position]. title = wcslen (title) ? Melder_wcsdup (title) : NULL;   /* Allow old-fashioned untitled separators. */
+	theCommands [position]. window = Melder_wcsdup_f (window);
+	theCommands [position]. menu = Melder_wcsdup_f (menu);
+	theCommands [position]. title = wcslen (title) ? Melder_wcsdup_f (title) : NULL;   /* Allow old-fashioned untitled separators. */
 	theCommands [position]. depth = depth;
 	theCommands [position]. callback = wcslen (script) ? DO_RunTheScriptFromAnyAddedMenuCommand : NULL;   /* NULL for a separator or cascade button. */
 	theCommands [position]. executable = wcslen (script) != 0;
 	if (wcslen (script) == 0) {
-		theCommands [position]. script = Melder_wcsdup (L"");   /* Empty string, which will be needed to signal origin. */
+		theCommands [position]. script = Melder_wcsdup_f (L"");   /* Empty string, which will be needed to signal origin. */
 	} else {
 		structMelderFile file = { 0 };
 		Melder_relativePathToFile (script, & file);
-		theCommands [position]. script = Melder_wcsdup (Melder_fileToPath (& file));
+		theCommands [position]. script = Melder_wcsdup_f (Melder_fileToPath (& file));
 	}
-	theCommands [position]. after = wcslen (after) ? Melder_wcsdup (after) : NULL;
+	theCommands [position]. after = wcslen (after) ? Melder_wcsdup_f (after) : NULL;
 	if (praatP.phase >= praat_READING_BUTTONS) {
 		static long uniqueID = 0;
 		theCommands [position]. uniqueID = ++ uniqueID;
 	}
 
 	if (! theCurrentPraatApplication -> batch) {
-		Widget parent = NULL;
+		GuiObject parent = NULL;
 
 		/* WHERE TO PUT IT?
 		 * Determine parent menu widget.
@@ -328,7 +325,9 @@ int praat_addMenuCommandScript (const wchar_t *window, const wchar_t *menu, cons
 			for (long i = position - 1; i > 0; i --) {
 				if (theCommands [i]. depth == depth - 1) {
 					if (theCommands [i]. callback == NULL && theCommands [i]. title != NULL && theCommands [i]. title [0] != '-')   /* Cascade button? */
-						#if motif
+						#if gtk
+							parent = gtk_menu_item_get_submenu (GTK_MENU_ITEM (theCommands [i]. button));
+						#elif motif
 							XtVaGetValues (theCommands [i]. button, XmNsubMenuId, & parent, NULL);   /* The relevant menu title. */
 						#endif
 					break;
@@ -401,16 +400,16 @@ void praat_saveMenuCommands (FILE *f) {
 
 /***** FIXED BUTTONS *****/
 
-void praat_addFixedButtonCommand (Widget parent, const wchar_t *title, int (*callback) (UiForm, const wchar_t *, Interpreter, const wchar_t *, bool, void *), int x, int y) {
+void praat_addFixedButtonCommand (GuiObject parent, const wchar_t *title, int (*callback) (UiForm, const wchar_t *, Interpreter, const wchar_t *, bool, void *), int x, int y) {
 	praat_Command me = & theCommands [++ theNumberOfCommands];
-	my window = Melder_wcsdup (L"Objects");
+	my window = Melder_wcsdup_f (L"Objects");
 	my title = title;
 	my callback = callback;
 	my unhidable = TRUE;
 	if (theCurrentPraatApplication -> batch) {
 		my button = NULL;
 	} else {
-		Widget button = my button = GuiButton_create (parent, x, x + 82, Gui_AUTOMATIC, -y,
+		GuiObject button = my button = GuiButton_create (parent, x, x + 82, Gui_AUTOMATIC, -y,
 			title, gui_button_cb_menu, callback, 0);
 		GuiObject_setSensitive (button, false);
 		GuiObject_show (button);

@@ -1,6 +1,6 @@
 /* GuiMenu.c
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2010 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,18 +25,23 @@
  * pb 2007/12/13 Gui
  * sdk 2008/02/08 GTK
  * sdk 2008/03/24 GTK
+ * pb 2010/11/28 removed explicit Motif
  */
 
 #include "GuiP.h"
 
-Widget GuiMenuBar_addMenu (Widget bar, const wchar_t *title, long flags) {
-	Widget menu = NULL, menuTitle;
+#define _motif_SHIFT_MASK  1
+#define _motif_COMMAND_MASK  2
+#define _motif_OPTION_MASK  4
+
+GuiObject GuiMenuBar_addMenu (GuiObject bar, const wchar_t *title, long flags) {
+	GuiObject menu = NULL, menuTitle;
 	menu = GuiMenuBar_addMenu2 (bar, title, flags, & menuTitle);
 	return menu;
 }
 
-Widget GuiMenuBar_addMenu2 (Widget bar, const wchar_t *title, long flags, Widget *menuTitle) {
-	Widget menu;
+GuiObject GuiMenuBar_addMenu2 (GuiObject bar, const wchar_t *title, long flags, GuiObject *menuTitle) {
+	GuiObject menu;
 	#if gtk
 		*menuTitle = gtk_menu_item_new_with_label (Melder_peekWcsToUtf8 (title));
 		menu = gtk_menu_new ();
@@ -48,7 +53,7 @@ Widget GuiMenuBar_addMenu2 (Widget bar, const wchar_t *title, long flags, Widget
 		gtk_menu_shell_append (GTK_MENU_SHELL (bar), *menuTitle);
 		gtk_widget_show (menu);
 		gtk_widget_show (*menuTitle);
-	#elif motif
+	#elif win || mac
 		*menuTitle = XmCreateCascadeButton (bar, Melder_peekWcsToUtf8 (title), NULL, 0);
 		if (wcsequ (title, L"Help"))
 			XtVaSetValues (bar, XmNmenuHelpWidget, *menuTitle, NULL);
@@ -62,7 +67,7 @@ Widget GuiMenuBar_addMenu2 (Widget bar, const wchar_t *title, long flags, Widget
 }
 
 #if gtk
-void set_position (GtkMenu *menu, gint *px, gint *py, gpointer data)
+static void set_position (GtkMenu *menu, gint *px, gint *py, gpointer data)
 {
 	gint w, h;
 	GtkWidget *button = (GtkWidget *) g_object_get_data (G_OBJECT (menu), "button");
@@ -92,8 +97,8 @@ static gint button_press (GtkWidget *widget, GdkEvent *event)
 	return FALSE;
 }
 
-Widget GuiMenuBar_addMenu3 (Widget parent, const wchar_t *title, long flags, Widget *button) {
-	Widget menu;
+GuiObject GuiMenuBar_addMenu3 (GuiObject parent, const wchar_t *title, long flags, GuiObject *button) {
+	GuiObject menu;
 	menu = gtk_menu_new ();
 	*button = gtk_button_new_with_label (Melder_peekWcsToUtf8 (title));
 	g_signal_connect_object (G_OBJECT (*button), "event",
@@ -115,26 +120,85 @@ Widget GuiMenuBar_addMenu3 (Widget parent, const wchar_t *title, long flags, Wid
 	static GSList *group = NULL;
 #endif
 
-void GuiMenuItem_check (Widget menuItem, bool check) {
+void GuiMenuItem_check (GuiObject menuItem, bool check) {
+	Melder_assert (menuItem != NULL);
 	#if gtk
 		gulong handlerId = (gulong) g_object_get_data (G_OBJECT (menuItem), "handlerId");
-		void (*commandCallback) (Widget, XtPointer, XtPointer) = g_object_get_data (G_OBJECT (menuItem), "commandCallback");
+		void (*commandCallback) (GuiObject, XtPointer, XtPointer) = g_object_get_data (G_OBJECT (menuItem), "commandCallback");
 		void *commandClosure = g_object_get_data (G_OBJECT (menuItem), "commandClosure");
 		//Melder_casual ("GuiMenuItem_check %ld %ld %ld", handlerId, commandCallback, commandClosure);
 		g_signal_handler_disconnect (G_OBJECT (menuItem), handlerId);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menuItem), check);
 		handlerId = g_signal_connect (G_OBJECT (menuItem), "toggled", G_CALLBACK (commandCallback), (gpointer) commandClosure);
 		g_object_set_data (G_OBJECT (menuItem), "handlerId", (gpointer) handlerId);
-	#elif motif
+	#elif win || mac
 		XmToggleButtonGadgetSetState (menuItem, check, False);
 	#endif
 }
 
-Widget GuiMenu_addItem (Widget menu, const wchar_t *title, long flags,
-	void (*commandCallback) (Widget, XtPointer, XtPointer), const void *closure)
+#if win || mac
+static void NativeMenuItem_setText (GuiObject me) {
+	int acc = my motiff.pushButton.acceleratorChar, modifiers = my motiff.pushButton.acceleratorModifiers;
+	#if win
+		static MelderString title = { 0 };
+		if (acc == 0) {
+			MelderString_copy (& title, _GuiWin_expandAmpersands (my name));
+		} else {
+			static const wchar_t *keyStrings [256] = {
+				0, L"<-", L"->", L"Up", L"Down", L"PAUSE", L"Del", L"Ins", L"Backspace", L"Tab", L"LineFeed", L"Home", L"End", L"Enter", L"PageUp", L"PageDown",
+				L"Esc", L"F1", L"F2", L"F3", L"F4", L"F5", L"F6", L"F7", L"F8", L"F9", L"F10", L"F11", L"F12", 0, 0, 0,
+				L"Space", L"!", L"\"", L"#", L"$", L"%", L"&", L"\'", L"(", L")", L"*", L"+", L",", L"-", L".", L"/",
+				L"0", L"1", L"2", L"3", L"4", L"5", L"6", L"7", L"8", L"9", L":", L";", L"<", L"=", L">", L"?",
+				L"@", L"A", L"B", L"C", L"D", L"E", L"F", L"G", L"H", L"I", L"J", L"K", L"L", L"M", L"N", L"O",
+				L"P", L"Q", L"R", L"S", L"T", L"U", L"V", L"W", L"X", L"Y", L"Z", L"[", L"\\", L"]", L"^", L"_",
+				L"`", L"a", L"b", L"c", L"d", L"e", L"f", L"g", L"h", L"i", L"j", L"k", L"l", L"m", L"n", L"o",
+				L"p", L"q", L"r", L"s", L"t", L"u", L"v", L"w", L"x", L"y", L"z", L"{", L"|", L"}", L"~", L"Del",
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, L"[", L"]", L",", L"?", L".", L"\\",
+				L";", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, L"-", L"`", L"=", L"\'", 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+			const wchar_t *keyString = keyStrings [acc] ? keyStrings [acc] : L"???";
+			MelderString_empty (& title);
+			MelderString_append6 (&title, _GuiWin_expandAmpersands (my name), L"\t",
+				modifiers & _motif_COMMAND_MASK ? L"Ctrl-" : NULL,
+				modifiers & _motif_OPTION_MASK ? L"Alt-" : NULL,
+				modifiers & _motif_SHIFT_MASK ? L"Shift-" : NULL, keyString);
+		}
+		ModifyMenu (my nat.entry.handle, my nat.entry.id, MF_BYCOMMAND | MF_STRING, my nat.entry.id, title.string);
+	#elif mac
+		static int theGlyphs [1+31] = { 0,
+			kMenuLeftArrowDashedGlyph, kMenuRightArrowDashedGlyph, kMenuUpArrowDashedGlyph, kMenuDownwardArrowDashedGlyph, 0,
+			kMenuDeleteRightGlyph, 0, kMenuDeleteLeftGlyph, kMenuTabRightGlyph, 0,
+			0, 0, kMenuReturnGlyph, kMenuPageUpGlyph, kMenuPageDownGlyph,
+			kMenuEscapeGlyph, kMenuF1Glyph, kMenuF2Glyph, kMenuF3Glyph, kMenuF4Glyph,
+			kMenuF5Glyph, kMenuF6Glyph, kMenuF7Glyph, kMenuF8Glyph, kMenuF9Glyph,
+			kMenuF10Glyph, kMenuF11Glyph, kMenuF12Glyph, 0, 0,
+			0 };
+		SetMenuItemTextWithCFString (my nat.entry.handle, my nat.entry.item, Melder_peekWcsToCfstring (my name));
+		if (acc > 32) {
+			SetItemCmd (my nat.entry.handle, my nat.entry.item, acc);
+		} else {
+			Melder_assert (acc > 0 && acc < 32);
+			SetItemCmd (my nat.entry.handle, my nat.entry.item, ' ');   /* Funny that this should be needed. */
+			SetMenuItemKeyGlyph (my nat.entry.handle, my nat.entry.item, theGlyphs [acc]);
+		}
+		SetMenuItemModifiers (my nat.entry.handle, my nat.entry.item,
+			( modifiers & _motif_OPTION_MASK ? kMenuOptionModifier : 0 ) +
+			( modifiers & _motif_SHIFT_MASK ? kMenuShiftModifier : 0 ) +
+			( modifiers & _motif_COMMAND_MASK ? 0 : kMenuNoCommandModifier ));
+	#endif
+}
+#endif
+
+GuiObject GuiMenu_addItem (GuiObject menu, const wchar_t *title, long flags,
+	void (*commandCallback) (GuiObject, XtPointer, XtPointer), const void *closure)
 {
 	Boolean toggle = flags & (GuiMenu_CHECKBUTTON | GuiMenu_RADIO_FIRST | GuiMenu_RADIO_NEXT | GuiMenu_TOGGLE_ON) ? True : False;
-	Widget button;
+	GuiObject button;
 	int accelerator = flags & 127;
 	Melder_assert (title != NULL);
 	#if gtk
@@ -151,21 +215,17 @@ Widget GuiMenu_addItem (Widget menu, const wchar_t *title, long flags,
 			button = gtk_menu_item_new_with_label (Melder_peekWcsToUtf8 (title));
 		}
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), button);
-	#elif motif
+	#elif win || mac
 		button = XtVaCreateManagedWidget (Melder_peekWcsToUtf8 (title),
 			toggle ? xmToggleButtonGadgetClass : xmPushButtonGadgetClass, menu, NULL);
 	#endif
 	Melder_assert (button != NULL);
 	if (flags & GuiMenu_INSENSITIVE)
-		#if gtk
-			gtk_widget_set_sensitive (button, FALSE);
-		#elif motif
-			XtSetSensitive (button, False);
-		#endif
+		GuiObject_setSensitive (button, false);
 	if (flags & GuiMenu_TOGGLE_ON)
 		#if gtk
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (button), TRUE);
-		#elif motif
+		#elif win || mac
 			XmToggleButtonGadgetSetState (button, True, False);
 		#endif
 	if (accelerator) {
@@ -176,7 +236,7 @@ Widget GuiMenu_addItem (Widget menu, const wchar_t *title, long flags,
 			flags |= GuiMenu_COMMAND;
 		
 		#if gtk
-			static const guint acceleratorKeys[] = { 0,
+			static const guint acceleratorKeys [] = { 0,
 				GDK_Left, GDK_Right, GDK_Up, GDK_Down, GDK_Pause, GDK_Delete, GDK_Insert, GDK_BackSpace,
 				GDK_Tab, GDK_Return, GDK_Home, GDK_End, GDK_Return, GDK_Page_Up, GDK_Page_Down, GDK_Escape,
 				GDK_F1, GDK_F2, GDK_F3, GDK_F4, GDK_F5, GDK_F6, GDK_F7, GDK_F8, GDK_F9, GDK_F10, GDK_F11, GDK_F12,
@@ -189,79 +249,41 @@ Widget GuiMenu_addItem (Widget menu, const wchar_t *title, long flags,
 
 			guint key;
 			if (accelerator < 32) {
-				key = acceleratorKeys[accelerator];
+				key = acceleratorKeys [accelerator];
 			} else {
 				// gdk key symbols in the ASCII range are equal to ASCII
 				key = accelerator;
 			}
 
-			GtkAccelGroup *ag = gtk_menu_get_accel_group(GTK_MENU(menu));
+			GtkAccelGroup *ag = gtk_menu_get_accel_group (GTK_MENU (menu));
 
 			if (key != 0)
 				gtk_widget_add_accelerator (button, toggle ? "toggled" : "activate",
 					ag, key, modifiers, GTK_ACCEL_VISIBLE);
 
-		#elif motif
-			static char *acceleratorStrings [] = { "",
-				"Left", "Right", "Up", "Down", "Pause", "Delete", "Insert", "BackSpace",
-				"Tab", "Return", "Home", "End", "Return", "Page_Up", "Page_Down", "Escape",
-				"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
-				"", "", "" };
-			static char *acceleratorTexts [] = { "",
-				" <-", " ->", "UP", "DOWN", "Pause", "Delete", "Insert", "Backspace",
-				"Tab", "Enter", "Home", "End", "Enter", "PageUp", "PageDown", "Esc",
-				"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
-				"", "", "" };
-
-			char acceleratorString [100], acceleratorText [100];
-			/*
-			* Build the Motif accelerator string and the text that will appear in the menu item.
-			*/
-			acceleratorString [0] = '\0';
-			acceleratorText [0] = '\0';
-			if (flags & GuiMenu_COMMAND) {
-				strcat (acceleratorString, "Ctrl ");
-				strcat (acceleratorText, "Ctrl-");
+		#elif win || mac
+			int modifiers = 0;
+			if (flags & GuiMenu_COMMAND) modifiers |= _motif_COMMAND_MASK;
+			if (flags & GuiMenu_SHIFT) modifiers |= _motif_SHIFT_MASK;
+			if (flags & GuiMenu_OPTION) modifiers |= _motif_OPTION_MASK;
+			if (accelerator > 0 && accelerator < 32) {
+				button -> shell -> motiff.shell.lowAccelerators [modifiers] |= 1 << accelerator;
+			} else if (accelerator == '?' || accelerator == '{' || accelerator == '}' || accelerator == '\"' ||
+				accelerator == '<' || accelerator == '>' || accelerator == '|' || accelerator == '_' || accelerator == '+' || accelerator == '~')
+			{
+				modifiers |= _motif_SHIFT_MASK;
 			}
-			if (flags & GuiMenu_SHIFT) {
-				strcat (acceleratorString, "Shift ");
-				strcat (acceleratorText, "Shift-");
-			}
-			if (flags & GuiMenu_OPTION) {
-				strcat (acceleratorString, "Mod1 ");
-				strcat (acceleratorText, "Alt-");
-			}
-			/*
-			* Delete the final space, if it exists.
-			*/
-			if (acceleratorString [0]) {
-				acceleratorString [strlen (acceleratorString) - 1] = '\0';
-			}
-			strcat (acceleratorString, "<Key>");
-			if (accelerator < 32) {
-				strcat (acceleratorString, acceleratorStrings [accelerator]);
-				strcat (acceleratorText, acceleratorTexts [accelerator]);
-			} else if (accelerator == '?') {
-				strcat (acceleratorString, "question");
-				strcat (acceleratorText, "?");
-			} else if (accelerator == '[') {
-				strcat (acceleratorString, "bracketleft");
-				strcat (acceleratorText, "[");
-			} else if (accelerator == ']') {
-				strcat (acceleratorString, "bracketright");
-				strcat (acceleratorText, "]");
-			} else {
-				static char single [2] = " ";
-				single [0] = accelerator;
-				strcat (acceleratorString, single);
-				strcat (acceleratorText, single);
-			}
-			if (acceleratorString [0]) {
-				XtVaSetValues (button, XmNaccelerator, acceleratorString, NULL);
-			}
-			XtVaSetValues (button, motif_argXmString (XmNacceleratorText, acceleratorText), NULL);
+			button -> motiff.pushButton.acceleratorChar = accelerator;
+			button -> motiff.pushButton.acceleratorModifiers = modifiers;
+			NativeMenuItem_setText (button);
 		#endif
 	}
+	#if mac
+		if (flags & GuiMenu_ATTRACTIVE) {
+			//Melder_casual ("attractive!");
+			SetItemStyle (button -> nat.entry.handle, button -> nat.entry.item, bold);
+		}
+	#endif
 	#if gtk
 		if (commandCallback != NULL) {
 			gulong handlerId = g_signal_connect (G_OBJECT (button),
@@ -274,7 +296,7 @@ Widget GuiMenu_addItem (Widget menu, const wchar_t *title, long flags,
 			gtk_widget_set_sensitive (button, FALSE);
 		}
 		gtk_widget_show (button);
-	#elif motif
+	#elif win || mac
 		XtAddCallback (button,
 			toggle ? XmNvalueChangedCallback : XmNactivateCallback,
 			commandCallback, (XtPointer) closure);
@@ -283,13 +305,13 @@ Widget GuiMenu_addItem (Widget menu, const wchar_t *title, long flags,
 	return button;
 }
 
-Widget GuiMenu_addSeparator (Widget menu) {
+GuiObject GuiMenu_addSeparator (GuiObject menu) {
 	#if gtk
-		Widget separator = gtk_separator_menu_item_new ();
+		GuiObject separator = gtk_separator_menu_item_new ();
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), separator);
 		gtk_widget_show (separator);
 		return separator;
-	#elif motif
+	#elif win || mac
 		return XtVaCreateManagedWidget ("menuSeparator", xmSeparatorGadgetClass, menu, NULL);
 	#endif
 }

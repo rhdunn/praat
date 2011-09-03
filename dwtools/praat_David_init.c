@@ -1,6 +1,6 @@
 /* praat_David_init.c
  *
- * Copyright (C) 1993-2010 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -123,15 +123,16 @@ extern machar_Table NUMfpp;
 #include "TableOfReal_and_SVD.h"
 #include "VowelEditor.h"
 
-static wchar_t *QUERY_BUTTON   = L"Query -                ";
-static wchar_t *DRAW_BUTTON    = L"Draw -                 ";
-static wchar_t *MODIFY_BUTTON  = L"Modify -               ";
+static wchar_t *QUERY_BUTTON   = L"Query -";
+static wchar_t *DRAW_BUTTON    = L"Draw -";
+static wchar_t *MODIFY_BUTTON  = L"Modify -";
 static wchar_t *EXTRACT_BUTTON = L"Extract -";
 
 extern void praat_TimeFunction_query_init (void *klas);
 extern void praat_TimeFrameSampled_query_init (void *klas);
 extern void praat_TableOfReal_init (void *klas);
 void praat_TableOfReal_init2  (void *klas);
+void praat_SSCP_as_TableOfReal_init (void *klas);
 
 void praat_CC_init (void *klas);
 void DTW_constraints_addCommonFields (void *dia);
@@ -560,6 +561,10 @@ DIRECT (ClassificationTable_to_Confusion)
 	EVERY_TO (ClassificationTable_to_Confusion (OBJECT))
 END
 
+DIRECT (ClassificationTable_to_Correlation_columns)
+	EVERY_TO (ClassificationTable_to_Correlation_columns (OBJECT))
+END
+
 DIRECT (ClassificationTable_to_Strings_maximumProbability)
 	EVERY_TO (ClassificationTable_to_Strings_maximumProbability (OBJECT))
 END
@@ -676,6 +681,26 @@ END
 
 DIRECT (Covariance_help)
 	Melder_help (L"Covariance");
+END
+
+FORM (Covariance_createSimple, L"Create simple Covariance", L"Create simple Covariance...")
+	WORD (L"Name", L"c")
+	SENTENCE (L"Covariances", L"1.0 0.0 1.0")
+	SENTENCE (L"Centroid", L"0.0 0.0")
+	POSITIVE (L"Number of observations", L"100.0")
+	OK
+DO
+	if (! praat_new1 (Covariance_createSimple (GET_STRING (L"Covariances"), GET_STRING (L"Centroid"),
+		GET_REAL (L"Number of observations")), GET_STRING (L"Name"))) return 0;
+END
+
+FORM (Covariance_getProbabilityAtPosition, L"Covariance: Get probability at position", 0)
+	SENTENCE (L"Position", L"10.0 20.0")
+	OK
+DO
+	wchar_t *position = GET_STRING (L"Position");
+	double p = Covariance_getProbabilityAtPosition_string (ONLY_OBJECT, position);
+	Melder_information4 (Melder_double (p), L" (= probability at position ", position, L")");
 END
 
 FORM (Covariance_getSignificanceOfOneMean, L"Covariance: Get significance of one mean", L"Covariance: Get significance of one mean...")
@@ -2177,23 +2202,23 @@ FORM_READ (LongSounds_appendToExistingSoundFile, L"LongSound: Append to existing
 	if (! pr_LongSounds_appendToExistingSoundFile (file)) return 0;
 END
 
-FORM_WRITE (LongSounds_writeToStereoAiffFile, L"LongSound: Write to AIFF file", 0, L"aiff")
+FORM_WRITE (LongSounds_writeToStereoAiffFile, L"LongSound: Save as AIFF file", 0, L"aiff")
 	if (! pr_LongSounds_writeToStereoAudioFile (file, Melder_AIFF)) return 0;
 END
 
-FORM_WRITE (LongSounds_writeToStereoAifcFile, L"LongSound: Write to AIFC file", 0, L"aifc")
+FORM_WRITE (LongSounds_writeToStereoAifcFile, L"LongSound: Save as AIFC file", 0, L"aifc")
 	if (! pr_LongSounds_writeToStereoAudioFile (file, Melder_AIFC)) return 0;
 END
 
-FORM_WRITE (LongSounds_writeToStereoWavFile, L"LongSound: Write to WAV file", 0, L"wav")
+FORM_WRITE (LongSounds_writeToStereoWavFile, L"LongSound: Save as WAV file", 0, L"wav")
 	if (! pr_LongSounds_writeToStereoAudioFile (file, Melder_WAV)) return 0;
 END
 
-FORM_WRITE (LongSounds_writeToStereoNextSunFile, L"LongSound: Write to NeXT/Sun file", 0, L"au")
+FORM_WRITE (LongSounds_writeToStereoNextSunFile, L"LongSound: Save as NeXT/Sun file", 0, L"au")
 	if (! pr_LongSounds_writeToStereoAudioFile (file, Melder_NEXT_SUN)) return 0;
 END
 
-FORM_WRITE (LongSounds_writeToStereoNistFile, L"LongSound: Write to NIST file", 0, L"nist")
+FORM_WRITE (LongSounds_writeToStereoNistFile, L"LongSound: Save as NIST file", 0, L"nist")
 	if (! pr_LongSounds_writeToStereoAudioFile (file, Melder_NIST)) return 0;
 END
 
@@ -2286,7 +2311,7 @@ FORM (Matrix_solveEquation, L"Matrix: Solve equation", L"Matrix: Solve equation.
 DO
 	WHERE (SELECTED)
 	{
-		if (! praat_new2 (Matrix_solveEquation (OBJECT, GET_REAL (L"Tolerance")), NAMEW, L"_solution")) return 0;
+		if (! praat_new2 (Matrix_solveEquation (OBJECT, GET_REAL (L"Tolerance")), NAME, L"_solution")) return 0;
 	}
 END
 
@@ -2721,64 +2746,81 @@ DIRECT (Permutation_sort)
 END
 
 FORM (Permutation_swapBlocks, L"Permutation: Swap blocks", L"Permutation: Swap blocks...")
-	NATURAL (L"From", L"1")
-	NATURAL (L"To", L"2")
+	NATURAL (L"From index", L"1")
+	NATURAL (L"To index", L"2")
 	NATURAL (L"Block size", L"1")
 	OK
 DO
-	if (! Permutation_swapBlocks (ONLY_OBJECT, GET_INTEGER (L"From"), GET_INTEGER (L"To"), GET_INTEGER (L"Block size"))) return 0;
+	if (! Permutation_swapBlocks (ONLY_OBJECT, GET_INTEGER (L"From index"), GET_INTEGER (L"To index"), GET_INTEGER (L"Block size"))) return 0;
 	praat_dataChanged (ONLY_OBJECT);
 END
 
+FORM (Permutation_swapPositions, L"Permutation: Swap positions", L"Permutation: Swap positions...")
+	NATURAL (L"First index", L"1")
+	NATURAL (L"Second index", L"2")
+	OK
+DO
+	if (! Permutation_swapPositions (ONLY_OBJECT, GET_INTEGER (L"First index"), GET_INTEGER (L"Second index"))) return 0;
+	praat_dataChanged (ONLY_OBJECT);
+END
+
+FORM (Permutation_swapNumbers, L"Permutation: Swap numbers", L"Permutation: Swap numbers...")
+	NATURAL (L"First number", L"1")
+	NATURAL (L"Second number", L"2")
+	OK
+DO
+	if (! Permutation_swapNumbers (ONLY_OBJECT, GET_INTEGER (L"First number"), GET_INTEGER (L"Second number"))) return 0;
+	praat_dataChanged (ONLY_OBJECT);
+END
 
 FORM (Permutation_swapOneFromRange, L"Permutation: Swap one from range", L"Permutation: Swap one from range...")
 	LABEL (L"", L"A randomly chosen element from ")
-	INTEGER (L"left Range", L"0")
-	INTEGER (L"right Range", L"0")
+	INTEGER (L"left Index range", L"0")
+	INTEGER (L"right Index range", L"0")
 	LABEL (L"", L"is swapped with the element at")
 	NATURAL (L"Index", L"1")
 	BOOLEAN (L"Forbid same", 1)
 	OK
 DO
-	if (! Permutation_swapOneFromRange (ONLY_OBJECT, GET_INTEGER (L"left Range"), GET_INTEGER (L"right Range"),
+	if (! Permutation_swapOneFromRange (ONLY_OBJECT, GET_INTEGER (L"left Index range"), GET_INTEGER (L"right Index range"),
 		GET_INTEGER (L"Index"), GET_INTEGER (L"Forbid same"))) return 0;
 	praat_dataChanged (ONLY_OBJECT);
 END
 
 FORM (Permutation_permuteRandomly, L"Permutation: Permute randomly", L"Permutation: Permute randomly...")
-	INTEGER (L"left Range", L"0")
-	INTEGER (L"right Range", L"0")
+	INTEGER (L"left Index range", L"0")
+	INTEGER (L"right Index range", L"0")
 	OK
 DO
 	Permutation p = ONLY_OBJECT;
-	if (! praat_new2 (Permutation_permuteRandomly (p, GET_INTEGER (L"left Range"),
-		GET_INTEGER (L"right Range")), Thing_getName (p), L"_randomly")) return 0;
+	if (! praat_new2 (Permutation_permuteRandomly (p, GET_INTEGER (L"left Index range"),
+		GET_INTEGER (L"right Index range")), Thing_getName (p), L"_randomly")) return 0;
 END
 
 FORM (Permutation_rotate, L"Permutation: Rotate", L"Permutation: Rotate...")
-	INTEGER (L"left Range", L"0")
-	INTEGER (L"right Range", L"0")
+	INTEGER (L"left Index range", L"0")
+	INTEGER (L"right Index range", L"0")
 	INTEGER (L"Step size", L"1")
 	OK
 DO
 	Permutation p = ONLY_OBJECT;
 	long step = GET_INTEGER (L"Step size");
-	if (! praat_new3 (Permutation_rotate (p, GET_INTEGER (L"left Range"), GET_INTEGER (L"right Range"), step), Thing_getName (p), L"_rotate", Melder_integer (step))) return 0;
+	if (! praat_new3 (Permutation_rotate (p, GET_INTEGER (L"left Index range"), GET_INTEGER (L"right Index range"), step), Thing_getName (p), L"_rotate", Melder_integer (step))) return 0;
 END
 
 FORM (Permutation_reverse, L"Permutation: Reverse", L"Permutation: Reverse...")
-	INTEGER (L"left Range", L"0")
-	INTEGER (L"right Range", L"0")
+	INTEGER (L"left Index range", L"0")
+	INTEGER (L"right Index range", L"0")
 	OK
 DO
 	Permutation p = ONLY_OBJECT;
-	if (! praat_new2 (Permutation_reverse (p, GET_INTEGER (L"left Range"), GET_INTEGER (L"right Range")),
+	if (! praat_new2 (Permutation_reverse (p, GET_INTEGER (L"left Index range"), GET_INTEGER (L"right Index range")),
 		Thing_getName (p), L"_reverse")) return 0;
 END
 
 FORM (Permutation_permuteBlocksRandomly, L"Permutation: Permute blocks randomly", L"Permutation: Permute randomly (blocks)...")
-	INTEGER (L"left Range", L"0")
-	INTEGER (L"right Range", L"0")
+	INTEGER (L"left Index range", L"0")
+	INTEGER (L"right Index range", L"0")
 	NATURAL (L"Block size", L"12")
 	BOOLEAN (L"Permute within blocks", 1)
 	BOOLEAN (L"No doublets", 0)
@@ -2786,20 +2828,20 @@ FORM (Permutation_permuteBlocksRandomly, L"Permutation: Permute blocks randomly"
 DO
 	Permutation p = ONLY_OBJECT;
 	long blocksize = GET_INTEGER (L"Block size");
-	if (! praat_new3 (Permutation_permuteBlocksRandomly (p, GET_INTEGER (L"left Range"),
-		GET_INTEGER (L"right Range"), blocksize, GET_INTEGER (L"Permute within blocks"), GET_INTEGER (L"No doublets")),
+	if (! praat_new3 (Permutation_permuteBlocksRandomly (p, GET_INTEGER (L"left Index range"),
+		GET_INTEGER (L"right Index range"), blocksize, GET_INTEGER (L"Permute within blocks"), GET_INTEGER (L"No doublets")),
 		Thing_getName (p), L"_blocks", Melder_integer(blocksize))) return 0;
 END
 
 FORM (Permutation_interleave, L"Permutation: Interleave", L"Permutation: Interleave...")
-	INTEGER (L"left Range", L"0")
-	INTEGER (L"right Range", L"0")
+	INTEGER (L"left Index range", L"0")
+	INTEGER (L"right Index range", L"0")
 	NATURAL (L"Block size", L"12")
 	INTEGER (L"Offset", L"0")
 	OK
 DO
 	Permutation p = ONLY_OBJECT;
-	if (! praat_new2 (Permutation_interleave (ONLY_OBJECT, GET_INTEGER (L"left Range"), GET_INTEGER (L"right Range"),
+	if (! praat_new2 (Permutation_interleave (ONLY_OBJECT, GET_INTEGER (L"left Index range"), GET_INTEGER (L"right Index range"),
 		GET_INTEGER (L"Block size"), GET_INTEGER (L"Offset")), Thing_getName (p), L"_interleave")) return 0;
 END
 
@@ -3640,11 +3682,11 @@ FORM_READ (KlattTable_readFromRawTextFile, L"KlattTable_readFromRawTextFile", 0,
 	if (! praat_new1 (KlattTable_readFromRawTextFile (file), MelderFile_name (file))) return 0;
 END
 
-FORM_WRITE (Sound_writeToRawFileBE, L"Sound: Write to raw 16-bit Big Endian file", 0, L"raw")
+FORM_WRITE (Sound_writeToRawFileBE, L"Sound: Save as raw 16-bit Big Endian file", 0, L"raw")
 	if (! Sound_writeToRawFile (ONLY_OBJECT, file, 0, 0, 16, 0)) return 0;
 END
 
-FORM_WRITE (Sound_writeToRawFileLE, L"Sound: Write to raw 16-bit Little Endian file", 0, L"raw")
+FORM_WRITE (Sound_writeToRawFileLE, L"Sound: Save as raw 16-bit Little Endian file", 0, L"raw")
 	if (! Sound_writeToRawFile (ONLY_OBJECT, file, 0, 1, 16, 0)) return 0;
 END
 
@@ -4002,24 +4044,23 @@ END
 
 /******************* TableOfReal ****************************/
 
-FORM (TableOfReal_reportMultivariateNormality, L"TableOfReal: Report multivariate normality (Henze-Zirkler)", L"TableOfReal: Report multivariate normality (HZ)...")
-	REAL (L"Beta", L"0.0")
+FORM (TableOfReal_reportMultivariateNormality, L"TableOfReal: Report multivariate normality (BHEP)", L"TableOfReal: Report multivariate normality (BHEP)...")
+	REAL (L"Smoothing parameter", L"0.0")
 	OK
 DO
-	TableOfReal t = ONLY (classTableOfReal);
-	long n = t -> numberOfRows, p = t -> numberOfColumns;
-	double prob, wnb, lnmu, lnvar;
-	double beta = GET_REAL (L"Beta");
+	TableOfReal me = ONLY (classTableOfReal);
+	double tnb, lnmu, lnvar;
+	double h = GET_REAL (L"Smoothing parameter");
+	double prob = TableOfReal_normalityTest_BHEP (me, &h, &tnb, &lnmu, &lnvar);
 	MelderInfo_open ();
-	prob = NUMnormalityTest_HenzeZirkler (t -> data, n, p, &beta, &wnb, &lnmu, &lnvar);
-	MelderInfo_writeLine1 (L"Henze-Zirkler normality test:");
-	MelderInfo_writeLine2 (L"Henze-Zirkler statistic: ", Melder_double (wnb));
+	MelderInfo_writeLine1 (L"Baringhaus–Henze–Epps–Pulley normality test:");
 	MelderInfo_writeLine2 (L"Significance of normality: ", Melder_double (prob));
+	MelderInfo_writeLine2 (L"BHEP statistic: ", Melder_double (tnb));
 	MelderInfo_writeLine2 (L"Lognormal mean: ", Melder_double (lnmu));
 	MelderInfo_writeLine2 (L"Lognormal variance: ", Melder_double (lnvar));
-	MelderInfo_writeLine2 (L"Smoothing beta: ", Melder_double (beta));
-	MelderInfo_writeLine2 (L"Sample size: ", Melder_integer (n));
-	MelderInfo_writeLine2 (L"Number of variables: ", Melder_integer (p));
+	MelderInfo_writeLine2 (L"Smoothing: ", Melder_double (h));
+	MelderInfo_writeLine2 (L"Sample size: ", Melder_integer (my numberOfRows));
+	MelderInfo_writeLine2 (L"Number of variables: ", Melder_integer (my numberOfColumns));
 	MelderInfo_close ();
 END
 
@@ -4225,19 +4266,18 @@ DO
 END
 
 FORM (TableOfReal_drawColumnAsDistribution, L"TableOfReal: Draw column as distribution", L"TableOfReal: Draw column as distribution...")
-	NATURAL (L"Column", L"1")
-    REAL (L"Minimum value", L"0.0")
-    REAL (L"Maximum value", L"0.0")
-    LABEL (L"", L"Display of the distribution")
+	NATURAL (L"Column number", L"1")
+    REAL (L"left Value range", L"0.0")
+    REAL (L"right Value range", L"0.0")
+    REAL (L"left Frequency range", L"0.0")
+    REAL (L"right frequency range", L"0.0")
     NATURAL (L"Number of bins", L"10")
-    REAL (L"Minimum frequency", L"0.0")
-    REAL (L"Maximum frequency", L"0.0")
     BOOLEAN (L"Garnish", 1)
 	OK
 DO
-	EVERY_DRAW (TableOfReal_drawColumnAsDistribution (OBJECT, GRAPHICS, GET_INTEGER (L"Column"),
-		GET_REAL (L"Minimum value"), GET_REAL (L"Maximum value"),GET_INTEGER (L"Number of bins"),
-		GET_REAL (L"Minimum frequency"), GET_REAL (L"Maximum frequency"), 0, GET_INTEGER (L"Garnish")))
+	EVERY_DRAW (TableOfReal_drawColumnAsDistribution (OBJECT, GRAPHICS, GET_INTEGER (L"Column number"),
+		GET_REAL (L"left Value range"), GET_REAL (L"right Value range"),GET_INTEGER (L"Number of bins"),
+		GET_REAL (L"left Frequency range"), GET_REAL (L"right frequency range"), 0, GET_INTEGER (L"Garnish")))
 END
 
 FORM (TableOfReal_to_Configuration_lda, L"TableOfReal: To Configuration (lda)", L"TableOfReal: To Configuration (lda)...")
@@ -4313,6 +4353,22 @@ DIRECT (TablesOfReal_to_Eigen_gsvd)
 	NEW (TablesOfReal_to_Eigen_gsvd (me, thee))
 END
 
+FORM (TableOfReal_and_TableOfReal_crossCorrelations, L"TableOfReal & TableOfReal: Cross-correlations", 0)
+	OPTIONMENU (L"Correlations between", 1)
+	OPTION (L"Rows")
+	OPTION (L"Columns")
+	BOOLEAN (L"Center", 0)
+	BOOLEAN (L"Normalize", 0)
+	OK
+DO
+	TableOfReal t1 = NULL, t2 = NULL;
+	int by_columns = GET_INTEGER (L"Correlations between") - 1;
+	WHERE (SELECTED && CLASS == classTableOfReal) { if (t1) t2 = OBJECT; else t1 = OBJECT; }
+	if (! praat_new1 (TableOfReal_and_TableOfReal_crossCorrelations (t1, t2, by_columns,
+		GET_INTEGER (L"Center"), GET_INTEGER (L"Normalize")),
+		(by_columns ? L"by_columns" : L"by_rows"))) return 0;
+END
+
 DIRECT (TablesOfReal_to_GSVD)
 	TableOfReal me = NULL, thee = NULL;
 	WHERE (SELECTED)
@@ -4371,14 +4427,14 @@ FORM (TableOfReal_meansByRowLabels, L"TableOfReal: Means by row labels", L"Table
     BOOLEAN (L"Expand", 0)
 	OK
 DO
-	EVERY_CHECK(praat_new2 (TableOfReal_meansByRowLabels (OBJECT, GET_INTEGER (L"Expand"), 0), NAMEW, L"_byrowlabels"))
+	EVERY_CHECK(praat_new2 (TableOfReal_meansByRowLabels (OBJECT, GET_INTEGER (L"Expand"), 0), NAME, L"_byrowlabels"))
 END
 
 FORM (TableOfReal_mediansByRowLabels, L"TableOfReal: Medians by row labels", L"TableOfReal: To TableOfReal (medians by row labels)...")
     BOOLEAN (L"Expand", 0)
 	OK
 DO
-	EVERY_CHECK(praat_new2 (TableOfReal_meansByRowLabels (OBJECT, GET_INTEGER (L"Expand"), 1), NAMEW, L"_byrowlabels"))
+	EVERY_CHECK(praat_new2 (TableOfReal_meansByRowLabels (OBJECT, GET_INTEGER (L"Expand"), 1), NAME, L"_byrowlabels"))
 END
 
 /***** TableOfReal and FilterBank  *****/
@@ -4570,7 +4626,7 @@ static void praat_FunctionTerms_init (void *klas)
 		praat_addAction1 (klas, 1, L"Get x of minimum...", 0, 1, DO_FunctionTerms_getXOfMinimum);
 		praat_addAction1 (klas, 1, L"Get maximum...", 0, 1, DO_FunctionTerms_getMaximum);
 		praat_addAction1 (klas, 1, L"Get x of maximum...", 0, 1, DO_FunctionTerms_getXOfMaximum);
-	praat_addAction1 (klas, 0, L"Modify -               ", 0, 0, 0);
+	praat_addAction1 (klas, 0, L"Modify -", 0, 0, 0);
 		praat_addAction1 (klas, 1, L"Set domain...", 0, 1, DO_FunctionTerms_setDomain);
 		praat_addAction1 (klas, 1, L"Set coefficient...", 0, 1, DO_FunctionTerms_setCoefficient);
 	praat_addAction1 (klas, 0, L"Analyse", 0, 0, 0);
@@ -4615,6 +4671,34 @@ static void praat_SSCP_extract_init (void *klas)
 	praat_addAction1 (klas, 1, L"Extract centroid", EXTRACT_BUTTON, 1, DO_SSCP_extractCentroid);
 }
 
+FORM (SSCP_setValue, L"Covariance: Set value", L"Covariance: Set value...")
+	NATURAL (L"Row number", L"1")
+	NATURAL (L"Column number", L"1")
+	REAL (L"New value", L"1.0")
+	OK
+DO
+	if (! SSCP_setValue (ONLY_GENERIC (classSSCP), GET_INTEGER (L"Row number"), GET_INTEGER (L"Column number"),
+		GET_REAL (L"New value"))) return 0;
+END
+
+FORM (SSCP_setCentroid, L"", 0)
+	NATURAL (L"Element number", L"1")
+	REAL (L"New value", L"1.0")
+	OK
+DO
+	if (! SSCP_setCentroid (ONLY_GENERIC (classSSCP), GET_INTEGER (L"Element number"), GET_REAL (L"New value"))) return 0;
+END
+
+void praat_SSCP_as_TableOfReal_init (void *klas)
+{
+	praat_TableOfReal_init (klas);
+	praat_removeAction (klas, NULL, NULL, L"Set value...");
+	praat_addAction1 (klas, 1, L"Set centroid...", L"Formula...", 1, DO_SSCP_setCentroid);
+	praat_addAction1 (klas, 1, L"Set value...", L"Formula...", 1, DO_SSCP_setValue);
+	praat_addAction1 (klas, 0, L"To TableOfReal", L"To Matrix", 1, DO_TableOfReal_to_TableOfReal);
+
+}
+
 void praat_TableOfReal_init2  (void *klas)
 {
 	praat_TableOfReal_init (klas);
@@ -4654,6 +4738,7 @@ void praat_uvafon_David_init (void)
 
     praat_addMenuCommand (L"Objects", L"Goodies", L"Report floating point properties", 0, 0, DO_Praat_ReportFloatingPointProperties);
 
+	praat_addMenuCommand (L"Objects", L"New", L"Create simple Covariance...", L"Create simple Matrix...", 1, DO_Covariance_createSimple);
  praat_addMenuCommand (L"Objects", L"New", L"Create Permutation...", 0, 0, DO_Permutation_create);
     praat_addMenuCommand (L"Objects", L"New", L"Polynomial", 0, 0, 0);
     	praat_addMenuCommand (L"Objects", L"New", L"Create Polynomial...", 0, 1, DO_Polynomial_create);
@@ -4673,10 +4758,10 @@ void praat_uvafon_David_init (void)
 	praat_addMenuCommand (L"Objects", L"New", L"Create TableOfReal (Weenink 1985)...", L"Create TableOfReal (Van Nierop 1973)...", 1, DO_TableOfReal_createFromWeeninkData);
 	praat_addMenuCommand (L"Objects", L"New", L"Create KlattTable example", L"Create TableOfReal (Weenink 1985)...", praat_DEPTH_1+praat_HIDDEN, DO_KlattTable_createExample);
 
-	praat_addMenuCommand (L"Objects", L"Read", L"Read Sound from raw 16-bit Little Endian file...", L"Read from special sound file", 1,
+	praat_addMenuCommand (L"Objects", L"Open", L"Read Sound from raw 16-bit Little Endian file...", L"Read from special sound file", 1,
 		 DO_Sound_readFromRawFileLE);
-	praat_addMenuCommand (L"Objects", L"Read", L"Read Sound from raw 16-bit Big Endian file...", L"Read Sound from raw 16-bit Little Endian file...", 1, DO_Sound_readFromRawFileBE);
-	praat_addMenuCommand (L"Objects", L"Read", L"Read KlattTable from raw text file...", L"Read Matrix from raw text file...", praat_HIDDEN, DO_KlattTable_readFromRawTextFile);
+	praat_addMenuCommand (L"Objects", L"Open", L"Read Sound from raw 16-bit Big Endian file...", L"Read Sound from raw 16-bit Little Endian file...", 1, DO_Sound_readFromRawFileBE);
+	praat_addMenuCommand (L"Objects", L"Open", L"Read KlattTable from raw text file...", L"Read Matrix from raw text file...", praat_HIDDEN, DO_KlattTable_readFromRawTextFile);
 
     praat_addAction1 (classActivation, 0, L"Modify", 0, 0, 0);
     praat_addAction1 (classActivation, 0, L"Formula...", 0, 0,
@@ -4745,7 +4830,7 @@ void praat_uvafon_David_init (void)
 		DO_Confusion_help);
     praat_TableOfReal_init2 (classConfusion);
 	praat_removeAction (classConfusion, NULL, NULL, L"Draw as numbers...");
-	praat_addAction1 (classConfusion, 0, L"Draw as numbers...", L"Draw -                 ", 1, DO_Confusion_drawAsNumbers);
+	praat_addAction1 (classConfusion, 0, L"Draw as numbers...", L"Draw -", 1, DO_Confusion_drawAsNumbers);
 	praat_addAction1 (classConfusion, 0, L"-- confusion statistics --", L"Get value...", 1, 0);
 	praat_addAction1 (classConfusion, 1, L"Get fraction correct", L"-- confusion statistics --", 1, DO_Confusion_getFractionCorrect);
 	praat_addAction1 (classConfusion, 1, L"Get row sum...", L"Get fraction correct", 1, DO_TableOfReal_getRowSum);
@@ -4764,9 +4849,10 @@ void praat_uvafon_David_init (void)
 
 	praat_addAction1 (classCovariance, 0, L"Covariance help", 0, 0,
 		DO_Covariance_help);
-    praat_TableOfReal_init2 (classCovariance);
+    praat_SSCP_as_TableOfReal_init (classCovariance);
 	praat_SSCP_query_init (classCovariance);
 	praat_SSCP_extract_init (classCovariance);
+	praat_addAction1 (classCovariance, 1, L"Get probability at position...", L"Get value...", 1, DO_Covariance_getProbabilityAtPosition);
 	praat_addAction1 (classCovariance, 1, L"Get diagonality (bartlett)...", L"Get ln(determinant)", 1, DO_SSCP_testDiagonality_bartlett);
 	praat_addAction1 (classCovariance, 1, L"Get significance of one mean...", L"Get diagonality (bartlett)...", 1, DO_Covariance_getSignificanceOfOneMean);
 	praat_addAction1 (classCovariance, 1, L"Get significance of means difference...", L"Get significance of one mean...", 1, DO_Covariance_getSignificanceOfMeansDifference);
@@ -4787,6 +4873,7 @@ void praat_uvafon_David_init (void)
 	praat_addAction1 (classClassificationTable, 0, L"ClassificationTable help", 0, 0, DO_ClassificationTable_help);
 	praat_TableOfReal_init (classClassificationTable);
 	praat_addAction1 (classClassificationTable, 0, L"To Confusion", 0, 0, DO_ClassificationTable_to_Confusion);
+	praat_addAction1 (classClassificationTable, 0, L"To Correlation (columns)", 0, 0, DO_ClassificationTable_to_Correlation_columns);
 	praat_addAction1 (classClassificationTable, 0, L"To Strings (max. prob.)", 0, 0, DO_ClassificationTable_to_Strings_maximumProbability);
 
 	praat_addAction1 (classCorrelation, 0, L"Correlation help", 0, 0, DO_Correlation_help);
@@ -4939,11 +5026,16 @@ void praat_uvafon_David_init (void)
 	praat_addAction1 (classSound, 0, L"Append to existing sound file...", 0, 0, DO_LongSounds_appendToExistingSoundFile);
 	praat_addAction2 (classLongSound, 0, classSound, 0, L"Append to existing sound file...", 0, 0, DO_LongSounds_appendToExistingSoundFile);
 
-	praat_addAction1 (classLongSound, 2, L"Write to stereo AIFF file...", L"Write to NIST file...", 1, DO_LongSounds_writeToStereoAiffFile);
-	praat_addAction1 (classLongSound, 2, L"Write to stereo AIFC file...", L"Write to stereo AIFF file...", 1, DO_LongSounds_writeToStereoAifcFile);
-	praat_addAction1 (classLongSound, 2, L"Write to stereo WAV file...", L"Write to stereo AIFC file...", 1, DO_LongSounds_writeToStereoWavFile);
-	praat_addAction1 (classLongSound, 2, L"Write to stereo NeXt/Sun file...", L"Write to stereo WAV file...", 1, DO_LongSounds_writeToStereoNextSunFile);
-	praat_addAction1 (classLongSound, 2, L"Write to stereo NIST file...", L"Write to stereo NeXt/Sun file...", 1, DO_LongSounds_writeToStereoNistFile);
+	praat_addAction1 (classLongSound, 2, L"Save as stereo AIFF file...", L"Save as NIST file...", 1, DO_LongSounds_writeToStereoAiffFile);
+	praat_addAction1 (classLongSound, 2, L"Write to stereo AIFF file...", L"Write to NIST file...", praat_HIDDEN + praat_DEPTH_1, DO_LongSounds_writeToStereoAiffFile);
+	praat_addAction1 (classLongSound, 2, L"Save as stereo AIFC file...", L"Save as stereo AIFF file...", 1, DO_LongSounds_writeToStereoAifcFile);
+	praat_addAction1 (classLongSound, 2, L"Write to stereo AIFC file...", L"Write to stereo AIFF file...", praat_HIDDEN + praat_DEPTH_1, DO_LongSounds_writeToStereoAifcFile);
+	praat_addAction1 (classLongSound, 2, L"Save as stereo WAV file...", L"Save as stereo AIFC file...", 1, DO_LongSounds_writeToStereoWavFile);
+	praat_addAction1 (classLongSound, 2, L"Write to stereo WAV file...", L"Write to stereo AIFC file...", praat_HIDDEN + praat_DEPTH_1, DO_LongSounds_writeToStereoWavFile);
+	praat_addAction1 (classLongSound, 2, L"Save as stereo NeXt/Sun file...", L"Save as stereo WAV file...", 1, DO_LongSounds_writeToStereoNextSunFile);
+	praat_addAction1 (classLongSound, 2, L"Write to stereo NeXt/Sun file...", L"Write to stereo WAV file...", praat_HIDDEN + praat_DEPTH_1, DO_LongSounds_writeToStereoNextSunFile);
+	praat_addAction1 (classLongSound, 2, L"Save as stereo NIST file...", L"Save as stereo NeXt/Sun file...", 1, DO_LongSounds_writeToStereoNistFile);
+	praat_addAction1 (classLongSound, 2, L"Write to stereo NIST file...", L"Write to stereo NeXt/Sun file...", praat_HIDDEN + praat_DEPTH_1, DO_LongSounds_writeToStereoNistFile);
 
 	praat_addAction1 (classMatrix, 0, L"Scatter plot...", L"Paint cells...", 1, DO_Matrix_scatterPlot);
 	praat_addAction1 (classMatrix, 0, L"Draw as squares...", L"Scatter plot...", 1, DO_Matrix_drawAsSquares);
@@ -5017,6 +5109,8 @@ void praat_uvafon_David_init (void)
 	praat_addAction1 (classPermutation, 0, MODIFY_BUTTON, 0, 0, 0);
 	praat_addAction1 (classPermutation, 1, L"Sort", 0, 1, DO_Permutation_sort);
 	praat_addAction1 (classPermutation, 1, L"Swap blocks...", 0, 1, DO_Permutation_swapBlocks);
+	praat_addAction1 (classPermutation, 1, L"Swap numbers...", 0, 1, DO_Permutation_swapNumbers);
+	praat_addAction1 (classPermutation, 1, L"Swap positions...", 0, 1, DO_Permutation_swapPositions);
 	praat_addAction1 (classPermutation, 1, L"Swap one from range...", 0, 1, DO_Permutation_swapOneFromRange);
 	praat_addAction1 (classPermutation, 0, L"-- sequential permutations --", 0, 1, 0);
 	praat_addAction1 (classPermutation, 0, L"Next", 0, 1, DO_Permutations_next);
@@ -5070,8 +5164,10 @@ void praat_uvafon_David_init (void)
 
 	praat_addAction2 (classRoots, 1, classPolynomial, 1,L"Polish roots", 0, 0, DO_Roots_and_Polynomial_polish);
 
-	praat_addAction1 (classSound, 1, L"Write to raw 16-bit Big Endian file...", 0, 0, DO_Sound_writeToRawFileBE);
-	praat_addAction1 (classSound, 1, L"Write to raw 16-bit Little Endian file...", 0, 0, DO_Sound_writeToRawFileLE);
+	praat_addAction1 (classSound, 1, L"Save as raw 16-bit Big Endian file...", 0, 0, DO_Sound_writeToRawFileBE);
+	praat_addAction1 (classSound, 1, L"Write to raw 16-bit Big Endian file...", 0, praat_HIDDEN, DO_Sound_writeToRawFileBE);
+	praat_addAction1 (classSound, 1, L"Save as raw 16-bit Little Endian file...", 0, 0, DO_Sound_writeToRawFileLE);
+	praat_addAction1 (classSound, 1, L"Write to raw 16-bit Little Endian file...", 0, praat_HIDDEN, DO_Sound_writeToRawFileLE);
 
 	praat_addAction1 (classSound, 0, L"To TextGrid (silences)...", L"To IntervalTier", 1, DO_Sound_to_TextGrid_detectSilences);
 
@@ -5162,6 +5258,10 @@ void praat_uvafon_David_init (void)
 	praat_addAction1 (classTableOfReal, 0, L"-- configurations --", 0, 1, 0);
 	praat_addAction1 (classTableOfReal, 0, L"To Configuration (pca)...",	0, 1, DO_TableOfReal_to_Configuration_pca);
 	praat_addAction1 (classTableOfReal, 0, L"To Configuration (lda)...", 0, 1, DO_TableOfReal_to_Configuration_lda);
+	praat_addAction1 (classTableOfReal, 2, L"-- between tables --", L"To Configuration (lda)...", 1, 0);
+	praat_addAction1 (classTableOfReal, 2, L"To TableOfReal (cross-correlations)...", 0, praat_HIDDEN + praat_DEPTH_1, DO_TableOfReal_and_TableOfReal_crossCorrelations);
+
+
 	praat_addAction1 (classTableOfReal, 1, L"To Pattern and Categories...", L"To Matrix", 1, DO_TableOfReal_to_Pattern_and_Categories);
 	praat_addAction1 (classTableOfReal, 1, L"Split into Pattern and Categories...", L"To Pattern and Categories...", praat_DEPTH_1 | praat_HIDDEN, DO_TableOfReal_to_Pattern_and_Categories);
 	praat_addAction1 (classTableOfReal, 0, L"To Permutation (sort row labels)", L"To Matrix", 1, DO_TableOfReal_to_Permutation_sortRowlabels);
@@ -5169,6 +5269,7 @@ void praat_uvafon_David_init (void)
 	praat_addAction1 (classTableOfReal, 1, L"To SVD", 0, praat_HIDDEN, DO_TableOfReal_to_SVD);
 	praat_addAction1 (classTableOfReal, 2, L"To GSVD", 0, praat_HIDDEN, DO_TablesOfReal_to_GSVD);
 	praat_addAction1 (classTableOfReal, 2, L"To Eigen (gsvd)", 0, praat_HIDDEN, DO_TablesOfReal_to_Eigen_gsvd);
+
  	praat_addAction1 (classTableOfReal, 0, L"To TableOfReal (cholesky)...", 0, praat_HIDDEN, DO_TableOfReal_choleskyDecomposition);
 
 	praat_addAction1 (classTableOfReal, 0, L"-- scatter plots --", L"Draw top and bottom lines...", 1, 0);
@@ -5179,7 +5280,7 @@ void praat_uvafon_David_init (void)
 	praat_addAction1 (classTableOfReal, 0, L"Draw vectors...", L"Draw box plots...", praat_DEPTH_1 | praat_HIDDEN, DO_TableOfReal_drawVectors);
 	praat_addAction1 (classTableOfReal, 1, L"Draw row as histogram...", L"Draw biplot...", praat_DEPTH_1 | praat_HIDDEN, DO_TableOfReal_drawRowAsHistogram);
 	praat_addAction1 (classTableOfReal, 1, L"Draw rows as histogram...", L"Draw row as histogram...", praat_DEPTH_1 | praat_HIDDEN, DO_TableOfReal_drawRowsAsHistogram);
-	praat_addAction1 (classTableOfReal, 1, L"Draw column as distribution...", L"Draw rows as histogram...", praat_DEPTH_1 | praat_HIDDEN, DO_TableOfReal_drawColumnAsDistribution);
+	praat_addAction1 (classTableOfReal, 1, L"Draw column as distribution...", L"Draw rows as histogram...", praat_DEPTH_1, DO_TableOfReal_drawColumnAsDistribution);
 
 	praat_addAction2 (classStrings, 1, classPermutation, 1, L"Permute strings", 0, 0, DO_Strings_and_Permutation_permuteStrings);
 
@@ -5192,6 +5293,8 @@ void praat_uvafon_David_init (void)
 
     INCLUDE_LIBRARY (praat_uvafon_MDS_init)
 	INCLUDE_LIBRARY (praat_KlattGrid_init)
+	INCLUDE_LIBRARY (praat_HMM_init)
+	INCLUDE_LIBRARY (praat_BSS_init)
 	INCLUDE_MANPAGES (manual_dwtools_init)
 	INCLUDE_MANPAGES (manual_Permutation_init)
 }

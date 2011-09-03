@@ -2,7 +2,7 @@
 #define _Simple_h_
 /* Simple.h
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,11 +20,15 @@
  */
 
 /*
- * pb 2008/03/19
+ * pb 2011/03/02
  */
 
 #ifndef _Data_h_
 	#include "Data.h"
+#endif
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 #include "Simple_def.h"
@@ -50,4 +54,9 @@ SimpleLong SimpleLong_create (long number);
 SimpleDouble SimpleDouble_create (double number);
 SimpleString SimpleString_create (const wchar_t *string);
 
+#ifdef __cplusplus
+	}
+#endif
+
+/* End of file Simple.h */
 #endif

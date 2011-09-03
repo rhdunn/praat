@@ -2,7 +2,7 @@
 #define _HyperPage_h_
 /* HyperPage.h
  *
- * Copyright (C) 1992-2007 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  */
 
 /*
- * pb 2007/08/12
+ * pb 2011/03/02
  */
 
 #ifndef _Editor_h_
@@ -31,6 +31,10 @@
 #endif
 #ifndef _Graphics_h_
 	#include "Graphics.h"
+#endif
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 #define HyperLink_members Data_members \
@@ -44,7 +48,7 @@ HyperLink HyperLink_create (const wchar_t *name, double x1, double x2, double y1
 Thing_declare1 (HyperPage);
 
 #define HyperPage__members(Klas) Editor__members(Klas) \
-	Widget drawingArea, verticalScrollBar; \
+	GuiObject drawingArea, verticalScrollBar; \
 	Graphics g, ps; \
 	double x, y, rightMargin, previousBottomSpacing; \
 	long pageNumber; \
@@ -57,8 +61,8 @@ Thing_declare1 (HyperPage);
 	struct { wchar_t *page; int top; } history [20]; \
 	int historyPointer; \
 	wchar_t *currentPageTitle; \
-	Widget fontSizeButton_10, fontSizeButton_12, fontSizeButton_14, fontSizeButton_18, fontSizeButton_24; \
-	Widget holder; \
+	GuiObject fontSizeButton_10, fontSizeButton_12, fontSizeButton_14, fontSizeButton_18, fontSizeButton_24; \
+	GuiObject holder; \
 	void *praatApplication, *praatObjects, *praatPicture; \
 	bool scriptErrorHasBeenNotified; \
 	structMelderDir rootDirectory;
@@ -110,11 +114,15 @@ int HyperPage_script (I, double width_inches, double height_inches, const wchar_
 int HyperPage_goToPage (I, const wchar_t *title);
 int HyperPage_goToPage_i (I, long i);
 
-int HyperPage_init (HyperPage me, Widget parent, const wchar_t *title, Any data);
+int HyperPage_init (HyperPage me, GuiObject parent, const wchar_t *title, Any data);
 
 void HyperPage_prefs (void);
 void HyperPage_setEntryHint (I, const wchar_t *entry);
 void HyperPage_initSheetOfPaper (HyperPage me);
+
+#ifdef __cplusplus
+	}
+#endif
 
 /* End of file HyperPage.h */
 #endif

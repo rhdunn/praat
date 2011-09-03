@@ -44,6 +44,7 @@
  * fb 2010/02/20 GTK
  * pb 2010/07/13 GTK: attempts to front the window
  * pb 2010/07/29 removed GuiWindow_show (and window comes to the front!)
+ * pb 2010/12/17 dashed-dotted lines
  */
 
 #include "praatP.h"
@@ -69,9 +70,9 @@ static Picture praat_picture;
 /***** "Font" MENU: font part *****/
 
 #if 0
-static Widget praatButton_times, praatButton_helvetica, praatButton_palatino, praatButton_courier;
+static GuiObject praatButton_times, praatButton_helvetica, praatButton_palatino, praatButton_courier;
 #endif
-static Widget praatButton_fonts [1 + kGraphics_font_MAX];
+static GuiObject praatButton_fonts [1 + kGraphics_font_MAX];
 
 static void updateFontMenu (void) {
 	if (! theCurrentPraatApplication -> batch) {
@@ -98,7 +99,7 @@ DIRECT (Courier) setFont (kGraphics_font_COURIER); END
 
 /***** "Font" MENU: size part *****/
 
-static Widget praatButton_10, praatButton_12, praatButton_14, praatButton_18, praatButton_24;
+static GuiObject praatButton_10, praatButton_12, praatButton_14, praatButton_18, praatButton_24;
 static void updateSizeMenu (void) {
 	if (! theCurrentPraatApplication -> batch) {
 		GuiMenuItem_check (praatButton_10, theCurrentPraatPicture -> fontSize == 10);
@@ -156,7 +157,7 @@ END
 
 /***** "Select" MENU *****/
 
-static Widget praatButton_innerViewport, praatButton_outerViewport;
+static GuiObject praatButton_innerViewport, praatButton_outerViewport;
 static void updateViewportMenu (void) {
 	if (! theCurrentPraatApplication -> batch) {
 		GuiMenuItem_check (praatButton_innerViewport, praat_mouseSelectsInnerViewport ? 1 : 0);
@@ -165,7 +166,7 @@ static void updateViewportMenu (void) {
 }
 
 DIRECT (MouseSelectsInnerViewport)
-	if (theCurrentPraatPicture != & theForegroundPraatPicture) return Melder_error1 (L"Viewport commands are not available inside pictures.");
+	if (theCurrentPraatPicture != & theForegroundPraatPicture) return Melder_error1 (L"Mouse commands are not available inside pictures.");
 	praat_picture_open ();
 	Picture_setMouseSelectsInnerViewport (praat_picture, praat_mouseSelectsInnerViewport = true);
 	praat_picture_close ();
@@ -173,7 +174,7 @@ DIRECT (MouseSelectsInnerViewport)
 END
 
 DIRECT (MouseSelectsOuterViewport)
-	if (theCurrentPraatPicture != & theForegroundPraatPicture) return Melder_error1 (L"Viewport commands are not available inside pictures.");
+	if (theCurrentPraatPicture != & theForegroundPraatPicture) return Melder_error1 (L"Mouse commands are not available inside pictures.");
 	praat_picture_open ();
 	Picture_setMouseSelectsInnerViewport (praat_picture, praat_mouseSelectsInnerViewport = false);
 	praat_picture_close ();
@@ -198,12 +199,12 @@ SET_REAL (L"right Horizontal range", theCurrentPraatPicture -> x2NDC - xmargin);
 SET_REAL (L"left Vertical range", 12 - theCurrentPraatPicture -> y2NDC + ymargin);
 SET_REAL (L"right Vertical range", 12 - theCurrentPraatPicture -> y1NDC - ymargin);
 DO
-	if (theCurrentPraatObjects != & theForegroundPraatObjects) return Melder_error1 (L"Viewport commands are not available inside manuals.");
+	//if (theCurrentPraatObjects != & theForegroundPraatObjects) return Melder_error1 (L"Viewport commands are not available inside manuals.");
 	double left = GET_REAL (L"left Horizontal range"), right = GET_REAL (L"right Horizontal range");
 	double top = GET_REAL (L"left Vertical range"), bottom = GET_REAL (L"right Vertical range");
 	double xmargin = theCurrentPraatPicture -> fontSize * 4.2 / 72.0, ymargin = theCurrentPraatPicture -> fontSize * 2.8 / 72.0;
 	if (theCurrentPraatPicture != & theForegroundPraatPicture) {
-		short x1DC, x2DC, y1DC, y2DC;
+		long x1DC, x2DC, y1DC, y2DC;
 		Graphics_inqWsViewport (GRAPHICS, & x1DC, & x2DC, & y1DC, & y2DC);
 		double x1wNDC, x2wNDC, y1wNDC, y2wNDC;
 		Graphics_inqWsWindow (GRAPHICS, & x1wNDC, & x2wNDC, & y1wNDC, & y2wNDC);
@@ -230,6 +231,13 @@ DO
 		theCurrentPraatPicture -> y1NDC = 12-bottom - ymargin;
 		theCurrentPraatPicture -> y2NDC = 12-top + ymargin;
 		Picture_setSelection (praat_picture, theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC, False);
+	} else if (theCurrentPraatObjects != & theForegroundPraatObjects) {   // in manual?
+		if (top > bottom) { double temp; temp = top; top = bottom; bottom = temp; }
+		double x1wNDC, x2wNDC, y1wNDC, y2wNDC;
+		Graphics_inqWsWindow (GRAPHICS, & x1wNDC, & x2wNDC, & y1wNDC, & y2wNDC);
+		double height_NDC = y2wNDC - y1wNDC;
+		theCurrentPraatPicture -> y1NDC = height_NDC-bottom - ymargin;
+		theCurrentPraatPicture -> y2NDC = height_NDC-top + ymargin;
 	} else {
 		if (top < bottom) { double temp; temp = top; top = bottom; bottom = temp; }
 		theCurrentPraatPicture -> y1NDC = bottom - ymargin;
@@ -252,7 +260,7 @@ SET_REAL (L"right Horizontal range", theCurrentPraatPicture -> x2NDC);
 SET_REAL (L"left Vertical range", 12 - theCurrentPraatPicture -> y2NDC);
 SET_REAL (L"right Vertical range", 12 - theCurrentPraatPicture -> y1NDC);
 DO
-	if (theCurrentPraatObjects != & theForegroundPraatObjects) return Melder_error1 (L"Viewport commands are not available inside manuals.");
+	//if (theCurrentPraatObjects != & theForegroundPraatObjects) return Melder_error1 (L"Viewport commands are not available inside manuals.");
 	double left = GET_REAL (L"left Horizontal range"), right = GET_REAL (L"right Horizontal range");
 	double top = GET_REAL (L"left Vertical range"), bottom = GET_REAL (L"right Vertical range");
 	if (left == right) {
@@ -271,6 +279,13 @@ DO
 		theCurrentPraatPicture -> y1NDC = 12-bottom;
 		theCurrentPraatPicture -> y2NDC = 12-top;
 		Picture_setSelection (praat_picture, theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC, False);
+	} else if (theCurrentPraatObjects != & theForegroundPraatObjects) {   // in manual?
+		if (top > bottom) { double temp; temp = top; top = bottom; bottom = temp; }
+		double x1wNDC, x2wNDC, y1wNDC, y2wNDC;
+		Graphics_inqWsWindow (GRAPHICS, & x1wNDC, & x2wNDC, & y1wNDC, & y2wNDC);
+		double height_NDC = y2wNDC - y1wNDC;
+		theCurrentPraatPicture -> y1NDC = height_NDC-bottom;
+		theCurrentPraatPicture -> y2NDC = height_NDC-top;
 	} else {
 		if (top < bottom) { double temp; temp = top; top = bottom; bottom = temp; }
 		theCurrentPraatPicture -> y1NDC = bottom;
@@ -308,8 +323,8 @@ END
 
 /***** "Pen" MENU *****/
 
-static Widget praatButton_lines [3];
-static Widget praatButton_black, praatButton_white, praatButton_red, praatButton_green, praatButton_blue,
+static GuiObject praatButton_lines [3];
+static GuiObject praatButton_black, praatButton_white, praatButton_red, praatButton_green, praatButton_blue,
 	praatButton_yellow, praatButton_cyan, praatButton_magenta, praatButton_maroon, praatButton_lime, praatButton_navy,
 	praatButton_teal, praatButton_purple, praatButton_olive, praatButton_pink, praatButton_silver, praatButton_grey;
 
@@ -350,6 +365,7 @@ static void setLineType (int lineType) {
 DIRECT (Solid_line) setLineType (Graphics_DRAWN); END
 DIRECT (Dotted_line) setLineType (Graphics_DOTTED); END
 DIRECT (Dashed_line) setLineType (Graphics_DASHED); END
+DIRECT (Dashed_dotted_line) setLineType (Graphics_DASHED_DOTTED); END
 
 FORM (Line_width, L"Praat picture: Line width", 0)
 	POSITIVE (L"Line width", L"1.0")
@@ -441,7 +457,7 @@ static int DO_Picture_writeToEpsFile (UiForm sendingForm, const wchar_t *sending
 	(void) interpreter;
 	(void) modified;
 	(void) dummy;
-	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Write to EPS file",
+	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Save as EPS file",
 		DO_Picture_writeToEpsFile, NULL, invokingButtonTitle, NULL);
 	if (sendingForm == NULL && sendingString == NULL) {
 		UiOutfile_do (dia, L"praat.eps");
@@ -452,7 +468,7 @@ static int DO_Picture_writeToEpsFile (UiForm sendingForm, const wchar_t *sending
 	}
 	return 1;
 }
-/*FORM_WRITE (Picture_writeToEpsFile, L"Write picture to Encapsulated PostScript file", 0, L"praat.eps")
+/*FORM_WRITE (Picture_writeToEpsFile, L"Save picture as Encapsulated PostScript file", 0, L"praat.eps")
 	if (! Picture_writeToEpsFile (praat_picture, fileName, TRUE)) return 0;
 END*/
 
@@ -461,7 +477,7 @@ static int DO_Picture_writeToFontlessEpsFile_xipa (UiForm sendingForm, const wch
 	(void) interpreter;
 	(void) modified;
 	(void) dummy;
-	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Write to fontless EPS file",
+	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Save as fontless EPS file",
 		DO_Picture_writeToFontlessEpsFile_xipa, NULL, invokingButtonTitle, NULL);
 	if (sendingForm == NULL && sendingString == NULL) {
 		UiOutfile_do (dia, L"praat.eps");
@@ -478,7 +494,7 @@ static int DO_Picture_writeToFontlessEpsFile_silipa (UiForm sendingForm, const w
 	(void) interpreter;
 	(void) modified;
 	(void) dummy;
-	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Write to fontless EPS file",
+	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Save as fontless EPS file",
 		DO_Picture_writeToFontlessEpsFile_silipa, NULL, invokingButtonTitle, NULL);
 	if (sendingForm == NULL && sendingString == NULL) {
 		UiOutfile_do (dia, L"praat.eps");
@@ -495,7 +511,7 @@ static int DO_Picture_writeToPdfFile (UiForm sendingForm, const wchar_t *sending
 	(void) interpreter;
 	(void) modified;
 	(void) dummy;
-	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Write to PDF file",
+	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Save as PDF file",
 		DO_Picture_writeToPdfFile, NULL, invokingButtonTitle, NULL);
 	if (sendingForm == NULL && sendingString == NULL) {
 		UiOutfile_do (dia, L"praat.pdf");
@@ -512,7 +528,7 @@ static int DO_Picture_writeToPraatPictureFile (UiForm sendingForm, const wchar_t
 	(void) interpreter;
 	(void) modified;
 	(void) dummy;
-	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Write to Praat picture file",
+	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Save as Praat picture file",
 		DO_Picture_writeToPraatPictureFile, NULL, invokingButtonTitle, NULL);
 	if (sendingForm == NULL && sendingString == NULL) {
 		UiOutfile_do (dia, L"praat.prapic");
@@ -544,7 +560,7 @@ END
 		(void) interpreter;
 		(void) modified;
 		(void) dummy;
-		if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Write to Mac PICT file",
+		if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Save as Mac PICT file",
 			DO_Picture_writeToMacPictFile, NULL, invokingButtonTitle, NULL);
 		if (sendingForm == NULL && sendingString == NULL) {
 			UiOutfile_do (dia, L"praat.pict");
@@ -562,7 +578,7 @@ END
 		(void) interpreter;
 		(void) modified;
 		(void) dummy;
-		if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Write to Windows metafile",
+		if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Save as Windows metafile",
 			DO_Picture_writeToWindowsMetafile, NULL, invokingButtonTitle, NULL);
 		if (sendingForm == NULL && sendingString == NULL) {
 			UiOutfile_do (dia, L"praat.emf");
@@ -748,11 +764,12 @@ FORM (DrawFunction, L"Praat picture: Draw function", 0)
 	TEXTFIELD (L"formula", L"x^2 - x^4")
 	OK
 DO
+	double *y = NULL;
+	PraatPictureFunction function = NULL;
+//start:
 	double x1WC, x2WC, y1WC, y2WC;
 	double fromX = GET_REAL (L"From x"), toX = GET_REAL (L"To x");
 	long n = GET_INTEGER (L"Number of horizontal steps");
-	double *y = NULL;
-	PraatPictureFunction function = NULL;
 	wchar_t *formula = GET_STRING (L"formula");
 	if (n < 2) return 1;
 	Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
@@ -1409,6 +1426,7 @@ DIRECT (Picture_settings_report)
 		theCurrentPraatPicture -> lineType == Graphics_DRAWN ? L"Solid" :
 		theCurrentPraatPicture -> lineType == Graphics_DOTTED ? L"Dotted" :
 		theCurrentPraatPicture -> lineType == Graphics_DASHED ? L"Dashed" :
+		theCurrentPraatPicture -> lineType == Graphics_DASHED_DOTTED ? L"Dashed-dotted" :
 		L"(unknown)");
 	MelderInfo_writeLine2 (L"Line width: ", Melder_double (theCurrentPraatPicture -> lineWidth));
 	MelderInfo_writeLine2 (L"Arrow size: ", Melder_double (theCurrentPraatPicture -> arrowSize));
@@ -1465,9 +1483,9 @@ static void cb_selectionChanged (Picture p, XtPointer closure,
 
 /***** Public functions. *****/
 
-static Widget shell, fileMenu, editMenu, marginsMenu, worldMenu, selectMenu, fontMenu, penMenu, helpMenu;
+static GuiObject shell, fileMenu, editMenu, marginsMenu, worldMenu, selectMenu, fontMenu, penMenu, helpMenu;
 
-Widget praat_picture_resolveMenu (const wchar_t *menu) {
+GuiObject praat_picture_resolveMenu (const wchar_t *menu) {
 	return
 		wcsequ (menu, L"File") ? fileMenu :
 		wcsequ (menu, L"Edit") ? editMenu :
@@ -1539,7 +1557,7 @@ void praat_picture_editor_close (void) {
 }
 
 void praat_picture_init (void) {
-	Widget dialog, scrollWindow, menuBar, drawingArea = NULL;
+	GuiObject dialog, scrollWindow, menuBar, drawingArea = NULL;
 	int margin, width, height, resolution, x;
 	static MelderString itemTitle_search = { 0 };
 	theCurrentPraatPicture -> lineType = Graphics_DRAWN;
@@ -1607,23 +1625,33 @@ void praat_picture_init (void) {
 	praat_addMenuCommand (L"Picture", L"File", L"Read from old Windows praat picture file...", 0, praat_HIDDEN, DO_Picture_readFromOldWindowsPraatPictureFile);
 	#endif
 	praat_addMenuCommand (L"Picture", L"File", L"-- write --", 0, 0, 0);
-	praat_addMenuCommand (L"Picture", L"File", L"Write to praat picture file...", 0, 0, DO_Picture_writeToPraatPictureFile);
+	praat_addMenuCommand (L"Picture", L"File", L"Save as praat picture file...", 0, 0, DO_Picture_writeToPraatPictureFile);
+	praat_addMenuCommand (L"Picture", L"File", L"Write to praat picture file...", 0, praat_HIDDEN, DO_Picture_writeToPraatPictureFile);
 	#ifdef _WIN32
-	praat_addMenuCommand (L"Picture", L"File", L"Write to Windows metafile...", 0, 0, DO_Picture_writeToWindowsMetafile);
+	praat_addMenuCommand (L"Picture", L"File", L"Save as Windows metafile...", 0, 0, DO_Picture_writeToWindowsMetafile);
+	praat_addMenuCommand (L"Picture", L"File", L"Write to Windows metafile...", 0, praat_HIDDEN, DO_Picture_writeToWindowsMetafile);
 	#endif
 	#if defined (macintosh)
-		praat_addMenuCommand (L"Picture", L"File", L"Write to PDF file...", 0, 'S', DO_Picture_writeToPdfFile);
-		praat_addMenuCommand (L"Picture", L"File", L"Write EPS file", 0, 0, NULL);
+		praat_addMenuCommand (L"Picture", L"File", L"Save as PDF file...", 0, 'S', DO_Picture_writeToPdfFile);
+		praat_addMenuCommand (L"Picture", L"File", L"Write to PDF file...", 0, praat_HIDDEN, DO_Picture_writeToPdfFile);
+		praat_addMenuCommand (L"Picture", L"File", L"Save EPS file", 0, 0, NULL);
+			praat_addMenuCommand (L"Picture", L"File", L"Save as Mac PICT file...", 0, praat_HIDDEN + praat_DEPTH_1, DO_Picture_writeToMacPictFile);
 			praat_addMenuCommand (L"Picture", L"File", L"Write to Mac PICT file...", 0, praat_HIDDEN + praat_DEPTH_1, DO_Picture_writeToMacPictFile);
 			praat_addMenuCommand (L"Picture", L"File", L"PostScript settings...", 0, 1, DO_PostScript_settings);
-			praat_addMenuCommand (L"Picture", L"File", L"Write to EPS file...", 0, 1, DO_Picture_writeToEpsFile);
-			praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (XIPA)...", 0, 1, DO_Picture_writeToFontlessEpsFile_xipa);
-			praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (SILIPA)...", 0, 1, DO_Picture_writeToFontlessEpsFile_silipa);
+			praat_addMenuCommand (L"Picture", L"File", L"Save as EPS file...", 0, 1, DO_Picture_writeToEpsFile);
+			praat_addMenuCommand (L"Picture", L"File", L"Write to EPS file...", 0, praat_HIDDEN + praat_DEPTH_1, DO_Picture_writeToEpsFile);
+			praat_addMenuCommand (L"Picture", L"File", L"Save as fontless EPS file (XIPA)...", 0, 1, DO_Picture_writeToFontlessEpsFile_xipa);
+			praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (XIPA)...", 0, praat_HIDDEN + praat_DEPTH_1, DO_Picture_writeToFontlessEpsFile_xipa);
+			praat_addMenuCommand (L"Picture", L"File", L"Save as fontless EPS file (SILIPA)...", 0, 1, DO_Picture_writeToFontlessEpsFile_silipa);
+			praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (SILIPA)...", 0, praat_HIDDEN + praat_DEPTH_1, DO_Picture_writeToFontlessEpsFile_silipa);
 	#else
 		praat_addMenuCommand (L"Picture", L"File", L"PostScript settings...", 0, 0, DO_PostScript_settings);
-		praat_addMenuCommand (L"Picture", L"File", L"Write to EPS file...", 0, 'S', DO_Picture_writeToEpsFile);
-		praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (XIPA)...", 0, 0, DO_Picture_writeToFontlessEpsFile_xipa);
-		praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (SILIPA)...", 0, 0, DO_Picture_writeToFontlessEpsFile_silipa);
+		praat_addMenuCommand (L"Picture", L"File", L"Save as EPS file...", 0, 'S', DO_Picture_writeToEpsFile);
+		praat_addMenuCommand (L"Picture", L"File", L"Write to EPS file...", 0, praat_HIDDEN, DO_Picture_writeToEpsFile);
+		praat_addMenuCommand (L"Picture", L"File", L"Save as fontless EPS file (XIPA)...", 0, 0, DO_Picture_writeToFontlessEpsFile_xipa);
+		praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (XIPA)...", 0, praat_HIDDEN, DO_Picture_writeToFontlessEpsFile_xipa);
+		praat_addMenuCommand (L"Picture", L"File", L"Save as fontless EPS file (SILIPA)...", 0, 0, DO_Picture_writeToFontlessEpsFile_silipa);
+		praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (SILIPA)...", 0, praat_HIDDEN, DO_Picture_writeToFontlessEpsFile_silipa);
 	#endif
 	praat_addMenuCommand (L"Picture", L"File", L"-- print --", 0, 0, 0);
 	#if defined (macintosh)
@@ -1730,6 +1758,7 @@ void praat_picture_init (void) {
 	praat_addMenuCommand (L"Picture", L"Pen", L"Plain line", 0, praat_RADIO_NEXT | praat_HIDDEN, DO_Solid_line);
 	praatButton_lines [Graphics_DOTTED] = praat_addMenuCommand (L"Picture", L"Pen", L"Dotted line", 0, praat_RADIO_NEXT, DO_Dotted_line);
 	praatButton_lines [Graphics_DASHED] = praat_addMenuCommand (L"Picture", L"Pen", L"Dashed line", 0, praat_RADIO_NEXT, DO_Dashed_line);
+	praatButton_lines [Graphics_DASHED_DOTTED] = praat_addMenuCommand (L"Picture", L"Pen", L"Dashed-dotted line", 0, praat_RADIO_NEXT, DO_Dashed_dotted_line);
 	praat_addMenuCommand (L"Picture", L"Pen", L"-- line width --", 0, 0, 0);
 	praat_addMenuCommand (L"Picture", L"Pen", L"Line width...", 0, 0, DO_Line_width);
 	praat_addMenuCommand (L"Picture", L"Pen", L"Arrow size...", 0, 0, DO_Arrow_size);

@@ -96,7 +96,7 @@ static InterpreterVariable InterpreterVariable_create (const wchar_t *key) {
 		key [6] == 'n' && key [7] == 'e' && key [8] == 'd' && key [9] == '\0')
 		return Melder_errorp ("You cannot use 'undefined' as the name of a variable.");
 	InterpreterVariable me = new (InterpreterVariable);
-	if (! me || ! (my key = Melder_wcsdup (key))) { forget (me); return NULL; }
+	if (! me || ! (my key = Melder_wcsdup_e (key))) { forget (me); return NULL; }
 	return me;
 }
 
@@ -116,7 +116,7 @@ class_methods_end
 Interpreter Interpreter_create (wchar_t *environmentName, Any editorClass) {
 	Interpreter me = new (Interpreter);
 	if (! me || ! (my variables = SortedSetOfString_create ())) { forget (me); return NULL; }
-	my environmentName = Melder_wcsdup (environmentName);
+	my environmentName = Melder_wcsdup_f (environmentName);
 	my editorClass = editorClass;
 	return me;
 }
@@ -171,7 +171,7 @@ int Melder_includeIncludeFiles (wchar_t **text) {
 			headLength = (head - *text) + wcslen (head);
 			includeTextLength = wcslen (includeText);
 			newLength = headLength + includeTextLength + 1 + wcslen (tail);
-			newText = Melder_malloc (wchar_t, newLength + 1);
+			newText = Melder_malloc_e (wchar_t, newLength + 1);
 			if (! newText) { Melder_free (includeText); cherror }
 			wcscpy (newText, *text);
 			wcscpy (newText + headLength, includeText);
@@ -295,7 +295,7 @@ int Interpreter_readParameters (Interpreter me, wchar_t *text) {
 			newLine = wcschr (p, '\n');
 			if (newLine) *newLine = '\0';
 			Melder_free (my arguments [my numberOfParameters]);
-			my arguments [my numberOfParameters] = Melder_wcsdup (p);
+			my arguments [my numberOfParameters] = Melder_wcsdup_f (p);
 			if (newLine) *newLine = '\n';
 			my types [my numberOfParameters] = type;
 		}
@@ -305,7 +305,7 @@ int Interpreter_readParameters (Interpreter me, wchar_t *text) {
 	return npar;
 }
 
-Any Interpreter_createForm (Interpreter me, Widget parent, const wchar_t *path, int (*okCallback) (UiForm, const wchar_t *, Interpreter, const wchar_t *, bool, void *), void *okClosure) {
+Any Interpreter_createForm (Interpreter me, GuiObject parent, const wchar_t *path, int (*okCallback) (UiForm, const wchar_t *, Interpreter, const wchar_t *, bool, void *), void *okClosure) {
 	Any form = UiForm_create (parent, my dialogTitle [0] ? my dialogTitle : L"Script arguments", okCallback, okClosure, NULL, NULL);
 	Any radio = NULL;
 	if (path) UiForm_addText (form, L"$file", path);
@@ -384,7 +384,7 @@ int Interpreter_getArgumentsFromDialog (Interpreter me, Any dialog) {
 			case Interpreter_POSITIVE: {
 				double value = UiForm_getReal_check (dialog, parameter); cherror
 				Melder_free (my arguments [ipar]);
-				my arguments [ipar] = Melder_calloc (wchar_t, 40);
+				my arguments [ipar] = Melder_calloc_f (wchar_t, 40);
 				wcscpy (my arguments [ipar], Melder_double (value));
 				break;
 			}
@@ -393,7 +393,7 @@ int Interpreter_getArgumentsFromDialog (Interpreter me, Any dialog) {
 			case Interpreter_BOOLEAN: {
 				long value = UiForm_getInteger (dialog, parameter); cherror
 				Melder_free (my arguments [ipar]);
-				my arguments [ipar] = Melder_calloc (wchar_t, 40);
+				my arguments [ipar] = Melder_calloc_f (wchar_t, 40);
 				swprintf (my arguments [ipar], 40, L"%ld", value);
 				break;
 			}
@@ -404,7 +404,7 @@ int Interpreter_getArgumentsFromDialog (Interpreter me, Any dialog) {
 				integerValue = UiForm_getInteger (dialog, parameter); cherror
 				stringValue = UiForm_getString (dialog, parameter); cherror
 				Melder_free (my arguments [ipar]);
-				my arguments [ipar] = Melder_calloc (wchar_t, 40);
+				my arguments [ipar] = Melder_calloc_f (wchar_t, 40);
 				swprintf (my arguments [ipar], 40, L"%ld", integerValue);
 				wcscpy (my choiceArguments [ipar], stringValue);
 				break;
@@ -416,7 +416,7 @@ int Interpreter_getArgumentsFromDialog (Interpreter me, Any dialog) {
 			default: {
 				wchar_t *value = UiForm_getString (dialog, parameter); cherror
 				Melder_free (my arguments [ipar]);
-				my arguments [ipar] = Melder_wcsdup (value);
+				my arguments [ipar] = Melder_wcsdup_f (value);
 				break;
 			}
 		}
@@ -454,7 +454,7 @@ int Interpreter_getArgumentsFromString (Interpreter me, const wchar_t *arguments
 		 */
 		if (my parameters [ipar] [0] == '\0') continue;
 		Melder_free (my arguments [ipar]);   /* Erase the current values, probably the default values. */
-		my arguments [ipar] = Melder_calloc (wchar_t, length + 1);   /* Replace with the actual arguments. */
+		my arguments [ipar] = Melder_calloc_f (wchar_t, length + 1);   /* Replace with the actual arguments. */
 		/*
 		 * Skip spaces until next argument.
 		 */
@@ -487,7 +487,7 @@ int Interpreter_getArgumentsFromString (Interpreter me, const wchar_t *arguments
 	if (size > 0) {
 		while (*arguments == ' ' || *arguments == '\t') arguments ++;
 		Melder_free (my arguments [size]);
-		my arguments [size] = Melder_wcsdup (arguments);
+		my arguments [size] = Melder_wcsdup_f (arguments);
 	}
 	/*
 	 * Convert booleans and choices to numbers.
@@ -549,7 +549,7 @@ static int Interpreter_addNumericVariable (Interpreter me, const wchar_t *key, d
 static InterpreterVariable Interpreter_addStringVariable (Interpreter me, const wchar_t *key, const wchar_t *value) {
 	InterpreterVariable variable = InterpreterVariable_create (key);
 	if (! variable || ! Collection_addItem (my variables, variable)) return NULL;
-	variable -> stringValue = Melder_wcsdup (value);
+	variable -> stringValue = Melder_wcsdup_f (value);
 	return variable;
 }
 
@@ -748,6 +748,12 @@ int Interpreter_run (Interpreter me, wchar_t *text) {
 		Interpreter_addNumericVariable (me, L"windows", 0);
 		Interpreter_addNumericVariable (me, L"unix", 0);
 	#endif
+	Interpreter_addNumericVariable (me, L"left", 1);   // to accommodate scripts from before Praat 5.2.06
+	Interpreter_addNumericVariable (me, L"right", 2);   // to accommodate scripts from before Praat 5.2.06
+	Interpreter_addNumericVariable (me, L"mono", 1);   // to accommodate scripts from before Praat 5.2.06
+	Interpreter_addNumericVariable (me, L"stereo", 2);   // to accommodate scripts from before Praat 5.2.06
+	Interpreter_addNumericVariable (me, L"all", 0);   // to accommodate scripts from before Praat 5.2.06
+	Interpreter_addNumericVariable (me, L"average", 0);   // to accommodate scripts from before Praat 5.2.06
 	#define xstr(s) str(s)
 	#define str(s) #s
 	Interpreter_addStringVariable (me, L"praatVersion$", L"" xstr(PRAAT_VERSION_STR));
@@ -903,7 +909,7 @@ int Interpreter_run (Interpreter me, wchar_t *text) {
 										save = *q; *q = '\0';
 										InterpreterVariable var = Interpreter_lookUpVariable (me, par); *q = save; cherror
 										Melder_free (var -> stringValue);
-										var -> stringValue = Melder_wcsdup (arg.string);
+										var -> stringValue = Melder_wcsdup_f (arg.string);
 									} else {
 										double value;
 										my callDepth --;
@@ -1141,10 +1147,13 @@ int Interpreter_run (Interpreter me, wchar_t *text) {
 				break;
 			case 'p':
 				if (wcsnequ (command2.string, L"procedure ", 10)) {
-					long iline;
-					for (iline = lineNumber + 1; iline <= numberOfLines; iline ++)
-						if (wcsnequ (lines [iline], L"endproc", 7) && wordEnd (lines [iline] [7]))
-							{ lineNumber = iline; break; }   /* Go after 'endproc'. */
+					long iline = lineNumber + 1;
+					for (; iline <= numberOfLines; iline ++) {
+						if (wcsnequ (lines [iline], L"endproc", 7) && wordEnd (lines [iline] [7])) {
+							lineNumber = iline;
+							break;
+						}   /* Go after 'endproc'. */
+					}
 					if (iline > numberOfLines) error1 (L"Unmatched 'proc'.")
 				} else if (wcsnequ (command2.string, L"print", 5)) {
 					/*
@@ -1284,7 +1293,7 @@ int Interpreter_run (Interpreter me, wchar_t *text) {
 					if (p [1] == '>')
 						withFile = 2, p ++;   /* Append to file. */
 					else
-						withFile = 3;   /* Write to file. */
+						withFile = 3;   /* Save to file. */
 				} else error3 (L"Missing '=', '<', or '>' after variable ", variableName, L".")
 				*endOfVariable = '\0';
 				p ++;
@@ -1324,7 +1333,7 @@ int Interpreter_run (Interpreter me, wchar_t *text) {
 					Melder_divertInfo (NULL); cherror
 					InterpreterVariable var = Interpreter_lookUpVariable (me, variableName); cherror
 					Melder_free (var -> stringValue);
-					var -> stringValue = Melder_wcsdup (valueString.string); cherror
+					var -> stringValue = Melder_wcsdup_e (valueString.string); cherror
 				} else {
 					/*
 					 * Evaluate a string expression and assign the result to the variable.
@@ -1509,7 +1518,7 @@ end:
 				Melder_clearError ();
 				assertErrorLineNumber = 0;
 			} else {
-				wchar_t *errorCopy = Melder_wcsdup (Melder_getError ());
+				wchar_t *errorCopy = Melder_wcsdup_f (Melder_getError ());
 				Melder_clearError ();
 				Melder_error6 (L"Script assertion fails in line ", Melder_integer (assertErrorLineNumber),
 					L": error " L_LEFT_GUILLEMET L" ", assertErrorString.string, L" " L_RIGHT_GUILLEMET L" not raised. Instead:\n",

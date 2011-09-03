@@ -1,6 +1,6 @@
 /* manual_tutorials.c
  *
- * Copyright (C) 1992-2010 Paul Boersma
+ * Copyright (C) 1992-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +23,54 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (L"What's new?", L"ppgb", 20101119)
+MAN_BEGIN (L"What's new?", L"ppgb", 20110303)
 INTRO (L"Latest changes in Praat.")
 /*LIST_ITEM (L"\\bu Manual page about @@drawing a vowel triangle@.")*/
+NORMAL (L"##5.2.17# (2 March 2011)")
+LIST_ITEM (L"\\bu Better names for Table opening and saving commands.")
+LIST_ITEM (L"\\bu @ExperimentMFC: reaction times.")
+LIST_ITEM (L"\\bu Linux/GTK: corrected triple clicks in ExperimentMFC.")
+NORMAL (L"##5.2.16# (20 February 2011)")
+LIST_ITEM (L"\\bu Better support for WAV files with special \"chunks\" in them.")
+LIST_ITEM (L"\\bu Manual: documentation of explicit formulas for @@Voice 2. Jitter|jitter measurements@.")
+NORMAL (L"##5.2.15# (11 February 2011)")
+LIST_ITEM (L"\\bu @@Sounds: Concatenate with overlap...@.")
+NORMAL (L"##5.2.14# (8 February 2011)")
+LIST_ITEM (L"\\bu Repaired crashing bug in Manipulation window introduced in 5.2.13.")
+NORMAL (L"##5.2.13# (7 February 2011)")
+LIST_ITEM (L"\\bu Renamed #Write commands to #Save commands.")
+LIST_ITEM (L"\\bu Scripting: allow pause forms without #Stop button (see @@Scripting 6.6. Controlling the user@).")
+LIST_ITEM (L"\\bu GTK: correct behaviour of default buttons.")
+NORMAL (L"##5.2.12# (28 January 2011)")
+LIST_ITEM (L"\\bu Renamed #Edit buttons to ##View & Edit#.")
+LIST_ITEM (L"\\bu Better visibility of dragged things on Linux.")
+NORMAL (L"##5.2.11# (18 January 2011)")
+LIST_ITEM (L"\\bu Better visibility of dragged things (sound selection, tier points, TextGrid boundaries) on Windows and Linux.")
+NORMAL (L"##5.2.10# (11 January 2011)")
+LIST_ITEM (L"\\bu Renamed #Read and #Write menus to #Open and #Save.")
+LIST_ITEM (L"\\bu Sound: use of ##Formula (part)...# can speed up formulas appreciably.")
+NORMAL (L"##5.2.09# (9 January 2011)")
+LIST_ITEM (L"\\bu Much improved scripting tutorial.")
+LIST_ITEM (L"\\bu Listening experiments can now show pictures instead of just texts (on the Mac).")
+LIST_ITEM (L"\\bu EPS files can now be many miles wide instead of just 55 inches.")
+NORMAL (L"##5.2.08# (1 January 2011)")
+LIST_ITEM (L"\\bu Improved manual.")
+LIST_ITEM (L"\\bu Improved memory allocation on 32-bit platforms: "
+	"less probability of crashes when you approach the 2 GB memory limit gradually, and a new \"low on memory; save your work now\" warning.")
+LIST_ITEM (L"\\bu Removed IntervalTier and TextTier datatypes from Praat (old scripts that use them will continue to work).")
+NORMAL (L"##5.2.07# (24 December 2010)")
+LIST_ITEM (L"\\bu Support for reading and writing multi-channel sound files (i.e. above two-channel stereo).")
+NORMAL (L"##5.2.06# (18 December 2010)")
+LIST_ITEM (L"\\bu Picture window: a new (the fourth) line type, namely dashed-dotted.")
+LIST_ITEM (L"\\bu Support for analysing and drawing multi-channel sounds (i.e. above two-channel stereo).")
+LIST_ITEM (L"\\bu Can read some EEG files (BioSemi 24-bit BDF) as a Sound and a TextGrid object.")
+LIST_ITEM (L"\\bu Linux: compatibility with computers without English language support.")
+LIST_ITEM (L"\\bu Macintosh: support for high-plane (i.e. very uncommon) Unicode characters in file names (as already existed on Unix and Windows).")
+NORMAL (L"##5.2.05# (4 December 2010)")
+LIST_ITEM (L"\\bu Regular expressions: better Unicode support.")
+LIST_ITEM (L"\\bu Scripting window: command ##Convert to C string#.")
+NORMAL (L"##5.2.04# (27 November 2010)")
+LIST_ITEM (L"\\bu Scripting: allow directory (folder) selector windows; see @@Scripting 6.6. Controlling the user@.")
 NORMAL (L"##5.2.03# (19 November 2010)")
 LIST_ITEM (L"\\bu Scripting: support for string arrays.")
 NORMAL (L"##5.2.02# (17 November 2010)")
@@ -315,7 +360,7 @@ LIST_ITEM (L"\\bu Formulas: sinc function.")
 NORMAL (L"##5.0.12# (12 March 2008)")
 LIST_ITEM (L"\\bu Bigger ligature symbol (k\\lip).")
 NORMAL (L"##5.0.11# (7 March 2008)")
-LIST_ITEM (L"\\bu Corrected writing of new binary Manipulation files (you can send any unreadable Manipulation files to Paul Boersma for correction).")
+LIST_ITEM (L"\\bu Corrected saving of new binary Manipulation files (you can send any unreadable Manipulation files to Paul Boersma for correction).")
 NORMAL (L"##5.0.10# (27 February 2008)")
 LIST_ITEM (L"\\bu Added the characters \\d- and \\D-.")
 LIST_ITEM (L"\\bu Windows: made ##praatcon.exe# compatible with Unicode command lines.")
@@ -389,7 +434,7 @@ LIST_ITEM (L"\\bu Macintosh: worked around a feature of a system library that co
 	"that contained objects with non-ASCII names.")
 NORMAL (L"##4.6.29# (1 October 2007)")
 LIST_ITEM (L"\\bu OT learning: leak and constraint in OTMulti.")
-LIST_ITEM (L"\\bu Support for writing Table, TableOfReal, Strings, OTGrammar and OTMulti in Unicode.")
+LIST_ITEM (L"\\bu Support for saving Table, TableOfReal, Strings, OTGrammar and OTMulti in Unicode.")
 NORMAL (L"##4.6.28# (1 October 2007)")
 LIST_ITEM (L"\\bu OT learning: positive constraint satisfactions in OTMulti tableaus.")
 LIST_ITEM (L"\\bu Corrected a bug that could cause Praat to crash when reading a non-UTF-8 text file "
@@ -467,7 +512,7 @@ LIST_ITEM (L"\\bu OT learning: added decision strategy PositiveHG.")
 NORMAL (L"##4.6.03# (24 May 2007)")
 LIST_ITEM (L"\\bu Spectral slices have better names.")
 NORMAL (L"##4.6.02# (17 May 2007)")
-LIST_ITEM (L"\\bu Sound files: writing FLAC audio files (implemented by Erez Volk).")
+LIST_ITEM (L"\\bu Sound files: saving FLAC audio files (implemented by Erez Volk).")
 NORMAL (L"##4.6.01# (16 May 2007)")
 LIST_ITEM (L"\\bu Removed a bug that caused downsampling (and therefore formant measurements) "
 	"to be incorrect for stereo sounds.")
@@ -554,15 +599,15 @@ NORMAL (L"##4.5.03# (29 November 2006)")
 LIST_ITEM (L"\\bu Table: added independent-samples t-test.")
 LIST_ITEM (L"\\bu Linux: corrected a bug introduced in 4.5.02 that prevented sounds from playing and other weird things.")
 NORMAL (L"##4.5.02# (16 November 2006)")
-LIST_ITEM (L"\\bu Corrected yet another bug in the new @@Sound: To IntervalTier (silence)...@.")
+LIST_ITEM (L"\\bu Corrected yet another bug in the new @@Sound: To TextGrid (silences)...@.")
 NORMAL (L"##4.5.01# (28 October 2006)")
 LIST_ITEM (L"\\bu Sound window: the pitch drawing method is #Curves, #Speckles, or #Automatic.")
-LIST_ITEM (L"\\bu Corrected another bug in the new @@Sound: To IntervalTier (silence)...@.")
+LIST_ITEM (L"\\bu Corrected another bug in the new @@Sound: To TextGrid (silences)...@.")
 NORMAL (L"##4.5# (26 October 2006)")
 NORMAL (L"##4.4.35# (20 October 2006)")
 LIST_ITEM (L"\\bu In @ManPages you can now draw pictures.")
 NORMAL (L"##4.4.34# (19 October 2006)")
-LIST_ITEM (L"\\bu Corrected a bug in the new @@Sound: To IntervalTier (silence)...@.")
+LIST_ITEM (L"\\bu Corrected a bug in the new @@Sound: To TextGrid (silences)...@.")
 NORMAL (L"##4.4.33# (4 October 2006)")
 LIST_ITEM (L"\\bu Windows: corrected a bug introduced in 4.4.31 that caused Praat to skip the first line of the Buttons file.")
 NORMAL (L"##4.4.32# (30 September 2006)")
@@ -600,7 +645,7 @@ LIST_ITEM (L"\\bu Removed limit on number of menus (Praat could crash if the num
 NORMAL (L"##4.4.19# (28 April 2006)")
 LIST_ITEM (L"\\bu Table: ##Get mean#, ##Get standard deviation#, ##Get quantile#.")
 NORMAL (L"##4.4.18# (24 April 2006)")
-LIST_ITEM (L"\\bu Table: #Edit: view the contents of a table.")
+LIST_ITEM (L"\\bu Table: ##View & Edit#: view the contents of a table.")
 LIST_ITEM (L"\\bu Table: ##Scatter plot#.")
 LIST_ITEM (L"\\bu Scripting: more warnings against missing or extra spaces.")
 NORMAL (L"##4.4.17# (19 April 2006)")
@@ -783,7 +828,7 @@ ENTRY (L"Praat 4.3, 26 January 2005")
 	NORMAL (L"OT learning:")
 	LIST_ITEM (L"\\bu Monitor rankings when learning.")
 	LIST_ITEM (L"\\bu OTGrammar: Remove harmonically bounded candidates...")
-	LIST_ITEM (L"\\bu OTGrammar: Write to headerless spreadsheet file...")
+	LIST_ITEM (L"\\bu OTGrammar: Save as headerless spreadsheet file...")
 	LIST_ITEM (L"\\bu Metrics grammar: added *Clash, *Lapse, WeightByPosition and *MoraicConsonant.")
 	NORMAL (L"Scripting:")
 	LIST_ITEM (L"\\bu nowarn, noprogress, nocheck.")
@@ -1038,7 +1083,7 @@ ENTRY (L"Praat 3.7, 24 March 1998")
 	LIST_ITEM (L"\\bu In all FunctionEditors: drag to get a selection.")
 	NORMAL (L"Phonetics library:")
 	LIST_ITEM (L"\\bu Many new query (#Get) commands for @Sound, @Intensity, @Harmonicity, @Pitch, "
-		"@Formant, @Ltas, @PitchTier, @IntensityTier, @DurationTier, @FormantTier.")
+		"@Formant, @Ltas, @PitchTier, @IntensityTier, @DurationTier, #FormantTier.")
 	LIST_ITEM (L"\\bu Many new modification commands.")
 	LIST_ITEM (L"\\bu Many new interpolations.")
 	LIST_ITEM (L"\\bu Sound enhancements: @@Sound: Lengthen (overlap-add)...@, @@Sound: Deepen band modulation...@")
@@ -1294,13 +1339,13 @@ NORMAL (L"This menu contains commands for drawing the object to the @@Picture wi
 	"which will allow you to print the drawing or to copy it to your word processor.")
 MAN_END
 
-MAN_BEGIN (L"Dynamic menu", L"ppgb", 19981024)
+MAN_BEGIN (L"Dynamic menu", L"ppgb", 20110131)
 INTRO (L"A column of buttons in the right-hand part of the @@Object window@, "
-	"plus the #Write menu in the Object window.")
+	"plus the #Save menu in the Object window.")
 NORMAL (L"If you select one or more @objects in the list, "
 	"the possible actions that you can perform with the selected objects "
 	"will appear in the dynamic menu. "
-	"These actions can include editing, writing, drawing, "
+	"These actions can include viewing & editing, saving, drawing, "
 	"conversions to other types (including analysis and synthesis), and more.")
 ENTRY (L"Example of analysis:")
 NORMAL (L"Record a Sound, select it, and click on ##To Pitch...#. "
@@ -1310,7 +1355,7 @@ ENTRY (L"Example of synthesis:")
 NORMAL (L"Create a #Speaker, create and edit an #Artword, and click on ##To Sound...#.")
 MAN_END
 
-MAN_BEGIN (L"Edit", L"ppgb", 20010414)
+MAN_BEGIN (L"View & Edit", L"ppgb", 20110128)
 INTRO (L"A command in the @@Dynamic menu@ of several types of @objects.")
 NORMAL (L"This command puts an @@Editors|editor@ window on the screen, which shows the contents of the selected object. "
 	"This window will allow your to view and modify the contents of this object.")
@@ -1427,21 +1472,21 @@ NORMAL (L"If you choose ##Move cursor to maximum pitch#, then choose ##Get pitch
 	"lower values.")
 MAN_END
 
-MAN_BEGIN (L"FAQ: Scripts", L"ppgb", 20040222)
+MAN_BEGIN (L"FAQ: Scripts", L"ppgb", 20110128)
 NORMAL (L"#Question: how do I do something to all the files in a directory?")
 NORMAL (L"Answer: look at @@Create Strings as file list...@.")
 NORMAL (L"")
 NORMAL (L"#Question: why doesn't the editor window react to my commands?")
 NORMAL (L"Your commands are probably something like:")
 CODE (L"Read from file... hello.wav")
-CODE (L"Edit")
+CODE (L"View & Edit")
 CODE (L"Zoom... 0.3 0.5")
 NORMAL (L"Answer: Praat doesn't know it has to send the #Zoom command to the editor "
 	"window called ##Sound hello#. There could be several Sound editor windows on your "
 	"screen. According to @@Scripting 7.1. Scripting an editor from a shell script@, "
 	"you will have to say this explicitly:")
 CODE (L"Read from file... hello.wav")
-CODE (L"Edit")
+CODE (L"View & Edit")
 CODE (L"editor Sound hello")
 CODE (L"Zoom... 0.3 0.5")
 NORMAL (L"")
@@ -1579,7 +1624,7 @@ NORMAL (L"Changes that you make to the data with a Data Editor, "
 	"are immediately reflected in any open type-specific Editors (e.g., a SoundEditor).")
 MAN_END
 
-MAN_BEGIN (L"Intro", L"ppgb", 20090511)
+MAN_BEGIN (L"Intro", L"ppgb", 20110131)
 INTRO (L"This is an introductory tutorial to Praat, a computer program "
 	"with which you can analyse, synthesize, and manipulate speech, "
 	"and create high-quality pictures for your articles and thesis. "
@@ -1591,7 +1636,7 @@ LIST_ITEM (L"@@Intro 1. How to get a sound@: "
 	"@@Intro 1.2. Reading a sound from disk|read@, "
 	"@@Intro 1.3. Creating a sound from a formula|formula@.")
 LIST_ITEM (L"@@Intro 2. What to do with a sound@: "
-	"@@Intro 2.1. Writing a sound to disk|write@, "
+	"@@Intro 2.1. Saving a sound to disk|write@, "
 	"@@Intro 2.2. Viewing and editing a sound|view@.")
 LIST_ITEM (L"@@Intro 3. Spectral analysis")
 LIST_ITEM1 (L"spectrograms: @@Intro 3.1. Viewing a spectrogram|view@, "
@@ -1659,7 +1704,7 @@ LIST_ITEM (L"@@Intro 1.2. Reading a sound from disk")
 LIST_ITEM (L"@@Intro 1.3. Creating a sound from a formula")
 MAN_END
 
-MAN_BEGIN (L"Intro 1.1. Recording a sound", L"ppgb", 20041126)
+MAN_BEGIN (L"Intro 1.1. Recording a sound", L"ppgb", 20110128)
 #ifdef macintosh
 	INTRO (L"To record a speech sound into Praat, you need a computer with a microphone.")
 	NORMAL (L"To record from the microphone, perform the following steps:")
@@ -1695,13 +1740,13 @@ LIST_ITEM (L"6. Click the ##Save to list# button. Your recording will now appear
 	"where it will be called \"Sound sound\".")
 LIST_ITEM (L"7. You can now close the SoundRecorder window.")
 LIST_ITEM (L"8. When you saved your sound to the Object window, some buttons appeared in that window. "
-	"These buttons show you what you can do with the sound. Try the #Play and @Edit buttons.")
+	"These buttons show you what you can do with the sound. Try the #Play and @@View & Edit@ buttons.")
 NORMAL (L"For more information on recording, see the @SoundRecorder manual page.")
 MAN_END
 
 MAN_BEGIN (L"Intro 1.2. Reading a sound from disk", L"ppgb", 20041126)
 INTRO (L"Apart from recording a new sound from a microphone, you could read an existing sound file from your disk.")
-NORMAL (L"With @@Read from file...@ from the Read menu, "
+NORMAL (L"With @@Read from file...@ from the @@Open menu@, "
 	"Praat will be able to read most standard types of sound files, e.g. WAV files. "
 	"They will appear as @Sound objects in the Object window. For instance, if you open the file ##hello.wav#, "
 	"an object called \"Sound hello\" will appear in the list.")
@@ -1714,15 +1759,15 @@ INTRO (L"If you have no microphone, no sound files on disk, and no access to the
 	"you could still create a sound with @@Create Sound from formula...@ from the @@New menu@.")
 MAN_END
 
-MAN_BEGIN (L"Intro 2. What to do with a sound", L"ppgb", 20041126)
+MAN_BEGIN (L"Intro 2. What to do with a sound", L"ppgb", 20110131)
 INTRO (L"As soon as you have a @Sound in the @@List of Objects@, "
 	"the buttons in the @@Dynamic menu@ (the right-hand part of the @@Object window@) "
 	"will show you what you can do with it.")
-LIST_ITEM (L"@@Intro 2.1. Writing a sound to disk")
+LIST_ITEM (L"@@Intro 2.1. Saving a sound to disk")
 LIST_ITEM (L"@@Intro 2.2. Viewing and editing a sound")
 MAN_END
 
-MAN_BEGIN (L"Intro 2.1. Writing a sound to disk", L"ppgb", 20041126)
+MAN_BEGIN (L"Intro 2.1. Saving a sound to disk", L"ppgb", 20110131)
 INTRO (L"There are several ways to write a sound to disk.")
 NORMAL (L"First, the @@File menu@ of the @SoundRecorder window contains commands to save the left "
 	"channel, the right channel, or both channels of the recorded sound to any of four standard types "
@@ -1730,14 +1775,15 @@ NORMAL (L"First, the @@File menu@ of the @SoundRecorder window contains commands
 	"Praat will handle them equally well on every computer. The first three of these types will "
 	"also be recognized by nearly all other sound-playing programs.")
 NORMAL (L"Then, once you have a @Sound object in the @@List of Objects@, "
-	"you can save it in several formats with the commands in the @@Write menu@. "
+	"you can save it in several formats with the commands in the @@Save menu@. "
 	"Again, the WAV, AIFF, AIFC, NeXT/Sun, and NIST formats are equally fine.")
 NORMAL (L"For more information, see the @@Sound files@ tutorial.")
 MAN_END
 
-MAN_BEGIN (L"Intro 2.2. Viewing and editing a sound", L"ppgb", 20051218)
+MAN_BEGIN (L"Intro 2.2. Viewing and editing a sound", L"ppgb", 20110212)
 NORMAL (L"To see the wave form of a @Sound that is in the list of objects, "
-	"select that Sound and click @Edit. A @SoundEditor window will appear on your screen. "
+	"select that Sound and click @@View & Edit@. A @SoundEditor window will appear on your screen. "
+	"You see a waveform (or two waveforms, if you have a stereo sound) and probably some \"analyses\" below it. "
 	"You can zoom in and scroll to see the various parts of the sound in detail. "
 	"You can select a part of the sound by dragging with the mouse. "
 	"To play a part of the sound, click on any of the rectangles below it. "
@@ -1765,9 +1811,9 @@ LIST_ITEM (L"@@Intro 3.7. Configuring the spectral slice")
 LIST_ITEM (L"@@Intro 3.8. The Spectrum object")
 MAN_END
 
-MAN_BEGIN (L"Intro 3.1. Viewing a spectrogram", L"ppgb", 20030513)
+MAN_BEGIN (L"Intro 3.1. Viewing a spectrogram", L"ppgb", 20110128)
 INTRO (L"To see the spectral content of a sound as a function of time, "
-	"select a @Sound or @LongSound object and choose @Edit. "
+	"select a @Sound or @LongSound object and choose @@View & Edit@. "
 	"A @SoundEditor or @LongSoundEditor window will appear on your screen. "
 	"In the entire bottom half of this window you will see a greyish image, which is called a %spectrogram. "
 	"If you do not see it, choose @@Show spectrogram@ from the #Spectrogram menu.")
@@ -1820,7 +1866,7 @@ NORMAL (L"The darkness of the spectrogram will also change when you scroll, beca
 	"will turn darker. The next section will describe a way to switch this off.")
 MAN_END
 
-MAN_BEGIN (L"Intro 3.2. Configuring the spectrogram", L"ppgb", 20070225)
+MAN_BEGIN (L"Intro 3.2. Configuring the spectrogram", L"ppgb", 20110128)
 NORMAL (L"With @@Spectrogram settings...@ from the #Spectrogram menu, "
 	"you can determine how the spectrogram is computed and how it is displayed. "
 	"These settings will be remembered across Praat sessions. "
@@ -1854,7 +1900,7 @@ DEFINITION (L"All values that are more than %%Dynamic range% dB below the maximu
 ENTRY (L"The bandwidth")
 NORMAL (L"To see how the window length influences the bandwidth, "
 	"first create a 1000-Hz sine wave with @@Create Sound from formula...@ "
-	"by typing $$1/2 * sin (2*pi*1000*x)$ as the formula, then click #Edit. "
+	"by typing $$1/2 * sin (2*pi*1000*x)$ as the formula, then click ##View & Edit#. "
 	"The spectrogram will show a horizontal black line. "
 	"You can now vary the window length in the spectrogram settings and see how the thickness "
 	"of the lines varies. The line gets thinner if you raise the window length. "
@@ -1875,7 +1921,7 @@ ENTRY (L"Advanced settings")
 NORMAL (L"The Spectrum menu also contains @@Advanced spectrogram settings...@.")
 MAN_END
 
-MAN_BEGIN (L"Advanced spectrogram settings...", L"ppgb", 20070225)
+MAN_BEGIN (L"Advanced spectrogram settings...", L"ppgb", 20110128)
 ENTRY (L"Optimization")
 TAG (L"%%Number of time steps%")
 DEFINITION (L"the maximum number of points along the time window for which Praat has to compute "
@@ -1910,7 +1956,7 @@ DEFINITION (L"the shape of the analysis window. To compute the spectrum at, say,
 ENTRY (L"Sidelobes; anybody wants to win a cake?")
 NORMAL (L"The Gaussian window is the only shape that we can consider seriously as a candidate for "
 	"the analysis window. To see this, create a 1000-Hz sine wave with @@Create Sound from formula...@ "
-	"by typing $$1/2 * sin (2*pi*1000*x)$ as the formula, then click #Edit. "
+	"by typing $$1/2 * sin (2*pi*1000*x)$ as the formula, then click ##View & Edit#. "
 	"If the window shape is Gaussian, the spectrogram will show a horizontal black line. "
 	"If the window shape is anything else, the spectrogram will show many horizontal grey lines (%sidelobes), "
 	"which do not represent anything that is available in the signal. They are artifacts of the "
@@ -1999,7 +2045,7 @@ NORMAL (L"If you drag the mouse through the wave form of the SoundEditor or Text
 MAN_END
 
 
-MAN_BEGIN (L"Intro 3.7. Configuring the spectral slice", L"ppgb", 20030316)
+MAN_BEGIN (L"Intro 3.7. Configuring the spectral slice", L"ppgb", 20110128)
 ENTRY (L"Spectral slice at the cursor")
 NORMAL (L"What Praat does precisely, depends on your Spectrogram settings. "
 	"Suppose that the %%window length% setting is 0.005 seconds (5 milliseconds). "
@@ -2026,7 +2072,7 @@ MAN_BEGIN (L"Intro 3.8. The Spectrum object", L"ppgb", 20030403)
 NORMAL (L"To compute a Fourier frequency spectrum of an entire sound, "
 	"select a @Sound object and choose @@Sound: To Spectrum...|To Spectrum...@ from the #Spectrum menu. "
 	"A new @Spectrum object will appear in the @@List of Objects@. "
-	"To view or modify it (or listen to its parts), click @Edit. "
+	"To view or modify it (or listen to its parts), click @@View & Edit@. "
 	"To print it, choose one of the #Draw commands to draw the Spectrum object to the @@Picture window@ first.")
 MAN_END
 
@@ -2039,9 +2085,9 @@ LIST_ITEM (L"@@Intro 4.4. Printing the pitch contour")
 LIST_ITEM (L"@@Intro 4.5. The Pitch object")
 MAN_END
 
-MAN_BEGIN (L"Intro 4.1. Viewing a pitch contour", L"ppgb", 20030521)
+MAN_BEGIN (L"Intro 4.1. Viewing a pitch contour", L"ppgb", 20110128)
 NORMAL (L"To see the pitch contour of an existing sound as a function of time, "
-	"select a @Sound or @LongSound object and choose @Edit. "
+	"select a @Sound or @LongSound object and choose @@View & Edit@. "
 	"A @SoundEditor window will appear on your screen. "
 	"The bottom half of this window will contain a pitch contour, drawn as a blue line or as a sequence of blue dots. "
 	"If you do not see the pitch contour, choose @@Show pitch@ from the #Pitch menu.")
@@ -2163,18 +2209,28 @@ NORMAL (L"To print a pitch contour, or to put it in an EPS file or on the clipbo
 	"or copy it to the clipboard (to do Paste in your word processor, for instance).")
 MAN_END
 
-MAN_BEGIN (L"Intro 4.5. The Pitch object", L"ppgb", 20030316)
+MAN_BEGIN (L"Intro 4.5. The Pitch object", L"ppgb", 20110128)
 NORMAL (L"The pitch contour that is visible in the @SoundEditor or @TextGridEditor window, "
 	"can be copied as a separate @Pitch object to the @@List of Objects@. To do this, "
 	"choose @@Extract visible pitch contour@ from the #Pitch menu.")
 NORMAL (L"Another way to get a separate Pitch object is to select a @Sound object in the list "
 	"choose @@Sound: To Pitch...@ (preferred) or any of the other methods from the @@Periodicity menu@.")
-NORMAL (L"To view and modify the contents of a Pitch object, select it and choose @Edit. "
+NORMAL (L"To view and modify the contents of a Pitch object, select it and choose @@View & Edit@. "
 	"This creates a @PitchEditor window on your screen.")
-NORMAL (L"To save a pitch contour to disk, select the @Pitch object in the list and choose one of the commands in the @@Write menu@.")
-NORMAL (L"Later on, you can read the saved file again with @@Read from file...@ from the @@Read menu@.")
+NORMAL (L"To save a pitch contour to disk, select the @Pitch object in the list and choose one of the commands in the @@Save menu@.")
+NORMAL (L"Later on, you can read the saved file again with @@Read from file...@ from the @@Open menu@.")
 NORMAL (L"To draw a @Pitch object to the @@Picture window@, select it and choose any of the commands in the @@Draw menu@. "
 	"From the Picture window, you can print it, save it to an EPS file, or copy it to the clipboard for inclusion in your word processor.")
+MAN_END
+
+MAN_BEGIN (L"Advanced pulses settings...", L"ppgb", 20110220)
+INTRO (L"A command in the #Pulses menu of the @SoundEditor or @TextGridEditor windows. "
+	"Before changing the advanced pulses settings, make sure you understand "
+	"the @@Voice@ tutorial.")
+NORMAL (L"For information about the ##Maximum period factor# setting, see @@PointProcess: Get jitter (local)...@. "
+	"The standard setting is best in most cases. "
+	"The ##Period floor# and ##Period ceiling# settings derive from the pitch floor and pitch ceiling (@@Pitch settings...@), "
+	"according to a formula given in @@Voice 2. Jitter@.")
 MAN_END
 
 MAN_BEGIN (L"Intro 5. Formant analysis", L"ppgb", 20030316)
@@ -2185,8 +2241,8 @@ LIST_ITEM (L"@@Intro 5.3. Querying the formant contours")
 LIST_ITEM (L"@@Intro 5.4. The Formant object")
 MAN_END
 
-MAN_BEGIN (L"Intro 5.1. Viewing formant contours", L"ppgb", 20030316)
-NORMAL (L"To see the formant contours of a sound as functions of time, select a @Sound or @LongSound object and choose @Edit. "
+MAN_BEGIN (L"Intro 5.1. Viewing formant contours", L"ppgb", 20110128)
+NORMAL (L"To see the formant contours of a sound as functions of time, select a @Sound or @LongSound object and choose @@View & Edit@. "
 	"A @SoundEditor window will appear on your screen. "
 	"The analysis part of this window will contain formant contours, drawn as red speckles. "
 	"If you do not see the formant contours, choose @@Show formant@ from the #Formant menu.")
@@ -2215,8 +2271,8 @@ NORMAL (L"Another way to get a separate Formant object is to select a @Sound obj
 	"choose @@Sound: To Formant (burg)...@ (preferred) or any of the other methods "
 	"from the @@Formants & LPC menu@.")
 ENTRY (L"Saving formant contours to disk")
-NORMAL (L"To save formant contours to disk, select the @Formant object in the list and choose one of the commands in the @@Write menu@.")
-NORMAL (L"Later on, you can read the saved file again with @@Read from file...@ from the @@Read menu@.")
+NORMAL (L"To save formant contours to disk, select the @Formant object in the list and choose one of the commands in the @@Save menu@.")
+NORMAL (L"Later on, you can read the saved file again with @@Read from file...@ from the @@Open menu@.")
 ENTRY (L"Drawing formant contours")
 NORMAL (L"To draw a @Formant object to the @@Picture window@, select it and choose any of the commands in the @@Draw menu@. "
 	"From the Picture window, you can print it, save it to an EPS file, or copy it to the clipboard for inclusion in your word processor.")
@@ -2230,8 +2286,8 @@ LIST_ITEM1 (L"@@Intro 6.3. Querying the intensity contour")
 LIST_ITEM1 (L"@@Intro 6.4. The Intensity object")
 MAN_END
 
-MAN_BEGIN (L"Intro 6.1. Viewing an intensity contour", L"ppgb", 20041123)
-INTRO (L"To see the intensity contour of a sound as a function of time, select a @Sound or @LongSound object and choose @Edit. "
+MAN_BEGIN (L"Intro 6.1. Viewing an intensity contour", L"ppgb", 20110128)
+INTRO (L"To see the intensity contour of a sound as a function of time, select a @Sound or @LongSound object and choose @@View & Edit@. "
 	"A @SoundEditor window will appear on your screen. "
 	"The analysis part of this window will contain an intensity contour, drawn as a yellow or green line "
 	"(choose ##Show intensity# from the #Intensity menu if it is not visible). "
@@ -2288,7 +2344,7 @@ NORMAL (L"To print an intensity contour, or to put it in an EPS file or on the c
 	"From the Picture window, you can print it, save it to an EPS file, or copy it to the clipboard.")
 MAN_END
 
-MAN_BEGIN (L"Intro 7. Annotation", L"ppgb", 20090630)
+MAN_BEGIN (L"Intro 7. Annotation", L"ppgb", 20110129)
 INTRO (L"You can annotate existing @Sound objects and sound files (@LongSound objects).")
 NORMAL (L"The labelling data will reside in a @TextGrid object. This object is separate "
 	"from the sound, which means that you will often see two objects in the list: a Sound or LongSound, "
@@ -2307,15 +2363,15 @@ NORMAL (L"When you create a TextGrid, you specify the names of the %tiers. For i
 ENTRY (L"View and edit")
 NORMAL (L"You can edit a TextGrid object all by itself, but you will normally want to see "
 	"the sound in the editor window as well. To achieve this, you select both the Sound (or LongSound) and "
-	"the TextGrid, and click @Edit. A @TextGridEditor will appear on your screen. "
+	"the TextGrid, and click @@View & Edit@. A @TextGridEditor will appear on your screen. "
 	"Like the Sound editor, the TextGrid editor will show you a spectrogram, a pitch contour, a formant contour, "
 	"and an intensity contour. This editor will allow "
 	"you to add, remove, and edit labels, boundaries, and tiers. Under Help in the TextGridEditor, you will "
 	"find the @TextGridEditor manual page. You are strongly advised to read it, because it will show you "
 	"how you can quickly zoom (drag the mouse), play (click a rectangle), or edit a label (just type).")
 ENTRY (L"Save")
-NORMAL (L"You will normally write the TextGrid to disk with @@Write to text file...@ "
-	"or @@Write to short text file...@. It is true that @@Write to binary file...@ will also work, but the others "
+NORMAL (L"You will normally write the TextGrid to disk with @@Save as text file...@ "
+	"or @@Save as short text file...@. It is true that @@Save as binary file...@ will also work, but the others "
 	"give you a file you can read with any text editor.")
 NORMAL (L"However you saved it, you can read the TextGrid into Praat later with @@Read from file...@.")
 MAN_END
@@ -2326,11 +2382,11 @@ LIST_ITEM (L"@@Intro 8.2. Manipulation of duration")
 LIST_ITEM (L"@@Intro 8.3. Manipulation of intensity")
 MAN_END
 
-MAN_BEGIN (L"Intro 8.1. Manipulation of pitch", L"ppgb", 20030309)
+MAN_BEGIN (L"Intro 8.1. Manipulation of pitch", L"ppgb", 20110128)
 INTRO (L"To modify the pitch contour of an existing @Sound object, "
 	"you select this @Sound and click ##To Manipulation#. "
 	"A @Manipulation object will then appear in the list. "
-	"You can then click @Edit to raise a @ManipulationEditor, "
+	"You can then click @@View & Edit@ to raise a @ManipulationEditor, "
 	"which will show the pitch contour (@PitchTier) as a series of thick dots. "
 	"To reduce the number of dots, choose ##Stylize pitch (2 st)# "
 	"from the #Pitch menu; it will then be easy to drag the dots "
@@ -2359,11 +2415,11 @@ NORMAL (L"For instance, suppose you want to have a pitch that falls from 350 to 
 	"You can put this PitchTier into a Manipulation object in the way described above.")
 MAN_END
 
-MAN_BEGIN (L"Intro 8.2. Manipulation of duration", L"ppgb", 20070107)
+MAN_BEGIN (L"Intro 8.2. Manipulation of duration", L"ppgb", 20110128)
 INTRO (L"You can use Praat to modify the relative durations in an existing sound.")
 NORMAL (L"First, you select a @Sound object and click \"To Manipulation\". "
 	"A @Manipulation object will then appear in the list. "
-	"You can then click @Edit to raise a @ManipulationEditor, "
+	"You can then click @@View & Edit@ to raise a @ManipulationEditor, "
 	"which will show an empty @DurationTier. "
 	"You can add targets to this tier by choosing \"Add duration point at cursor\" "
 	"from the \"Dur\" menu. The targets will show up as green dots, which you can easily drag "
@@ -2394,13 +2450,13 @@ NORMAL (L"To put this DurationTier back into a Manipulation object, you select t
 	"and choose ##Replace duration tier#.")
 MAN_END
 
-MAN_BEGIN (L"Intro 8.3. Manipulation of intensity", L"ppgb", 20070825)
+MAN_BEGIN (L"Intro 8.3. Manipulation of intensity", L"ppgb", 20110128)
 INTRO (L"You can modify the intensity contour of an existing sound.")
 NORMAL (L"While the pitch and duration of a sound can be modified with the @ManipulationEditor "
 	"(see @@Intro 8.1. Manipulation of pitch@ and @@Intro 8.2. Manipulation of duration@), "
 	"the modification of the intensity curve is done in a different way.")
 NORMAL (L"You can create an @IntensityTier with the command @@Create IntensityTier...@ "
-	"from the @@New menu@. With @Edit, you can add points to this tier. "
+	"from the @@New menu@. With @@View & Edit@, you can add points to this tier. "
 	"You can then \"multiply\" this tier with a sound, by selecting the @Sound and the "
 	"IntensityTier together and clicking @@Sound & IntensityTier: Multiply|Multiply@. "
 	"The points in the IntensityTier represent relative intensities in dB; "
@@ -2447,93 +2503,6 @@ NORMAL (L"To change the selection of one object (without changing the others), "
 	"use Control-click (Unix, Windows) or Command-click (Macintosh).")
 MAN_END
 
-MAN_BEGIN (L"Look and feel", L"ppgb", 20030528)
-INTRO (L"This page is about how you see the Praat shell and work with it in an interactive session.")
-ENTRY (L"The Praat shell on Macintosh^\\re")
-NORMAL (L"Most of the %look is Macintosh: rounded buttons, a menu bar at the top. "
-	"Some of the look is Motif^\\tm: a menu bar in every window.")
-NORMAL (L"Most of the %feel is Macintosh: only one window active simultaneously.")
-ENTRY (L"The Praat shell on Windows^\\re 95 and NT")
-NORMAL (L"Most of the look and feel is Windows, though all windows are separate overlapping windows, "
-	"instead of children of a large application window.")
-ENTRY (L"The Praat shell on the X Window platform")
-NORMAL (L"From every computer with OSF/Motif, you can run the Praat shell on every X server in the world. "
-	"If your program is %praat, you just type:")
-CODE (L"praat -motif")
-NORMAL (L"With this command, you will always get the same old Motif look and feel.")
-NORMAL (L"Many platforms, however, have their own favoured look and feel. "
-	"For this reason, the Praat shell recognizes several client computers: if you just type")
-CODE (L"praat")
-NORMAL (L"(or double-click on the %praat icon), "
-	"the Praat shell assumes that the X server matches the client computer.")
-NORMAL (L"The following client computers are recognized: SGI, Sun, HP. On other computers (Linux, IBM RS6000), "
-	"typing $praat will give the same look and feel as typing $$praat -motif$.")
-ENTRY (L"The Praat shell on SGI")
-NORMAL (L"On a Silicon Graphics^\\re Iris^\\tm computer, typing")
-CODE (L"praat")
-NORMAL (L"or double-clicking the %praat icon, will give you either of the following look-and-feel styles:")
-LIST_ITEM (L"\\bu the native SGI \"Indigo Magic\" style, with lighting buttons and user-controllable "
-	"color schemes, if available;")
-LIST_ITEM (L"\\bu the plain Motif style, if color schemes are not available (to find this out, "
-	"the Praat shell checks the existence of the color-scheme browser %%/usr/sbin/schemebr% "
-	"on the client side).")
-NORMAL (L"You can force the Praat shell to use the SGI style with")
-CODE (L"praat -sgi")
-NORMAL (L"or the Motif style with")
-CODE (L"praat -motif")
-ENTRY (L"The Praat shell on Sun")
-NORMAL (L"On a Sun computer, typing")
-CODE (L"praat")
-NORMAL (L"will give you the look and feel of Sun4, Solaris, or the Common Desktop Environment (CDE). "
-	"These styles use non-standard fonts for their menus, buttons, and texts. Whether CDE is "
-	"available, is determined by checking the existence of %%/usr/dt/bin/dtaction%.")
-NORMAL (L"You can force any of these styles with $$praat -solaris$, $$praat -sun4$, or $$praat -cde$.")
-ENTRY (L"The Praat shell on HP")
-NORMAL (L"On a Hewlett-Packard computer, typing")
-CODE (L"praat")
-NORMAL (L"will give you the look and feel of the HP version of the Common Desktop Environment. "
-	"If you do not have that, try $$praat -motif$.")
-ENTRY (L"Running the Praat shell across a network")
-NORMAL (L"Like most X programs, you can run the Praat program across a network, "
-	"with the executable running on the %client computer, "
-	"and yourself sitting at a computer that acts as an %%X server%. For this to work, "
-	"you will have to take care of two things:")
-LIST_ITEM (L"\\bu Tell the client computer to use the server %display. If you use %telnet "
-	"(but not %rlogin), this will be done automatically for you, because %telnet "
-	"propagates the DISPLAY environment variable. "
-	"Otherwise, if you are sitting at %%indigo3.uni-franeker.nl%, "
-	"you type the following line to your remote login shell:")
-CODE (L"    setenv DISPLAY indigo3.uni-franeker.nl:0")
-LIST_ITEM (L"\\bu Your X server should grant the client computer access to its display. "
-	"This may sometimes be automatic (e.g., if the server allows the whole world to connect to it). "
-	"Otherwise, if the client is %%distant1.uni-harderwijk.nl%, you type the following line to your "
-	"local shell:")
-CODE (L"    xhost +distant1.uni-harderwijk.nl")
-NORMAL (L"Finally, you type $$praat -motif$ to your remote login shell, "
-	"and the two windows will appear on your screen.")
-NORMAL (L"If you run the Praat shell from an SGI client across a network on an X server "
-	"(a PC or Sun, for example), "
-	"the normal $praat command will probably work and give you the native SGI look and feel. "
-	"This works because the SGI style only uses fonts that are available everywhere.")
-NORMAL (L"If your X server is a Sun with Solaris, you can probably use the Motif, and Solaris or CDE styles.")
-NORMAL (L"Likewise, if you run %praat from a different machine on a HP X server, you may try $$praat -hp$.")
-NORMAL (L"If you run %praat from a Sun client on an X server, you will probably use $$praat -motif$.")
-ENTRY (L"Resource files?")
-NORMAL (L"Many X Windows applications work with %%client-side% resource files, "
-	"which describe the fonts etc. that they need. "
-	"However, as the fonts are server-dependent, changing to a different X server "
-	"will often require you to change the resource file %%on the client side%, "
-	"unless you only use fonts that are available on all platforms (like Helvetica and Times). "
-	"However, your application may not adhere to any native look-and-feel strategy then. "
-	"Incorporating all resource files into the application, as done in the Praat shell, "
-	"solves this problem. Locally, you just type $praat, and across a network you use "
-	"one of the explicit look-and-feel options.")
-NORMAL (L"In the Praat shell, the user-controllability of window sizes and fonts, "
-	"which is sometimes expressed by editing resource files, "
-	"is implemented by a hidden mechanism, which remembers across sessions "
-	"the changes made by the user while the application is running.")
-MAN_END
-
 MAN_BEGIN (L"New menu", L"ppgb", 20080427)
 INTRO (L"The ##New menu# is one of the menus in the @@Object window@. "
 	"You use this menu to create new objects from scratch. It contains the following commands:")
@@ -2555,7 +2524,7 @@ LIST_ITEM (L"\\bu @@Create Strings as file list...@")
 LIST_ITEM (L"\\bu @@Create TextGrid...@")
 LIST_ITEM (L"\\bu @@OT learning@ tutorial")
 LIST_ITEM (L"\\bu @@Create tongue-root grammar...@")
-NORMAL (L"To create new objects from files on disk, use the @@Read menu@ instead. "
+NORMAL (L"To create new objects from files on disk, use the @@Open menu@ instead. "
 	"Objects can also often be create from other objects, with commands that start with ##To#.")
 MAN_END
 
@@ -2573,8 +2542,8 @@ LIST_ITEM (L"\\bu @@Remove")
 LIST_ITEM (L"\\bu @@Inspect")
 ENTRY (L"Menus")
 LIST_ITEM (L"The Object window contains several fixed menus: "
-	"the #Praat, #New, #Read, and #Help menus. "
-	"It also contains the #Write menu, whose contents vary with the kinds of selected objects, "
+	"the #Praat, #New, #Open, and #Help menus. "
+	"It also contains the #Save menu, whose contents vary with the kinds of selected objects, "
 	"and must, therefore, be considered part of the dynamic menu.")
 ENTRY (L"The Praat menu")
 LIST_ITEM (L"\\bu (@@Run script...@)")
@@ -2590,8 +2559,8 @@ LIST_ITEM (L"\\bu (@@Add action command...@)")
 LIST_ITEM (L"\\bu @@Quit")
 ENTRY (L"Other menus")
 LIST_ITEM (L"\\bu The @@New menu@: for creating objects from scratch.")
-LIST_ITEM (L"\\bu The @@Read menu@: for reading objects from file into memory.")
-LIST_ITEM (L"\\bu The @@Write menu@: for writing objects from memory to file.")
+LIST_ITEM (L"\\bu The @@Open menu@: for reading objects from file into memory.")
+LIST_ITEM (L"\\bu The @@Save menu@: for writing objects from memory to file.")
 LIST_ITEM (L"\\bu The ##Help menu#: for viewing the manual.")
 MAN_END
 
@@ -2646,24 +2615,24 @@ ENTRY (L"Behaviour")
 NORMAL (L"All @objects not written to a file will be lost. "
 	"However, file-based objects (like large lexica) will be saved correctly.")
 ENTRY (L"Usage")
-NORMAL (L"To save your data to a disk file before quitting, choose a command from the @@Write menu@.")
+NORMAL (L"To save your data to a disk file before quitting, choose a command from the @@Save menu@.")
 MAN_END
 
-MAN_BEGIN (L"Read from file...", L"ppgb", 19970911)
-INTRO (L"One of the commands in the @@Read menu@.")
+MAN_BEGIN (L"Read from file...", L"ppgb", 20110129)
+INTRO (L"One of the commands in the @@Open menu@.")
 ENTRY (L"Purpose")
 NORMAL (L"To read one or more @objects from a file on disk.")
 ENTRY (L"Behaviour")
 NORMAL (L"Many kinds of files are recognized:")
-LIST_ITEM (L"1. Text files that are structured as described under @@Write to text file...@; "
+LIST_ITEM (L"1. Text files that are structured as described under @@Save as text file...@; "
 	"these can contain an object of any class, or a collection of objects.")
-LIST_ITEM (L"2. Files that were produced by @@Write to binary file...@ (any class).")
+LIST_ITEM (L"2. Files that were produced by @@Save as binary file...@ (any class).")
 LIST_ITEM (L"3. Files in a LISP text format (only for classes that can be written to a LISP file).")
 LIST_ITEM (L"4. Files that were made recognizable by the libraries built on Praat. "
 	"For instance, the phonetics library adds recognizers for many kinds of sound files.")
 NORMAL (L"If the file contains more than one object, these objects will appear in the list, "
 	"and their names will be the same as the names that they had "
-	"when they were saved with ##Write to text file...# or ##Write to binary file...#.")
+	"when they were saved with ##Save as text file...# or ##Save as binary file...#.")
 ENTRY (L"Examples")
 LIST_ITEM (L"\\bu If the file contains only one Pitch object and is called \"hallo.pit\", "
 	"an object with the name \"Pitch hallo\" will appear in the list of objects. "
@@ -2674,11 +2643,11 @@ LIST_ITEM (L"\\bu If the file contains one object of class Pitch, named \"hallo\
 	"called \"Pitch hallo\" and \"Polygon kromme\".")
 MAN_END
 
-MAN_BEGIN (L"Read menu", L"ppgb", 20080526)
+MAN_BEGIN (L"Open menu", L"ppgb", 20110111)
 INTRO (L"One of the menus in the @@Object window@.")
-NORMAL (L"With the Read menu, you read one or more @objects from a file on disk into memory. "
+NORMAL (L"With the Open menu, you read one or more @objects from a file on disk into memory. "
 	"The resulting object(s) will appear in the @@List of Objects@.")
-NORMAL (L"The Read menu contains the command @@Read from file...@, which recognizes most file types, "
+NORMAL (L"The Open menu contains the command @@Read from file...@, which recognizes most file types, "
 	"and perhaps several other commands for reading unrecognizable file types (e.g., raw sound data), "
 	"or for interpreting known file types in a different way "
 	"(e.g., reading two mono sounds from one stereo sound file):")
@@ -2689,7 +2658,7 @@ INTRO (L"One of the fixed buttons in the @@Object window@.")
 NORMAL (L"You can choose this command after selecting one or more @objects in the list.")
 NORMAL (L"The selected objects will permanently disappear from the list, "
 	"and the computer memory that they occupied will be freed.")
-NORMAL (L"To save your data before removing, choose a command from the @@Write menu@.")
+NORMAL (L"To save your data before removing, choose a command from the @@Save menu@.")
 MAN_END
 
 MAN_BEGIN (L"Rename...", L"ppgb", 19960904)
@@ -2756,7 +2725,7 @@ LIST_ITEM (L"@@Source-filter synthesis 3. The ba-da continuum")
 LIST_ITEM (L"@@Source-filter synthesis 4. Using existing sounds")
 MAN_END
 
-MAN_BEGIN (L"Source-filter synthesis 1. Creating a source from pitch targets", L"ppgb", 20080425)
+MAN_BEGIN (L"Source-filter synthesis 1. Creating a source from pitch targets", L"ppgb", 20110128)
 INTRO (L"Creating a glottal source signal for speech synthesis involves creating a @PointProcess, "
 	"which is a series of time points that should represent the exact moments of glottal closure.")
 NORMAL (L"You may want to start with creating a well-defined pitch contour. "
@@ -2764,38 +2733,88 @@ NORMAL (L"You may want to start with creating a well-defined pitch contour. "
 	"during that time. You first create an empty @PitchTier by choosing @@Create PitchTier...@ from the #New menu "
 	"(I call this PitchTier \"empty\" because it does not contain any pitch information yet); "
 	"you may want to name the PitchTier \"source\" and have it start at 0 seconds and end at 0.5 seconds. "
-	"Once the PitchTier exists and is selected, you can #Edit it to add pitch points (pitch targets) to it at certain times "
+	"Once the PitchTier exists and is selected, you can ##View & Edit# it to add pitch points (pitch targets) to it at certain times "
 	"(or you choose @@PitchTier: Add point...@ from the #Modify menu repeatedly). "
-	"You could add a pitch point of 300 Hz at time 0.0 and a pitch point of 200 Hz at time 1.0. "
-	"In a script, it would look like this):")
-CODE (L"Create PitchTier... source 0 0.5")
-CODE (L"Add point... 0 300")
-CODE (L"Add point... 0.5 200")
-NORMAL (L"If the PitchTier window, you can see that the pitch curve falls linearly "
-	"from 300 to 200 Hz during its time domain. You can hear the falling pitch by clicking on the rectangles in the PitchTier window "
+	"You could add a pitch point of 150 Hz at time 0.0 and a pitch point of 100 Hz at time 0.5. "
+	"In the PitchTier window, you can see that the pitch curve falls linearly "
+	"from 150 to 100 Hz during its time domain:")
+SCRIPT (4.5, 2.5,
+	L"Create PitchTier... source 0 0.5\n"
+	"Add point... 0.0 150\n"
+	"Add point... 0.5 100\n"
+	"Draw... 0 0 0 200 yes lines and speckles\n"
+	"Text top... no %%An F0 linearly falling between two points\n"
+	"One mark left... 100 yes yes no\n"
+	"Remove\n"
+)
+NORMAL (L"You can hear the falling pitch by clicking on the rectangles in the PitchTier window "
 	"(or by clicking ##Play pulses#, #Hum, or ##Play sine# in the Objects window).")
 NORMAL (L"From this PitchTier, you can create a @PointProcess with @@PitchTier: To PointProcess@. "
 	"The resulting PointProcess now represents a series of glottal pulses. To make some parts of this "
 	"point process voiceless, you can use @@PointProcess: Remove points between...@. "
 	"It is advisable to make the very beginning and end of this point process voiceless, so that the filtered sound "
-	"will not start or end abruptly. A script version could look like this:")
-CODE (L"Remove points between... 0 0.02")
-CODE (L"Remove points between... 0.24 0.31")
-CODE (L"Remove points between... 0.48 0.5")
-NORMAL (L"In this example, the first and last 20 ms are devoiced, and a stretch of 70 ms in the middle "
-	"is made voiceless as well, perhaps because you want to simulate a voiceless plosive there.")
+	"will not start or end abruptly. In the following example, the first and last 20 ms are devoiced, "
+	"and a stretch of 70 ms in the middle "
+	"is made voiceless as well, perhaps because you want to simulate a voiceless plosive there:")
+SCRIPT (4.5, 2.5,
+	L"pitchTier = Create PitchTier... source 0 0.5\n"
+	"Add point... 0.0 150\n"
+	"Add point... 0.5 100\n"
+	"pulses = To PointProcess\n"
+	"Remove points between... 0 0.02\n"
+	"Remove points between... 0.24 0.31\n"
+	"Remove points between... 0.48 0.5\n"
+	"Draw... 0 0 yes\n"
+	"Text top... no %%The times of the glottal pulses\n"
+	"One mark bottom... 0.24 yes yes no\n"
+	"One mark bottom... 0.31 yes yes no\n"
+	"plus pitchTier\n"
+	"Remove\n"
+)
 NORMAL (L"Now that we have a glottal point process (a glottal pulse train), the only thing left "
 	"is to turn it into a sound by choosing @@PointProcess: To Sound (phonation)...@. "
-	"If you use the standard settings of this command, the result will be a @Sound with "
+	"If you use the standard settings of this command (but with ##Adaptation factor# set to 0.6), the result will be a @Sound with "
 	"reasonable glottal flow derivatives centred around each of the original pulses in the point process. "
-	"You can check this by selecting the Sound and choosing #Edit. "
-	"You will also see that the amplitude of the first two glottal wave shapes of every voiced stretch "
-	"is (realistically) somewhat smaller than the amplitudes of the following wave shapes.")
+	"You can check this by selecting the Sound and choosing ##View & Edit#:")
+SCRIPT (4.5, 2.5,
+	L"pitchTier = Create PitchTier... source 0 0.5\n"
+	"Add point... 0.0 150\n"
+	"Add point... 0.5 100\n"
+	"pulses = To PointProcess\n"
+	"Remove points between... 0 0.02\n"
+	"Remove points between... 0.24 0.31\n"
+	"Remove points between... 0.48 0.5\n"
+	"source = To Sound (phonation)... 44100 0.6 0.05 0.7 0.03 3.0 4.0\n"
+	"Draw... 0 0 0 0 yes curve\n"
+	"Text top... no %%The source waveform\n"
+	"One mark bottom... 0.24 yes yes no\n"
+	"One mark bottom... 0.31 yes yes no\n"
+	"plus pitchTier\n"
+	"plus pulses\n"
+	"Remove\n"
+)
+NORMAL (L"You will also see that the amplitude of the first two glottal wave shapes of every voiced stretch "
+	"is (realistically) somewhat smaller than the amplitudes of the following wave shapes; "
+	"This is the result of setting ##Adaptation factor# to 0.6.")
 NORMAL (L"What you have now is what we call a %%glottal source signal%. It does two things: it contains information on the glottal flow, "
 	"and it already takes into account one aspect of the %filter, namely the radiation at the lips. "
 	"This combination is standard procedure in acoustic synthesis.")
 NORMAL (L"The glottal source signal sounds as a voice without a vocal tract. "
 	"The following section describes how you add vocal-tract resonances, i.e. the %filter.")
+ENTRY (L"Automation")
+NORMAL (L"In a clean Praat script, the procedure described above will look as follows:")
+CODE (L"pitchTier = Create PitchTier... source 0 0.5")
+CODE (L"Add point... 0.0 150")
+CODE (L"Add point... 0.5 100")
+CODE (L"pulses = To PointProcess")
+CODE (L"Remove points between... 0 0.02")
+CODE (L"Remove points between... 0.24 0.31")
+CODE (L"Remove points between... 0.48 0.5")
+CODE (L"source = To Sound (phonation)... 44100 0.6 0.05 0.7 0.03 3.0 4.0")
+CODE (L"select pitchTier")
+CODE (L"plus pulses")
+CODE (L"Remove")
+CODE (L"select source")
 MAN_END
 
 MAN_BEGIN (L"Source-filter synthesis 2. Filtering a source", L"ppgb", 20080427)
@@ -3017,7 +3036,7 @@ INTRO (L"A command in the Spectrogram menu of the @SoundEditor and @TextGridEdit
 	"See @@Intro 3.2. Configuring the spectrogram@.")
 MAN_END
 
-MAN_BEGIN (L"Types of objects", L"ppgb", 20080427)
+MAN_BEGIN (L"Types of objects", L"ppgb", 20101230)
 INTRO (L"Praat contains the following types of objects and @Editors. "
 	"For an introduction and tutorials, see @Intro.")
 NORMAL (L"General purpose:")
@@ -3053,7 +3072,7 @@ LIST_ITEM (L"\\bu @Excitation: excitation pattern of basilar membrane")
 LIST_ITEM (L"\\bu @Excitations: an ensemble of #Excitation objects")
 LIST_ITEM (L"\\bu @Cochleagram: excitation pattern as a function of time")
 NORMAL (L"Labelling and segmentation (see @@Intro 7. Annotation@):")
-LIST_ITEM (L"\\bu @TextGrid (@TextGridEditor), @IntervalTier, @TextTier")
+LIST_ITEM (L"\\bu @TextGrid (@TextGridEditor)")
 NORMAL (L"Listening experiments:")
 LIST_ITEM (L"\\bu @ExperimentMFC")
 NORMAL (L"Manipulation of sound:")
@@ -3096,7 +3115,7 @@ NORMAL (L"Bureaucracy")
 LIST_ITEM (L"\\bu @WordList, @SpellingChecker")
 MAN_END
 
-MAN_BEGIN (L"Unicode", L"ppgb", 20071210)
+MAN_BEGIN (L"Unicode", L"ppgb", 20110129)
 INTRO (L"Praat is becoming a fully international program: "
 	"the texts in Praat's TextGrids, Tables, scripts, or Info window (and elsewhere) can contain many types of characters "
 	"(see @@special symbols@). "
@@ -3105,14 +3124,14 @@ ENTRY (L"ASCII text files")
 NORMAL (L"If your TextGrid (or Table, or script, or Info window...) contains only characters that can be encoded as ASCII, "
 	"namely the characters !\\\" \\# \\$ \\% &\\' ()*+,-./0123456789:;<=>?\\@  "
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\bs]\\^ \\_ ` abcdefghijklmnopqrstuvwxyz{|}~, "
-	"then when you say @@Write to text file...@ or #Save, Praat will write an ASCII text file, "
+	"then when you say @@Save as text file...@ or #Save, Praat will write an ASCII text file, "
 	"which is a text file in which every character is encoded in a single byte (8 bits). "
 	"All programs that can read plain text files can read such files produced by Praat.")
 ENTRY (L"UTF-16 text files")
 NORMAL (L"If your TextGrid (or Table, or script, or Info window...) contains one or more characters that cannot be encoded as ASCII, "
 	"for instance West-European characters such as \\ao\\c,\\e'\\o\"\\ss\\?d, East-European characters such as \\c<\\l/\\o:\\s<\\uo\\z', "
 	"or Hebrew characters such as \\?+\\B+\\G+\\M%\\vO\\sU, "
-	"then when you say @@Write to text file...@ or #Save, Praat will write an UTF-16 text file, "
+	"then when you say @@Save as text file...@ or #Save, Praat will write an UTF-16 text file, "
 	"which is a text file in which every character is encoded in two bytes (and some very rare characters in four bytes). "
 	"Many programs can read such text files, for instance NotePad, WordPad, Microsoft Word, and TextWrangler.")
 ENTRY (L"What if my other programs cannot read UTF-16 text files?")
@@ -3144,29 +3163,29 @@ MAN_BEGIN (L"View", L"ppgb", 20010512)
 INTRO (L"One of the menus in several @editors and in the @manual.")
 MAN_END
 
-MAN_BEGIN (L"Write menu", L"ppgb", 19970911)
+MAN_BEGIN (L"Save menu", L"ppgb", 20110129)
 INTRO (L"One of the menus in the @@Object window@.")
 ENTRY (L"Purpose")
-NORMAL (L"With the Write menu, you write one or more selected @objects from memory to a file on disk. "
-	"The data can be read in again with one of the commands in the @@Read menu@ "
+NORMAL (L"With the #Save menu, you write one or more selected @objects from memory to a file on disk. "
+	"The data can be read in again with one of the commands in the @@Open menu@ "
 	"(most often simply with @@Read from file...@).")
 ENTRY (L"Usage: save your work")
 NORMAL (L"You will often choose a command from this menu just before clicking the @Remove button "
 	"or choosing the @Quit command.")
 ENTRY (L"Fixed commands")
-NORMAL (L"If no object is selected, the Write menu is empty. "
+NORMAL (L"If no object is selected, the #Save menu is empty. "
 	"If any object is selected, it will at least contain the following commands:")
 LIST_ITEM (L"\\bu @@Write to console")
-LIST_ITEM (L"\\bu @@Write to text file...")
-LIST_ITEM (L"\\bu @@Write to short text file...")
-LIST_ITEM (L"\\bu @@Write to binary file...")
+LIST_ITEM (L"\\bu @@Save as text file...")
+LIST_ITEM (L"\\bu @@Save as short text file...")
+LIST_ITEM (L"\\bu @@Save as binary file...")
 ENTRY (L"Dynamic commands")
 NORMAL (L"Depending on the class of the selected object, the following commands may be available "
-	"in the Write menu:")
+	"in the #Save menu:")
 MAN_END
 
-MAN_BEGIN (L"Write to binary file...", L"ppgb", 19970911)
-INTRO (L"One of the commands in the @@Write menu@.")
+MAN_BEGIN (L"Save as binary file...", L"ppgb", 20110129)
+INTRO (L"One of the commands in the @@Save menu@.")
 ENTRY (L"Availability")
 NORMAL (L"You can choose this command after selecting one or more @objects.")
 ENTRY (L"Behaviour")
@@ -3179,31 +3198,31 @@ NORMAL (L"These files are in a device-independent binary format, "
 	"and can be written and read on any machine.")
 MAN_END
 
-MAN_BEGIN (L"Write to console", L"ppgb", 20070106)
-INTRO (L"One of the commands in the @@Write menu@.")
+MAN_BEGIN (L"Write to console", L"ppgb", 20110129)
+INTRO (L"One of the commands in the @@Save menu@.")
 NORMAL (L"You can choose this command after selecting one object. "
 	"The data that it contains, is written to the Console window "
 	"(the terminal window, if you started up Praat from a terminal window), "
-	"in the same format as with the @@Write to text file...@ command, "
+	"in the same format as with the @@Save as text file...@ command, "
 	"except for the first line, which reads something like:")
 CODE (L"Write to console: class Sound,  name \"hallo\"")
 MAN_END
 
-MAN_BEGIN (L"Write to short text file...", L"ppgb", 19981124)
-INTRO (L"One of the commands in the @@Write menu@.")
+MAN_BEGIN (L"Save as short text file...", L"ppgb", 20110129)
+INTRO (L"One of the commands in the @@Save menu@.")
 ENTRY (L"Availability")
 NORMAL (L"You can choose this command after selecting one or more @objects.")
 ENTRY (L"Behaviour")
 NORMAL (L"The Object window will ask you for a file name. "
 	"After you click OK, the objects will be written to a text file on disk.")
 ENTRY (L"File format")
-NORMAL (L"The format is much shorter than the one described at @@Write to text file...@. "
+NORMAL (L"The format is much shorter than the one described at @@Save as text file...@. "
 	"Most of the comments are gone, and there is normally one piece of data per line.")
 NORMAL (L"The file can be read again with the all-purpose @@Read from file...@.")
 MAN_END
 
-MAN_BEGIN (L"Write to text file...", L"ppgb", 20070106)
-INTRO (L"One of the commands in the @@Write menu@.")
+MAN_BEGIN (L"Save as text file...", L"ppgb", 20110129)
+INTRO (L"One of the commands in the @@Save menu@.")
 ENTRY (L"Availability")
 NORMAL (L"You can choose this command after selecting one or more @objects.")
 ENTRY (L"Behaviour")

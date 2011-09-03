@@ -1,6 +1,6 @@
 /* SpellingChecker.c
  *
- * Copyright (C) 1999-2007 Paul Boersma
+ * Copyright (C) 1999-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
  * pb 2007/06/21 tex
  * pb 2007/08/12 wchar_t
  * pb 2007/10/01 can write as encoding
+ * pb 2011/03/03 wide-character WordList
  */
 
 #include "SpellingChecker.h"
@@ -64,7 +65,7 @@ class_methods (SpellingChecker, Data) {
 SpellingChecker WordList_upto_SpellingChecker (WordList me) {
 	SpellingChecker thee = new (SpellingChecker); cherror
 	thy wordList = Data_copy (me); cherror
-	thy separatingCharacters = Melder_wcsdup (L".,;:()\"");
+	thy separatingCharacters = Melder_wcsdup_e (L".,;:()\""); cherror
 end:
 	iferror forget (thee);
 	return thee;
@@ -185,7 +186,7 @@ int SpellingChecker_isWordAllowed (SpellingChecker me, const wchar_t *word) {
 			}
 		}
 	}
-	if (WordList_hasWord (my wordList, Melder_peekWcsToUtf8 (word)))
+	if (WordList_hasWord (my wordList, word))
 		return TRUE;
 	if (my userDictionary != NULL) {
 		if (wcslen (word) > 3333) return FALSE;   /* Superfluous, because WordList_hasWord already checked. But safe. */
@@ -198,16 +199,15 @@ int SpellingChecker_isWordAllowed (SpellingChecker me, const wchar_t *word) {
 
 int SpellingChecker_addNewWord (SpellingChecker me, const wchar_t *word) {
 	wchar_t *generic = NULL;
+//start:
 	if (! my userDictionary) {
 		my userDictionary = SortedSetOfString_create ();
 		if (! my userDictionary) return 0;
 	}
-	generic = Melder_calloc (wchar_t, 3 * wcslen (word) + 1);
-	if (! generic) goto end;
+	generic = Melder_calloc_e (wchar_t, 3 * wcslen (word) + 1); cherror
 	Longchar_genericizeW (word, generic);
-	if (! SortedSetOfString_add (my userDictionary, generic)) goto end;
+	SortedSetOfString_add (my userDictionary, generic); cherror
 end:
-	Melder_free (generic);
 	iferror return 0;
 	return 1;
 }

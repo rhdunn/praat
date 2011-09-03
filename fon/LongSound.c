@@ -36,6 +36,7 @@
  * pb 2010/01/10 MP3 precision warning
  * fb 2010/02/25 corrected a bug that could cause LongSound_playPart to crash with an assertion on error
  * pb 2010/11/07 no longer do an assertion on thy resampledBuffer
+ * pb 2010/12/20 support for more than 2 channels
  */
 
 #include "LongSound.h"
@@ -74,7 +75,6 @@ static void destroy (I) {
 
 static void info (I) {
 	iam (LongSound);
-	static const wchar_t *channelStrings [] = { L"none", L"mono", L"stereo", L"three", L"quadro" };
 	static const wchar_t *encodingStrings [1+16] = { L"none",
 		L"linear 8 bit signed", L"linear 8 bit unsigned",
 		L"linear 16 bit big-endian", L"linear 16 bit little-endian",
@@ -87,7 +87,7 @@ static void info (I) {
 	MelderInfo_writeLine3 (L"Duration: ", Melder_double (my xmax - my xmin), L" seconds");
 	MelderInfo_writeLine2 (L"File name: ", Melder_fileToPath (& my file));
 	MelderInfo_writeLine2 (L"File type: ", my audioFileType > Melder_NUMBER_OF_AUDIO_FILE_TYPES ? L"unknown" : Melder_audioFileTypeString (my audioFileType));
-	MelderInfo_writeLine2 (L"Channels: ", my numberOfChannels > 4 ? L"unknown" : channelStrings [my numberOfChannels]);
+	MelderInfo_writeLine2 (L"Number of channels: ", Melder_integer (my numberOfChannels));
 	MelderInfo_writeLine2 (L"Encoding: ", my encoding > 16 ? L"unknown" : encodingStrings [my encoding]);
 	MelderInfo_writeLine3 (L"Sampling frequency: ", Melder_double (my sampleRate), L" Hertz");
 	MelderInfo_writeLine3 (L"Size: ", Melder_integer (my nx), L" samples");
@@ -288,13 +288,6 @@ static int _LongSound_FILE_seekSample (LongSound me, long firstSample) {
 	return 1;
 }
 
-static int _LongSound_FLAC_readAudioToFloat (LongSound me, double *leftBuffer, double *rightBuffer, long firstSample, long numberOfSamples) {
-	my compressedMode = COMPRESSED_MODE_READ_FLOAT;
-	my compressedFloats [0] = leftBuffer ? leftBuffer + 1 : NULL;
-	my compressedFloats [1] = rightBuffer ? rightBuffer + 1 : NULL;
-	return _LongSound_FLAC_process (me, firstSample, numberOfSamples);
-}
-
 static int _LongSound_FLAC_readAudioToShort (LongSound me, short *buffer, long firstSample, long numberOfSamples) {
 	my compressedMode = COMPRESSED_MODE_READ_SHORT;
 	my compressedShorts = buffer + 1;
@@ -310,26 +303,29 @@ static int _LongSound_MP3_process (LongSound me, long firstSample, long numberOf
 	return 1;
 }
 
-static int _LongSound_MP3_readAudioToFloat (LongSound me, double *leftBuffer, double *rightBuffer, long firstSample, long numberOfSamples) {
-	my compressedMode = COMPRESSED_MODE_READ_FLOAT;
-	my compressedFloats [0] = leftBuffer ? leftBuffer + 1 : NULL;
-	my compressedFloats [1] = rightBuffer ? rightBuffer + 1 : NULL;
-	return _LongSound_MP3_process (me, firstSample, numberOfSamples - 1);
-}
-
 static int _LongSound_MP3_readAudioToShort (LongSound me, short *buffer, long firstSample, long numberOfSamples) {
 	my compressedMode = COMPRESSED_MODE_READ_SHORT;
 	my compressedShorts = buffer + 1;
 	return _LongSound_MP3_process (me, firstSample, numberOfSamples - 1);
 }
 
-int LongSound_readAudioToFloat (LongSound me, double *leftBuffer, double *rightBuffer, long firstSample, long numberOfSamples) {
-	if (my encoding == Melder_FLAC_COMPRESSION)
-		return _LongSound_FLAC_readAudioToFloat (me, leftBuffer, rightBuffer, firstSample, numberOfSamples);
-	if (my encoding == Melder_MPEG_COMPRESSION)
-		return _LongSound_MP3_readAudioToFloat (me, leftBuffer, rightBuffer, firstSample, numberOfSamples);
+int LongSound_readAudioToFloat (LongSound me, double **buffer, long firstSample, long numberOfSamples) {
+	if (my encoding == Melder_FLAC_COMPRESSION) {
+		my compressedMode = COMPRESSED_MODE_READ_FLOAT;
+		for (int ichan = 1; ichan <= my numberOfChannels; ichan ++) {
+			my compressedFloats [ichan - 1] = & buffer [ichan] [1];
+		}
+		return _LongSound_FLAC_process (me, firstSample, numberOfSamples);
+	}
+	if (my encoding == Melder_MPEG_COMPRESSION) {
+		my compressedMode = COMPRESSED_MODE_READ_FLOAT;
+		for (int ichan = 1; ichan <= my numberOfChannels; ichan ++) {
+			my compressedFloats [ichan - 1] = & buffer [ichan] [1];
+		}
+		return _LongSound_MP3_process (me, firstSample, numberOfSamples);
+	}
 	return _LongSound_FILE_seekSample (me, firstSample) &&
-		Melder_readAudioToFloat (my f, rightBuffer == NULL ? 1 : 2, my encoding, leftBuffer, rightBuffer, numberOfSamples);
+		Melder_readAudioToFloat (my f, my numberOfChannels, my encoding, buffer, numberOfSamples);
 }
 
 int LongSound_readAudioToShort (LongSound me, short *buffer, long firstSample, long numberOfSamples) {
@@ -351,7 +347,7 @@ Sound LongSound_extractPart (LongSound me, double tmin, double tmax, int preserv
 	if (n < 1) error1 (L"Less than 1 sample in window.")
 	thee = Sound_create (my numberOfChannels, tmin, tmax, n, my dx, my x1 + (imin - 1) * my dx); cherror
 	if (! preserveTimes) thy xmin = 0.0, thy xmax -= tmin, thy x1 -= tmin;
-	LongSound_readAudioToFloat (me, thy z [1], thy ny == 1 ? NULL : thy z [2], imin, n); cherror
+	LongSound_readAudioToFloat (me, thy z, imin, n); cherror
 end:
 	iferror { forget (thee); Melder_error1 (L"Sound not extracted from LongSound."); }
 	return thee;
@@ -381,6 +377,7 @@ end:
 }
 
 int LongSound_writePartToAudioFile16 (LongSound me, int audioFileType, double tmin, double tmax, MelderFile file) {
+//start:
 	long imin, imax, n;
 	if (tmax <= tmin) { tmin = my xmin; tmax = my xmax; }
 	if (tmin < my xmin) tmin = my xmin;
@@ -388,21 +385,24 @@ int LongSound_writePartToAudioFile16 (LongSound me, int audioFileType, double tm
 	n = Sampled_getWindowSamples (me, tmin, tmax, & imin, & imax);
 	if (n < 1) return Melder_error1 (L"Less than 1 sample selected.");
 	MelderFile_create (file, Melder_macAudioFileType (audioFileType), L"PpgB", Melder_winAudioFileExtension (audioFileType));
-	if (file -> filePointer)
-		MelderFile_writeAudioFileHeader16 (file, audioFileType, my sampleRate, n, my numberOfChannels);
+	MelderFile_writeAudioFileHeader16_e (file, audioFileType, my sampleRate, n, my numberOfChannels); cherror
 	writePartToOpenFile16 (me, audioFileType, imin, n, file, 0);
+end:
 	MelderFile_close (file);
 	iferror return Melder_error1 (L"Sound file not written.");
 	return 1;
 }
 
 int LongSound_writeChannelToAudioFile16 (LongSound me, int audioFileType, int channel, MelderFile file) {
+//start:
 	if (my numberOfChannels != 2)
 		return Melder_error3 (L"This audio file is not a stereo file. It does not have a ", channel == 0 ? L"left" : L"right", L" channel.");
 	MelderFile_create (file, Melder_macAudioFileType (audioFileType), L"PpgB", Melder_winAudioFileExtension (audioFileType));
-	if (file -> filePointer)
-		MelderFile_writeAudioFileHeader16 (file, audioFileType, my sampleRate, my nx, 1);
+	if (file -> filePointer) {
+		MelderFile_writeAudioFileHeader16_e (file, audioFileType, my sampleRate, my nx, 1); cherror
+	}
 	writePartToOpenFile16 (me, audioFileType, 1, my nx, file, channel == 0 ? -1 : -2);
+end:
 	MelderFile_close (file);
 	iferror return Melder_error1 (L"Sound file not written.");
 	return 1;
@@ -452,10 +452,10 @@ static int _LongSound_haveSamples (LongSound me, long imin, long imax) {
 			 */
 			long nshift = (imax - my imin + 1) * my numberOfChannels, shift = (my imin - imin) * my numberOfChannels;
 			#if USE_MEMMOVE
-			memmove (my buffer + shift, my buffer, nshift * sizeof (short));
+				memmove (my buffer + shift, my buffer, nshift * sizeof (short));
 			#else
-			for (i = nshift - 1; i >= 0; i --)
-				my buffer [i + shift] = my buffer [i];
+				for (i = nshift - 1; i >= 0; i --)
+					my buffer [i + shift] = my buffer [i];
 			#endif
 			if (! _LongSound_readSamples (me, my buffer, imin, my imin - 1)) return 0;
 		} else {
@@ -464,10 +464,10 @@ static int _LongSound_haveSamples (LongSound me, long imin, long imax) {
 			 */
 			long nshift = (my imax - my imin + 1) * my numberOfChannels, shift = (my imin - imin) * my numberOfChannels;
 			#if USE_MEMMOVE
-			memmove (my buffer + shift, my buffer, nshift * sizeof (short));
+				memmove (my buffer + shift, my buffer, nshift * sizeof (short));
 			#else
-			for (i = nshift - 1; i >= 0; i --)
-				my buffer [i + shift] = my buffer [i];
+				for (i = nshift - 1; i >= 0; i --)
+					my buffer [i + shift] = my buffer [i];
 			#endif
 			if (! _LongSound_readSamples (me, my buffer, imin, my imin - 1)) return 0;
 			if (! _LongSound_readSamples (me, my buffer + (my imax - imin + 1) * my numberOfChannels, my imax + 1, imax)) return 0;
@@ -478,10 +478,10 @@ static int _LongSound_haveSamples (LongSound me, long imin, long imax) {
 		 */
 		long nshift = (my imax - imin + 1) * my numberOfChannels, shift = (imin - my imin) * my numberOfChannels;
 		#if USE_MEMMOVE
-		memmove (my buffer, my buffer + shift, nshift * sizeof (short));
+			memmove (my buffer, my buffer + shift, nshift * sizeof (short));
 		#else
-		for (i = 0; i < nshift; i ++)
-			my buffer [i] = my buffer [i + shift];
+			for (i = 0; i < nshift; i ++)
+				my buffer [i] = my buffer [i + shift];
 		#endif
 		if (! _LongSound_readSamples (me, my buffer + (my imax - imin + 1) * my numberOfChannels, my imax + 1, imax)) return 0;
 	}
@@ -564,7 +564,7 @@ void LongSound_playPart (LongSound me, double tmin, double tmax,
 		if (thy callback) thy callback (thy closure, 1, tmin, tmax, tmin);
 		if (thy silenceBefore > 0 || thy silenceAfter > 0) {
 			Melder_free (thy resampledBuffer);   // just in case
-			thy resampledBuffer = Melder_calloc (short, (thy silenceBefore + thy numberOfSamples + thy silenceAfter) * my numberOfChannels);
+			thy resampledBuffer = Melder_calloc_f (short, (thy silenceBefore + thy numberOfSamples + thy silenceAfter) * my numberOfChannels);
 			memcpy (& thy resampledBuffer [thy silenceBefore * my numberOfChannels], & my buffer [(i1 - my imin) * my numberOfChannels],
 				thy numberOfSamples * sizeof (short) * my numberOfChannels);
 			if (! MelderAudio_play16 (thy resampledBuffer, my sampleRate, thy silenceBefore + thy numberOfSamples + thy silenceAfter,
@@ -580,7 +580,7 @@ void LongSound_playPart (LongSound me, double tmin, double tmax,
 		long newN = ((double) n * newSampleRate) / my sampleRate - 1, i;
 		long silenceBefore = (long) (newSampleRate * MelderAudio_getOutputSilenceBefore ());
 		long silenceAfter = (long) (newSampleRate * MelderAudio_getOutputSilenceAfter ());
-		short *resampledBuffer = Melder_calloc (short, (silenceBefore + newN + silenceAfter) * my numberOfChannels);
+		short *resampledBuffer = Melder_calloc_e (short, (silenceBefore + newN + silenceAfter) * my numberOfChannels);
 		short *from = my buffer + (i1 - my imin) * my numberOfChannels;   /* Guaranteed: from [0 .. (my imax - my imin + 1) * nchan] */
 		double t1 = my x1, dt = 1.0 / newSampleRate;
 		if (! resampledBuffer) { Melder_flushError ("Cannot resample and play this sound."); return; }
@@ -622,6 +622,7 @@ err:
 }
 
 int LongSound_concatenate (Ordered me, MelderFile file, int audioFileType) {
+//start:
 	long i, sampleRate, n;   /* Integer sampling frequencies only, because of possible rounding errors. */
 	int numberOfChannels;
 	Data data;
@@ -667,23 +668,24 @@ int LongSound_concatenate (Ordered me, MelderFile file, int audioFileType) {
 	 * Create output file and write header.
 	 */
 	MelderFile_create (file, Melder_macAudioFileType (audioFileType), L"PpgB", Melder_winAudioFileExtension (audioFileType));
-	if (file -> filePointer)
-		MelderFile_writeAudioFileHeader16 (file, audioFileType, sampleRate, n, numberOfChannels);
+	if (file -> filePointer) {
+		MelderFile_writeAudioFileHeader16_e (file, audioFileType, sampleRate, n, numberOfChannels); cherror
+	}
 	for (i = 1; i <= my size; i ++) {
 		data = my item [i];
 		if (data -> methods == (Data_Table) classSound) {
 			Sound sound = (Sound) data;
 			if (file -> filePointer)
-				MelderFile_writeFloatToAudio (file, Melder_defaultAudioFileEncoding16 (audioFileType),
-					& sound -> z [1] [1], sound -> nx,
-					sound -> ny > 1 ? & sound -> z [2] [1] : NULL, sound -> ny > 1 ? sound -> nx : 0, TRUE);
+				MelderFile_writeFloatToAudio (file, sound -> ny, Melder_defaultAudioFileEncoding16 (audioFileType),
+					sound -> z, sound -> nx, TRUE);
 		} else {
 			LongSound longSound = (LongSound) data;
 			writePartToOpenFile16 (longSound, audioFileType, 1, longSound -> nx, file, 0);
 		}
 	}
+end:
 	MelderFile_close (file);
-	iferror return Melder_error1 (L"Sound file not written.");
+	iferror return Melder_error3 (L"Sound file ", MelderFile_messageName (file), L" not written.");
 	return 1;
 }
 

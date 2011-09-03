@@ -1,6 +1,6 @@
 /* ExperimentMFC.c
  *
- * Copyright (C) 2001-2008 Paul Boersma
+ * Copyright (C) 2001-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
  * pb 2008/04/08 in ExtractResults, check that a resonse was given
  * pb 2008/10/20 except nonstandard sound files
  * pb 2009/03/18 removed a bug introduced by the previous change (a cherror got hidden)
+ * pb 2011/03/03 added reaction times; version 2 of ResultsMFC
  */
 
 #include "ExperimentMFC.h"
@@ -179,17 +180,15 @@ end:
 }
 
 static void permuteRandomly (ExperimentMFC me, long first, long last) {
-	long itrial;
-	for (itrial = first; itrial < last; itrial ++) {
-		long jtrial = NUMrandomInteger (itrial, last), dummy;
-		dummy = my stimuli [jtrial];
+	for (long itrial = first; itrial < last; itrial ++) {
+		long jtrial = NUMrandomInteger (itrial, last);
+		long dummy = my stimuli [jtrial];
 		my stimuli [jtrial] = my stimuli [itrial];
 		my stimuli [itrial] = dummy;
 	}
 }
 
 int ExperimentMFC_start (ExperimentMFC me) {
-	long istim, iresp, itrial, ireplica;
 	long maximumStimulusPlaySamples, maximumResponsePlaySamples, maximumPlaySamples;
 	long stimulusCarrierBeforeSamples = 0, stimulusCarrierAfterSamples = 0, maximumStimulusSamples = 0;
 	long responseCarrierBeforeSamples = 0, responseCarrierAfterSamples = 0, maximumResponseSamples = 0;
@@ -204,6 +203,7 @@ int ExperimentMFC_start (ExperimentMFC me) {
 	my stimuli = NUMlvector (1, my numberOfTrials); cherror
 	my responses = NUMlvector (1, my numberOfTrials); cherror
 	my goodnesses = NUMdvector (1, my numberOfTrials); cherror
+	my reactionTimes = NUMdvector (1, my numberOfTrials); cherror
 	/*
 	 * Read all the sounds. They must all have the same sampling frequency and number of channels.
 	 */
@@ -220,7 +220,7 @@ int ExperimentMFC_start (ExperimentMFC me) {
 				& my stimulusCarrierAfter. name, & my stimulusCarrierAfter. sound); cherror
 			stimulusCarrierAfterSamples = my stimulusCarrierAfter. sound -> nx;
 		}
-		for (istim = 1; istim <= my numberOfDifferentStimuli; istim ++) {
+		for (long istim = 1; istim <= my numberOfDifferentStimuli; istim ++) {
 			readSound (me, my stimulusFileNameHead, my stimulusFileNameTail, my stimulusMedialSilenceDuration,
 				& my stimulus [istim]. name, & my stimulus [istim]. sound); cherror
 			if (my stimulus [istim]. sound -> nx > maximumStimulusSamples)
@@ -238,7 +238,7 @@ int ExperimentMFC_start (ExperimentMFC me) {
 				& my responseCarrierAfter. name, & my responseCarrierAfter. sound); cherror
 			responseCarrierAfterSamples = my responseCarrierAfter. sound -> nx;
 		}
-		for (iresp = 1; iresp <= my numberOfDifferentResponses; iresp ++) {
+		for (long iresp = 1; iresp <= my numberOfDifferentResponses; iresp ++) {
 			readSound (me, my responseFileNameHead, my responseFileNameTail, my responseMedialSilenceDuration,
 				& my response [iresp]. name, & my response [iresp]. sound); cherror
 			if (my response [iresp]. sound -> nx > maximumResponseSamples)
@@ -259,30 +259,30 @@ int ExperimentMFC_start (ExperimentMFC me) {
 	 * Determine the order in which the stimuli will be presented to the subject.
 	 */
 	if (my randomize == kExperiment_randomize_CYCLIC_NON_RANDOM) {
-		for (itrial = 1; itrial <= my numberOfTrials; itrial ++)
+		for (long itrial = 1; itrial <= my numberOfTrials; itrial ++)
 			my stimuli [itrial] = (itrial - 1) % my numberOfDifferentStimuli + 1;
 	} else if (my randomize == kExperiment_randomize_PERMUTE_ALL) {
-		for (itrial = 1; itrial <= my numberOfTrials; itrial ++)
+		for (long itrial = 1; itrial <= my numberOfTrials; itrial ++)
 			my stimuli [itrial] = (itrial - 1) % my numberOfDifferentStimuli + 1;
 		permuteRandomly (me, 1, my numberOfTrials);
 	} else if (my randomize == kExperiment_randomize_PERMUTE_BALANCED) {
-		for (ireplica = 1; ireplica <= my numberOfReplicationsPerStimulus; ireplica ++) {
+		for (long ireplica = 1; ireplica <= my numberOfReplicationsPerStimulus; ireplica ++) {
 			long offset = (ireplica - 1) * my numberOfDifferentStimuli;
-			for (istim = 1; istim <= my numberOfDifferentStimuli; istim ++)
+			for (long istim = 1; istim <= my numberOfDifferentStimuli; istim ++)
 				my stimuli [offset + istim] = istim;
 			permuteRandomly (me, offset + 1, offset + my numberOfDifferentStimuli);
 		}
 	} else if (my randomize == kExperiment_randomize_PERMUTE_BALANCED_NO_DOUBLETS) {
-		for (ireplica = 1; ireplica <= my numberOfReplicationsPerStimulus; ireplica ++) {
+		for (long ireplica = 1; ireplica <= my numberOfReplicationsPerStimulus; ireplica ++) {
 			long offset = (ireplica - 1) * my numberOfDifferentStimuli;
-			for (istim = 1; istim <= my numberOfDifferentStimuli; istim ++)
+			for (long istim = 1; istim <= my numberOfDifferentStimuli; istim ++)
 				my stimuli [offset + istim] = istim;
 			do {
 				permuteRandomly (me, offset + 1, offset + my numberOfDifferentStimuli);
 			} while (ireplica != 1 && my stimuli [offset + 1] == my stimuli [offset] && my numberOfDifferentStimuli > 1);
 		}
 	} else if (my randomize == kExperiment_randomize_WITH_REPLACEMENT) {
-		for (itrial = 1; itrial <= my numberOfTrials; itrial ++)
+		for (long itrial = 1; itrial <= my numberOfTrials; itrial ++)
 			my stimuli [itrial] = NUMrandomInteger (1, my numberOfDifferentStimuli);
 	}
 end:
@@ -323,6 +323,7 @@ static void playSound (ExperimentMFC me, Sound sound, Sound carrierBefore, Sound
 				my playBuffer -> z [channel] + initialSilenceSamples + carrierBeforeSamples + soundSamples, 1, carrierAfterSamples);
 		}
 	}
+	my startingTime = Melder_clock ();
 	Sound_playPart (my playBuffer, 0.0,
 		(initialSilenceSamples + carrierBeforeSamples + soundSamples + carrierAfterSamples) * my samplePeriod,
 		0, NULL);
@@ -339,7 +340,7 @@ void ExperimentMFC_playResponse (ExperimentMFC me, long iresp) {
 }
 
 class_methods (ResultsMFC, Data) {
-	us -> version = 1;
+	us -> version = 2;
 	class_method_local (ResultsMFC, destroy)
 	class_method_local (ResultsMFC, description)
 	class_method_local (ResultsMFC, copy)
@@ -363,6 +364,7 @@ ResultsMFC ResultsMFC_create (long numberOfTrials) {
 
 ResultsMFC ExperimentMFC_extractResults (ExperimentMFC me) {
 	ResultsMFC thee = NULL;
+//start:
 	if (my trial == 0 || my trial <= my numberOfTrials)
 		return Melder_errorp ("(ExperimentMFC_extractResults:) Experiment not finished.");
 	thee = ResultsMFC_create (my numberOfTrials); cherror
@@ -372,15 +374,16 @@ ResultsMFC ExperimentMFC_extractResults (ExperimentMFC me) {
 		if (pipe) {
 			long nameLength = wcslen (my stimulus [my stimuli [trial]]. name);
 			long buttonTextLength = wcslen (pipe);
-			thy result [trial]. stimulus = Melder_calloc (wchar_t, nameLength + buttonTextLength + 1); cherror
+			thy result [trial]. stimulus = Melder_calloc_e (wchar_t, nameLength + buttonTextLength + 1); cherror
 			wcscpy (thy result [trial]. stimulus, my stimulus [my stimuli [trial]]. name);
 			wcscat (thy result [trial]. stimulus, pipe);
 		} else {
-			thy result [trial]. stimulus = Melder_wcsdup (my stimulus [my stimuli [trial]]. name); cherror
+			thy result [trial]. stimulus = Melder_wcsdup_e (my stimulus [my stimuli [trial]]. name); cherror
 		}
 		if (my responses [trial] < 1) error3 (L"No response for trial ", Melder_integer (trial), L".")
-		thy result [trial]. response = Melder_wcsdup (my response [my responses [trial]]. name); cherror
+		thy result [trial]. response = Melder_wcsdup_e (my response [my responses [trial]]. name); cherror
 		thy result [trial]. goodness = my goodnesses [trial];
+		thy result [trial]. reactionTime = my reactionTimes [trial];
 	}
 end:
 	iferror { forget (thee); return NULL; }
@@ -388,20 +391,22 @@ end:
 }
 
 ResultsMFC ResultsMFC_removeUnsharedStimuli (ResultsMFC me, ResultsMFC thee) {
-	ResultsMFC him = ResultsMFC_create (thy numberOfTrials); cherror
+	ResultsMFC him = NULL;
+//start:
+	him = ResultsMFC_create (thy numberOfTrials); cherror
 	his numberOfTrials = 0;
 	for (long i = 1; i <= thy numberOfTrials; i ++) {
-		int present = FALSE;
+		bool present = false;
 		for (long j = 1; j <= my numberOfTrials; j ++) {
 			if (wcsequ (thy result [i]. stimulus, my result [j]. stimulus)) {
-				present = TRUE;
+				present = true;
 				break;
 			}
 		}
 		if (present) {
 			his numberOfTrials ++;
-			his result [his numberOfTrials]. stimulus = Melder_wcsdup (thy result [i]. stimulus); cherror
-			his result [his numberOfTrials]. response = Melder_wcsdup (thy result [i]. response); cherror
+			his result [his numberOfTrials]. stimulus = Melder_wcsdup_e (thy result [i]. stimulus); cherror
+			his result [his numberOfTrials]. response = Melder_wcsdup_e (thy result [i]. response); cherror
 		}
 	}
 	if (his numberOfTrials == 0) error1 (L"No shared stimuli.")
@@ -411,32 +416,38 @@ end:
 }
 
 Table ResultsMFCs_to_Table (Collection me) {
-	Table thee;
-	long irow = 0, iresults, itrial;
-	int hasGoodnesses = 0;
-	for (iresults = 1; iresults <= my size; iresults ++) {
+	Table thee = NULL;
+//start:
+	long irow = 0;
+	bool hasGoodnesses = false, hasReactionTimes = false;
+	for (long iresults = 1; iresults <= my size; iresults ++) {
 		ResultsMFC results = my item [iresults];
-		for (itrial = 1; itrial <= results -> numberOfTrials; itrial ++) {
+		for (long itrial = 1; itrial <= results -> numberOfTrials; itrial ++) {
 			irow ++;
 			if (results -> result [itrial]. goodness != 0)
-				hasGoodnesses = 1;
+				hasGoodnesses = true;
+			if (results -> result [itrial]. reactionTime != 0.0)
+				hasReactionTimes = true;
 		}
 	}
-	thee = Table_create (irow, 3 + hasGoodnesses); cherror
+	thee = Table_create (irow, 3 + hasGoodnesses + hasReactionTimes); cherror
 	Table_setColumnLabel (thee, 1, L"subject");
 	Table_setColumnLabel (thee, 2, L"stimulus");
 	Table_setColumnLabel (thee, 3, L"response");
 	if (hasGoodnesses) Table_setColumnLabel (thee, 4, L"goodness");
+	if (hasReactionTimes) Table_setColumnLabel (thee, 4 + hasGoodnesses, L"reactionTime");
 	irow = 0;
-	for (iresults = 1; iresults <= my size; iresults ++) {
+	for (long iresults = 1; iresults <= my size; iresults ++) {
 		ResultsMFC results = my item [iresults];
-		for (itrial = 1; itrial <= results -> numberOfTrials; itrial ++) {
+		for (long itrial = 1; itrial <= results -> numberOfTrials; itrial ++) {
 			irow ++;
 			Table_setStringValue (thee, irow, 1, results -> name);
 			Table_setStringValue (thee, irow, 2, results -> result [itrial]. stimulus);
 			Table_setStringValue (thee, irow, 3, results -> result [itrial]. response);
 			if (hasGoodnesses)
 				Table_setNumericValue (thee, irow, 4, results -> result [itrial]. goodness);
+			if (hasReactionTimes)
+				Table_setNumericValue (thee, irow, 4 + hasGoodnesses, results -> result [itrial]. reactionTime);
 		}
 	}
 end:
@@ -445,10 +456,10 @@ end:
 }
 
 Categories ResultsMFC_to_Categories_stimuli (ResultsMFC me) {
-	Categories thee = Categories_create ();
-	long trial;
-	if (! thee) return 0;
-	for (trial = 1; trial <= my numberOfTrials; trial ++) {
+	Categories thee = NULL;
+//start:
+	thee = Categories_create (); cherror
+	for (long trial = 1; trial <= my numberOfTrials; trial ++) {
 		SimpleString category = SimpleString_create (my result [trial]. stimulus); cherror
 		Collection_addItem (thee, category); cherror
 	}
@@ -458,10 +469,10 @@ end:
 }
 
 Categories ResultsMFC_to_Categories_responses (ResultsMFC me) {
-	Categories thee = Categories_create ();
-	long trial;
-	if (! thee) return 0;
-	for (trial = 1; trial <= my numberOfTrials; trial ++) {
+	Categories thee = NULL;
+//start:
+	thee = Categories_create ();
+	for (long trial = 1; trial <= my numberOfTrials; trial ++) {
 		SimpleString category = SimpleString_create (my result [trial]. response); cherror
 		Collection_addItem (thee, category); cherror
 	}
@@ -503,4 +514,4 @@ double Categories_getEntropy (Categories me) {
 	return entropy;
 }
 
-/* End of file Formant.c */
+/* End of file ExperimentMFC.c */

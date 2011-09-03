@@ -1,6 +1,6 @@
 /* DataEditor.c
  *
- * Copyright (C) 1995-2008 Paul Boersma
+ * Copyright (C) 1995-2011 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
  * pb 2008/03/20 split off Help menu
  * pb 2008/03/21 new Editor API
  * pb 2008/07/20 wchar_t
+ * pb 2011/03/03 removed stringwa
  */
 
 #define NAME_X  30
@@ -54,15 +55,15 @@
 /*static const char * typeStrings [] = { "none",
 	"byte", "short", "int", "long", "ubyte", "ushort", "uint", "ulong", "bool",
 	"float", "double", "fcomplex", "dcomplex", "char", "wchar",
-	"enum", "lenum", "boolean", "question", "string", "stringw", "lstring", "lstringw",
+	"enum", "lenum", "boolean", "question", "stringw", "lstringw",
 	"struct", "widget", "object", "collection" };*/
 static int stringLengths [] = { 0,
 	4, 6, 6, 11, 3, 5, 5, 10, 1,
 	15, 27, 35, 59, 4, 6,
-	33, 33, 8, 6, 60, 60, 60, 60 };
+	33, 33, 8, 6, 60, 60 };
 
 typedef struct structDataSubEditor_FieldData {
-	Widget label, button, text;
+	GuiObject label, button, text;
 	void *address;
 	Data_Description description;
 	long minimum, maximum, min2, max2;
@@ -74,7 +75,7 @@ typedef struct structDataSubEditor_FieldData {
 	DataEditor root; \
 	void *address; \
 	Data_Description description; \
-	Widget scrollBar; \
+	GuiObject scrollBar; \
 	int irow, topField, numberOfFields; \
 	struct structDataSubEditor_FieldData fieldData [1 + MAXNUM_ROWS];
 #define DataSubEditor__methods(Klas) Editor__methods(Klas) \
@@ -266,13 +267,11 @@ static void gui_button_cb_change (I, GuiButtonEvent event) {
 				if (value < 0) goto error;
 				* (signed char *) my fieldData [i]. address = value;
 			} break;
-			case stringwa:
 			case stringwwa:
-			case lstringwa:
 			case lstringwwa: {
 				wchar_t *old = * (wchar_t **) my fieldData [i]. address;
 				Melder_free (old);
-				* (wchar_t **) my fieldData [i]. address = Melder_wcsdup (text);
+				* (wchar_t **) my fieldData [i]. address = Melder_wcsdup_f (text);
 			} break;
 			default: break;
 		}
@@ -374,7 +373,7 @@ static void classDataSubEditor_createChildren (DataSubEditor me) {
 	GuiButton_createShown (my dialog, x, x + buttonWidth, y, Gui_AUTOMATIC,
 		L"Cancel", gui_button_cb_cancel, me, 0);
 	
-	Widget scrolledWindow = XmCreateScrolledWindow (my dialog, "list", NULL, 0);
+	GuiObject scrolledWindow = XmCreateScrolledWindow (my dialog, "list", NULL, 0);
 	XtVaSetValues (scrolledWindow, 
 		XmNrightAttachment, XmATTACH_FORM,
 		XmNtopAttachment, XmATTACH_FORM, XmNtopOffset, LIST_Y + Machine_getMenuBarHeight (),
@@ -394,11 +393,11 @@ static void classDataSubEditor_createChildren (DataSubEditor me) {
 	GuiObject_show (scrolledWindow);
 	XtAddCallback (my scrollBar, XmNvalueChangedCallback, gui_cb_scroll, (XtPointer) me);
 	XtAddCallback (my scrollBar, XmNdragCallback, gui_cb_scroll, (XtPointer) me);
-	Widget form = XmCreateForm (scrolledWindow, "list", NULL, 0);
+	GuiObject form = XmCreateForm (scrolledWindow, "list", NULL, 0);
 	
 	#elif gtk
-	Widget outerBox = gtk_vbox_new(0, 0);
-	Widget buttonBox = gtk_hbutton_box_new();
+	GuiObject outerBox = gtk_vbox_new(0, 0);
+	GuiObject buttonBox = gtk_hbutton_box_new();
 	gtk_button_box_set_layout(GTK_BUTTON_BOX(buttonBox), GTK_BUTTONBOX_START);
 	gtk_box_pack_start(GTK_BOX(outerBox), buttonBox, 0, 0, 3);
 	
@@ -408,9 +407,9 @@ static void classDataSubEditor_createChildren (DataSubEditor me) {
 	GuiButton_createShown (buttonBox, x, x + buttonWidth, y, Gui_AUTOMATIC,
 		L"Cancel", gui_button_cb_cancel, me, 0);
 	
-	Widget scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
+	GuiObject scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
 	
-	Widget form = gtk_vbox_new(0, 3);
+	GuiObject form = gtk_vbox_new(0, 3);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolledWindow), form);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 	gtk_box_pack_start(GTK_BOX(outerBox), scrolledWindow, 1, 1, 3);
@@ -495,9 +494,7 @@ static wchar_t * singleTypeToText (void *address, int type, void *tagType, Melde
 		case lenumwa: MelderString_append3 (buffer, L"<", ((const wchar_t * (*) (int)) tagType) (* (signed short *) address), L">"); break;
 		case booleanwa: MelderString_append1 (buffer, * (signed char *) address ? L"<true>" : L"<false>"); break;
 		case questionwa: MelderString_append1 (buffer, * (signed char *) address ? L"<yes>" : L"<no>"); break;
-		case stringwa:
 		case stringwwa:
-		case lstringwa:
 		case lstringwwa: {
 			wchar_t *string = * (wchar_t **) address;
 			if (string == NULL) { MelderString_empty (buffer); return buffer -> string; }   // Convert NULL string to empty string.
@@ -556,7 +553,7 @@ static void showStructMember (
 		fieldData -> minimum = minimum;   /* Normally 1. */
 		fieldData -> maximum = maximum;
 		fieldData -> rank = 1;
-		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup (history);
+		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup_f (history);
 		GuiObject_show (fieldData -> button);
 	} else if (rank < 0) {
 		/*
@@ -571,7 +568,7 @@ static void showStructMember (
 		fieldData -> minimum = 0;   /* In-line arrays start with index 0. */
 		fieldData -> maximum = maximum;   /* Probably between -1 and capacity - 1. */
 		fieldData -> rank = rank;
-		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup (history);
+		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup_f (history);
 		GuiObject_show (fieldData -> button);
 	} else if (rank == 3) {
 		/*
@@ -582,7 +579,7 @@ static void showStructMember (
 		fieldData -> minimum = wcsequ (((const wchar_t * (*) (int)) memberDescription -> min1) (0), L"_") ? 1 : 0;
 		fieldData -> maximum = ((int (*) (const wchar_t *)) memberDescription -> max1) (L"\n");
 		fieldData -> rank = rank;
-		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup (history);
+		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup_f (history);
 		GuiObject_show (fieldData -> button);
 	} else if (rank == 2) {
 		void *arrayAddress = * (void **) memberAddress;
@@ -604,20 +601,20 @@ static void showStructMember (
 		fieldData -> min2 = min2;
 		fieldData -> max2 = max2;
 		fieldData -> rank = 2;
-		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup (history);
+		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup_f (history);
 		GuiObject_show (fieldData -> button);
 	} else if (type == structwa) {   /* In-line struct. */
 		fieldData -> address = memberAddress;   /* Direct. */
 		fieldData -> description = memberDescription;
 		fieldData -> rank = 0;
-		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup (history);
+		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup_f (history);
 		GuiObject_show (fieldData -> button);
 	} else if (type == objectwa || type == collectionwa) {
 		fieldData -> address = * (Data *) memberAddress;   /* Indirect. */
 		if (! fieldData -> address) return;   /* No button if no object. */
 		fieldData -> description = memberDescription;
 		fieldData -> rank = 0;
-		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup (history);
+		Melder_free (fieldData -> history); fieldData -> history = Melder_wcsdup_f (history);
 		GuiObject_show (fieldData -> button);
 	}
 }
@@ -750,7 +747,7 @@ static void classVectorEditor_showMembers (VectorEditor me) {
 			fieldData -> description = object -> methods -> description;
 			fieldData -> rank = 0;
 			if (fieldData -> history) Melder_free (fieldData -> history);
-			fieldData -> history = Melder_wcsdup (history.string);
+			fieldData -> history = Melder_wcsdup_f (history.string);
 			GuiObject_show (fieldData -> button);			
 		}
 	}
@@ -923,7 +920,7 @@ class_methods (DataEditor, ClassEditor) {
 	class_methods_end
 }
 
-DataEditor DataEditor_create (Widget parent, const wchar_t *title, Any data) {
+DataEditor DataEditor_create (GuiObject parent, const wchar_t *title, Any data) {
 	DataEditor me = NULL;
 	Data_Table klas = ((Data) data) -> methods;
 	if (klas -> description == NULL) error3

@@ -58,7 +58,7 @@ FORM (Rename, L"Rename object", L"Rename...")
 	LABEL (L"rename object", L"New name:")
 	TEXTFIELD (L"newName", L"")
 	OK
-{ int IOBJECT; WHERE (SELECTED) SET_STRING (L"newName", NAMEW) }
+{ int IOBJECT; WHERE (SELECTED) SET_STRING (L"newName", NAME) }
 DO
 	wchar_t *string = GET_STRING (L"newName");
 	if (theCurrentPraatObjects -> totalSelection == 0)
@@ -71,7 +71,7 @@ DO
 	MelderString_empty (& fullName);
 	MelderString_append3 (& fullName, Thing_className (OBJECT), L" ", string);
 	if (! wcsequ (fullName.string, FULL_NAME)) {
-		Melder_free (FULL_NAME), FULL_NAME = Melder_wcsdup (fullName.string);
+		Melder_free (FULL_NAME), FULL_NAME = Melder_wcsdup_f (fullName.string);
 		MelderString listName = { 0 };
 		MelderString_append3 (& listName, Melder_integer (ID), L". ", fullName.string);
 		praat_list_renameAndSelect (IOBJECT, listName.string);
@@ -86,7 +86,7 @@ FORM (Copy, L"Copy object", L"Copy...")
 	LABEL (L"copy object", L"Name of new object:")
 	TEXTFIELD (L"newName", L"")
 	OK
-{ int IOBJECT; WHERE (SELECTED) SET_STRING (L"newName", NAMEW) }
+{ int IOBJECT; WHERE (SELECTED) SET_STRING (L"newName", NAME) }
 DO
 	if (theCurrentPraatObjects -> totalSelection == 0)
 		return Melder_error1 (L"Selection changed!\nNo object selected. Cannot copy.");
@@ -119,13 +119,13 @@ END
 
 /********** The fixed menus. **********/
 
-static Widget praatMenu, newMenu, readMenu, goodiesMenu, preferencesMenu, applicationHelpMenu, helpMenu;
+static GuiObject praatMenu, newMenu, readMenu, goodiesMenu, preferencesMenu, applicationHelpMenu, helpMenu;
 
-Widget praat_objects_resolveMenu (const wchar_t *menu) {
+GuiObject praat_objects_resolveMenu (const wchar_t *menu) {
 	return
 		wcsequ (menu, L"Praat") || wcsequ (menu, L"Control") ? praatMenu :
 		wcsequ (menu, L"New") || wcsequ (menu, L"Create") ? newMenu :
-		wcsequ (menu, L"Read") ? readMenu :
+		wcsequ (menu, L"Open") || wcsequ (menu, L"Read") ? readMenu :
 		wcsequ (menu, L"Help") ? helpMenu :
 		wcsequ (menu, L"Goodies") ? goodiesMenu :
 		wcsequ (menu, L"Preferences") ? preferencesMenu :
@@ -355,7 +355,7 @@ DO
 	MelderInfo_close ();
 END
 
-/********** Callbacks of the Read menu. **********/
+/********** Callbacks of the Open menu. **********/
 
 static int readFromFile (MelderFile file) {
 	Data object = Data_readFromFile (file);
@@ -384,9 +384,9 @@ FORM_READ (Data_readFromFile, L"Read Object(s) from file", 0, true)
 	if (! readFromFile (file)) return 0;
 END
 
-/********** Callbacks of the Write menu. **********/
+/********** Callbacks of the Save menu. **********/
 
-FORM_WRITE (Data_writeToTextFile, L"Write Object(s) to text file", 0, 0)
+FORM_WRITE (Data_writeToTextFile, L"Save Object(s) as one text file", 0, 0)
 	if (theCurrentPraatObjects -> totalSelection == 1) {
 		return Data_writeToTextFile (ONLY_OBJECT, file);
 	} else {
@@ -400,7 +400,7 @@ FORM_WRITE (Data_writeToTextFile, L"Write Object(s) to text file", 0, 0)
 	}
 END
 
-FORM_WRITE (Data_writeToShortTextFile, L"Write Object(s) to short text file", 0, 0)
+FORM_WRITE (Data_writeToShortTextFile, L"Save Object(s) as one short text file", 0, 0)
 	if (theCurrentPraatObjects -> totalSelection == 1)
 		return Data_writeToShortTextFile (ONLY_OBJECT, file);
 	else {
@@ -414,7 +414,7 @@ FORM_WRITE (Data_writeToShortTextFile, L"Write Object(s) to short text file", 0,
 	}
 END
 
-FORM_WRITE (Data_writeToBinaryFile, L"Write Object(s) to binary file", 0, 0)
+FORM_WRITE (Data_writeToBinaryFile, L"Save Object(s) as one binary file", 0, 0)
 	if (theCurrentPraatObjects -> totalSelection == 1)
 		return Data_writeToBinaryFile (ONLY_OBJECT, file);
 	else {
@@ -428,7 +428,7 @@ FORM_WRITE (Data_writeToBinaryFile, L"Write Object(s) to binary file", 0, 0)
 	}
 END
 
-FORM_WRITE (Data_writeToLispFile, L"Write Object to LISP file", 0, L"lsp")
+FORM_WRITE (Data_writeToLispFile, L"Save Object as LISP file", 0, L"lsp")
 	return Data_writeToLispFile (ONLY_OBJECT, file);
 END
 
@@ -459,7 +459,7 @@ DO
 	if (! HyperPage_goToPage_i (manPage, GET_INTEGER (L"Page"))) return 0;
 END
 
-FORM (WriteManualToHtmlDirectory, L"Write all pages as HTML files", 0)
+FORM (WriteManualToHtmlDirectory, L"Save all pages as HTML files", 0)
 	LABEL (L"", L"Type a directory name:")
 	TEXTFIELD (L"directory", L"")
 	OK
@@ -488,10 +488,10 @@ void praat_show (void) {
 
 /********** Menu descriptions. **********/
 
-void praat_addFixedButtons (Widget form) {
+void praat_addFixedButtons (GuiObject form) {
 // Het is bagger, ik weet het, maar kom maar met een betere oplossing... bijvoorkeur zonder #defines
 #if gtk
-	Widget buttons1 = NULL, buttons2 = NULL, buttons3 = NULL;
+	GuiObject buttons1 = NULL, buttons2 = NULL, buttons3 = NULL;
 	if (form) {
 		buttons1 = gtk_hbutton_box_new ();
 		buttons2 = gtk_hbutton_box_new ();
@@ -543,8 +543,8 @@ static int cb_openDocument (MelderFile file) {
 	return 0;
 }
 
-void praat_addMenus (Widget bar) {
-	Widget button;
+void praat_addMenus (GuiObject bar) {
+	GuiObject button;
 
 	Melder_setSearchProc (searchProc);
 
@@ -560,7 +560,7 @@ void praat_addMenus (Widget bar) {
 			praatMenu = GuiMenuBar_addMenu (bar, L"Praat", 0);
 		#endif
 		newMenu = GuiMenuBar_addMenu (bar, L"New", 0);
-		readMenu = GuiMenuBar_addMenu (bar, L"Read", 0);
+		readMenu = GuiMenuBar_addMenu (bar, L"Open", 0);
 		praat_actions_createWriteMenu (bar);
 		#ifdef macintosh
 			applicationHelpMenu = GuiMenuBar_addMenu (bar ? praatP.topBar : NULL, L"Help", 0);
@@ -610,11 +610,14 @@ void praat_addMenus (Widget bar) {
 	praat_addMenuCommand (L"Objects", L"Preferences", L"Text reading preferences...", 0, 0, DO_TextInputEncodingSettings);
 	praat_addMenuCommand (L"Objects", L"Preferences", L"Text writing preferences...", 0, 0, DO_TextOutputEncodingSettings);
 
-	praat_addMenuCommand (L"Objects", L"Read", L"Read from file...", 0, 'O', DO_Data_readFromFile);
+	praat_addMenuCommand (L"Objects", L"Open", L"Read from file...", 0, praat_ATTRACTIVE + 'O', DO_Data_readFromFile);
 
-	praat_addAction1 (classData, 0, L"Write to text file...", 0, 0, DO_Data_writeToTextFile);
-	praat_addAction1 (classData, 0, L"Write to short text file...", 0, 0, DO_Data_writeToShortTextFile);
-	praat_addAction1 (classData, 0, L"Write to binary file...", 0, 0, DO_Data_writeToBinaryFile);
+	praat_addAction1 (classData, 0, L"Save as text file...", 0, 0, DO_Data_writeToTextFile);
+	praat_addAction1 (classData, 0, L"Write to text file...", 0, praat_HIDDEN, DO_Data_writeToTextFile);
+	praat_addAction1 (classData, 0, L"Save as short text file...", 0, 0, DO_Data_writeToShortTextFile);
+	praat_addAction1 (classData, 0, L"Write to short text file...", 0, praat_HIDDEN, DO_Data_writeToShortTextFile);
+	praat_addAction1 (classData, 0, L"Save as binary file...", 0, 0, DO_Data_writeToBinaryFile);
+	praat_addAction1 (classData, 0, L"Write to binary file...", 0, praat_HIDDEN, DO_Data_writeToBinaryFile);
 }
 
 void praat_addMenus2 (void) {

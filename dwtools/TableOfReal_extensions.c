@@ -1,6 +1,6 @@
 /* TableOfReal_extensions.c
  *
- * Copyright (C) 1993-2010 David Weenink
+ * Copyright (C) 1993-2011 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,9 +44,12 @@
  djmw 20081119 +TableOfReal_areAllCellsDefined
  djmw 20090506 +setInner for _drawScatterPlotMatrix
  djmw 20091009 +TableOfReal_drawColumnAsDistribution
+ djmw 20100222 Corrected a bug in TableOfReal_copyOneRowWithLabel which caused label corruption if 
+               from and to table were equal and rows were equal too.
 */
 
 #include <ctype.h>
+#include "SSCP.h"
 #include "Matrix_extensions.h"
 #include "NUMclapack.h"
 #include "NUM2.h"
@@ -64,6 +67,9 @@
 #define Graphics_ARROW 1
 #define Graphics_TWOWAYARROW 2
 #define Graphics_LINE 3
+
+TableOfReal TableOfReal_and_TableOfReal_columnCorrelations (I, thou, int center, int normalize);
+TableOfReal TableOfReal_and_TableOfReal_rowCorrelations (I, thou, int center, int normalize);
 
 int TableOfReal_areAllCellsDefined (I, long rb, long re, long cb, long ce)
 {
@@ -110,11 +116,13 @@ int TableOfReal_copyOneRowWithLabel (I, thou, long myrow, long thyrow)
 	if ( myrow < 1 ||  myrow > my  numberOfRows ||
 		thyrow < 1 || thyrow > thy numberOfRows ||
 		my numberOfColumns != thy numberOfColumns) return 0;
-
+	
+	if (me == thee && myrow == thyrow) return 1; 
+	
+	Melder_free (thy rowLabels[thyrow]);
 	if (my rowLabels[myrow] != NULL && thy rowLabels[thyrow] != my rowLabels[myrow])
 	{
-		Melder_free (thy rowLabels[thyrow]);
-		thy rowLabels[thyrow] = Melder_wcsdup (my rowLabels[myrow]);
+		thy rowLabels[thyrow] = Melder_wcsdup_e (my rowLabels[myrow]);
 		if (thy rowLabels[thyrow] == NULL) return 0;
 	}
 	if (my data[myrow] != thy data[thyrow]) NUMdvector_copyElements (my data[myrow], thy data[thyrow], 1, my numberOfColumns);
@@ -190,7 +198,7 @@ TableOfReal TableOfReal_createIrisDataset (void)
 	TableOfReal_setColumnLabel (me, 2, L"sw");
 	TableOfReal_setColumnLabel (me, 3, L"pl");
 	TableOfReal_setColumnLabel (me, 4, L"pw");
-	for (i=1; i <= 150; i++)
+	for (i = 1; i <= 150; i++)
 	{
 		int kind = (i - 1) / 50 + 1;
 		wchar_t *label = kind == 1 ? L"1" : kind == 2 ? L"2" : L"3";
@@ -217,7 +225,7 @@ Strings TableOfReal_extractRowLabels (I)
 	for (i = 1; i <= n; i++)
 	{
 		wchar_t *label = my rowLabels[i] ? my rowLabels[i] : L"?";
-		thy strings[i] = Melder_wcsdup (label);
+		thy strings[i] = Melder_wcsdup_e (label);
 		if (thy strings[i] == NULL) goto end;
 	}
 
@@ -244,7 +252,7 @@ Strings TableOfReal_extractColumnLabels (I)
 	for (i = 1; i <= n; i++)
 	{
 		wchar_t *label = my columnLabels[i] ? my columnLabels[i] : L"?";
-		thy strings[i] = Melder_wcsdup (label);
+		thy strings[i] = Melder_wcsdup_e (label);
 		if (thy strings[i] == NULL) goto end;
 	}
 
@@ -764,7 +772,7 @@ int TableOfReal_equalLabels (I, thou, int rowLabels, int columnLabels)
 		if (my rowLabels == thy rowLabels) return 1;
 		for (i=1; i <= my numberOfRows; i++)
 		{
-			if (NUMwcscmp (my rowLabels[i], thy rowLabels[i])) return 0;
+			if (Melder_wcscmp (my rowLabels[i], thy rowLabels[i])) return 0;
 		}
 	}
 	if (columnLabels)
@@ -773,7 +781,7 @@ int TableOfReal_equalLabels (I, thou, int rowLabels, int columnLabels)
 		if (my columnLabels == thy columnLabels) return 1;
 		for (i=1; i <= my numberOfColumns; i++)
 		{
-			if (NUMwcscmp (my columnLabels[i], thy columnLabels[i])) return 0;
+			if (Melder_wcscmp (my columnLabels[i], thy columnLabels[i])) return 0;
 		}
 	}
 	return 1;
@@ -1453,16 +1461,16 @@ long TableOfReal_getNumberOfLabelMatches (I, wchar_t *search, int columnLabels,
 	}
 	if (use_regexp)
 	{
-		char *compileMsg;
-		compiled_regexp = CompileRE (Melder_peekWcsToUtf8 (search), &compileMsg, 0);
-		if (compiled_regexp == NULL) return Melder_error1 (Melder_utf8ToWcs (compileMsg));
+		wchar_t *compileMsg;
+		compiled_regexp = CompileRE (search, &compileMsg, 0);
+		if (compiled_regexp == NULL) return Melder_error1 (compileMsg);
 	}
 	for (i = 1; i <= numberOfLabels; i++)
 	{
 		if (labels[i] == NULL) continue;
 		if (use_regexp)
 		{
-			if (ExecRE (compiled_regexp, NULL, Melder_peekWcsToUtf8 (labels[i]), NULL, 0,
+			if (ExecRE (compiled_regexp, NULL, labels[i], NULL, 0,
 				'\0', '\0', NULL, NULL, NULL)) nmatches++;
 		}
 		else if (wcsequ (labels[i], search)) nmatches++;
@@ -1556,9 +1564,11 @@ void TableOfReal_drawColumnAsDistribution (I, Graphics g, int column, double min
 	double freqMin, double freqMax, int cumulative, int garnish)
 {
 	iam (TableOfReal);
+	if (column < 1 || column > my numberOfColumns) return;
 	Matrix thee = TableOfReal_to_Matrix (me);
 	Matrix_drawDistribution (thee, g,  column-0.5, column+0.5, 0, 0,
 		minimum, maximum, nBins, freqMin,  freqMax,  cumulative,  garnish);
+	if (garnish && my columnLabels[column] != NULL) Graphics_textBottom (g, 1, my columnLabels[column]);
 	forget (thee);
 }
 
@@ -1593,7 +1603,7 @@ TableOfReal TableOfReal_sortRowsByIndex (I, long *index, int reverse)
 
 		if (mylabel != NULL)
 		{
-			thy rowLabels[i] = Melder_wcsdup (mylabel);
+			thy rowLabels[i] = Melder_wcsdup_e (mylabel);
 			if (thy rowLabels[i] == NULL) goto end;
 		}
 
@@ -1844,7 +1854,7 @@ TableOfReal TableOfReal_appendColumns (I, thou)
 			1, thy numberOfColumns)) goto end;
 	for (i = 1; i <= my numberOfRows; i++)
 	{
-		if (NUMwcscmp (my rowLabels[i], thy rowLabels[i])) labeldiffs++;
+		if (Melder_wcscmp (my rowLabels[i], thy rowLabels[i])) labeldiffs++;
 		NUMdvector_copyElements (my data[i], his data[i], 1, my numberOfColumns);
 		NUMdvector_copyElements (thy data[i], &his data[i][my numberOfColumns], 1, thy numberOfColumns);
 	}
@@ -1906,6 +1916,152 @@ Any TableOfReal_appendColumnsMany (Collection me)
 
 end:
 
+	if (Melder_hasError ()) forget (him);
+	return him;
+}
+
+double TableOfReal_normalityTest_BHEP (I, double *h, double *tnb, double *lnmu, double *lnvar)
+{
+	iam (TableOfReal);
+	long n = my numberOfRows, p = my numberOfColumns;
+	double beta = *h > 0 ? NUMsqrt1_2 / *h :
+		NUMsqrt1_2 * pow ((1.0 + 2 * p ) / 4, 1.0 / (p + 4 )) * pow (n, 1.0 / (p + 4));
+	double p2 = p / 2.0;
+	double beta2 = beta * beta, beta4 = beta2 * beta2, beta8 = beta4 * beta4;
+	double gamma = 1 + 2 * beta2, gamma2 = gamma * gamma, gamma4 = gamma2 * gamma2;
+	double delta = 1.0 + beta2 * (4 + 3 * beta2), delta2 = delta * delta;
+	double mu, mu2, var, prob = NUMundefined;
+
+	if (*h <= 0) *h = NUMsqrt1_2 / beta;
+
+	*tnb = *lnmu = *lnvar = NUMundefined;
+
+	if (n < 2 || p < 1) return prob;
+
+	Covariance thee = TableOfReal_to_Covariance (me);
+	if (thee == NULL) goto end;
+	if (! SSCP_expandLowerCholesky (thee))
+	{
+		*tnb = 4 * n;
+	}
+	else
+	{
+		double djk, djj, sumjk = 0, sumj = 0;
+		double b1 = beta2 / 2, b2 = b1 / (1.0 + beta2);
+		/* Heinze & Wagner (1997), page 3
+			We use d[j][k] = ||Y[j]-Y[k]||^2 = (Y[j]-Y[k])'S^(-1)(Y[j]-Y[k])
+			So d[j][k]= d[k][j] and d[j][j] = 0
+		*/
+		for (long j = 1; j <= n; j++)
+		{
+			for (long k = 1; k < j; k++)
+			{
+				djk = NUMmahalanobisDistance_chi (thy lowerCholesky, my data[j], my data[k], p, p);
+				sumjk += 2 * exp (-b1 * djk); // factor 2 because d[j][k] == d[k][j]
+			}
+			sumjk += 1; // for k == j
+			djj = NUMmahalanobisDistance_chi (thy lowerCholesky, my data[j], thy centroid, p, p);
+			sumj += exp (-b2 * djj);
+		}
+		*tnb = (1.0 / n) * sumjk - 2.0 * pow (1.0 + beta2, - p2) * sumj + n * pow (gamma, - p2); // n *
+	}
+	mu = 1.0 - pow (gamma, -p2) * (1.0 + p * beta2 / gamma + p * (p + 2) * beta4 / (2 * gamma2));
+	var = 2.0 * pow (1 + 4 * beta2, -p2)
+		+ 2.0 * pow (gamma,  -p) * (1.0 + 2 * p * beta4 / gamma2  + 3 * p * (p + 2) * beta8 / (4 * gamma4))
+		- 4.0 * pow (delta, -p2) * (1.0 + 3 * p * beta4 / (2 * delta) + p * (p + 2) * beta8 / (2 * delta2));
+	mu2 = mu * mu;
+	*lnmu = 0.5 * log (mu2 * mu2 / (mu2 + var)); //log (sqrt (mu2 * mu2 /(mu2 + var)));
+	*lnvar = sqrt (log ((mu2 + var) / mu2));
+	prob = NUMlogNormalQ (*tnb, *lnmu, *lnvar);
+end:
+	forget (thee);
+	return prob;
+}
+
+TableOfReal TableOfReal_and_TableOfReal_crossCorrelations (I, thou, int by_columns, int center, int normalize)
+{
+	iam (TableOfReal); thouart (TableOfReal);
+	return by_columns ? TableOfReal_and_TableOfReal_columnCorrelations (me, thee, center, normalize) :
+		TableOfReal_and_TableOfReal_rowCorrelations (me, thee, center, normalize);
+}
+
+TableOfReal TableOfReal_and_TableOfReal_rowCorrelations (I, thou, int center, int normalize)
+{
+	iam (TableOfReal); thouart (TableOfReal);
+	TableOfReal him = NULL;
+	double **my_data = NULL, **thy_data = NULL;
+	if (my numberOfColumns != thy numberOfColumns) return Melder_errorp1 (L"Both tables must have the same number of columns.");
+
+//start:
+
+	him = TableOfReal_create (my numberOfRows, thy numberOfRows); cherror
+	my_data = NUMdmatrix_copy (my data, 1, my numberOfRows, 1, my numberOfColumns); cherror
+	thy_data = NUMdmatrix_copy (thy data, 1, thy numberOfRows, 1, thy numberOfColumns); cherror
+	if (center)
+	{
+		NUMcentreRows (my_data, 1, my numberOfRows, 1, my numberOfColumns);
+		NUMcentreRows (thy_data, 1, thy numberOfRows, 1, thy numberOfColumns);
+	}
+	if (normalize)
+	{
+		NUMnormalizeRows (my_data, my numberOfRows, my numberOfColumns, 1);
+		NUMnormalizeRows (thy_data, thy numberOfRows, thy numberOfColumns, 1);
+	}
+	if (! NUMstrings_copyElements (my rowLabels, his rowLabels, 1, his numberOfRows) ||
+		! NUMstrings_copyElements (thy rowLabels, his columnLabels, 1, his numberOfColumns)) goto end;
+	for (long i = 1; i <= my numberOfRows; i++)
+	{
+		for (long k = 1; k <= thy numberOfRows; k++)
+		{
+			double ctmp = 0;
+			for (long j = 1; j <= my numberOfColumns; j++)
+			{ ctmp += my_data[i][j] * thy_data[k][j]; }
+			his data[i][k] = ctmp;
+		}
+	}
+end:
+	NUMdmatrix_free (my_data, 1, 1); NUMdmatrix_free (thy_data, 1, 1);
+	if (Melder_hasError ()) forget (him);
+	return him;
+}
+
+TableOfReal TableOfReal_and_TableOfReal_columnCorrelations (I, thou, int center, int normalize)
+{
+	iam (TableOfReal); thouart (TableOfReal);
+	TableOfReal him = NULL;
+	double **my_data = NULL, **thy_data = NULL;
+	if (my numberOfRows != thy numberOfRows) return Melder_errorp1 (L"Both tables must have the same number of rows.");
+
+//start:
+
+	him = TableOfReal_create (my numberOfColumns, thy numberOfColumns); cherror
+	my_data = NUMdmatrix_copy (my data, 1, my numberOfRows, 1, my numberOfColumns); cherror
+	thy_data = NUMdmatrix_copy (thy data, 1, thy numberOfRows, 1, thy numberOfColumns); cherror
+	if (center)
+	{
+		NUMcentreColumns (my_data, 1, my numberOfRows, 1, my numberOfColumns, NULL);
+		NUMcentreColumns (thy_data, 1, thy numberOfRows, 1, thy numberOfColumns, NULL);
+	}
+	if (normalize)
+	{
+		NUMnormalizeColumns (my_data, my numberOfRows, my numberOfColumns, 1);
+		NUMnormalizeColumns (thy_data, thy numberOfRows, thy numberOfColumns, 1);
+	}
+	if (! NUMstrings_copyElements (my columnLabels, his rowLabels, 1, his numberOfRows) ||
+		! NUMstrings_copyElements (thy columnLabels, his columnLabels, 1, his numberOfColumns)) goto end;
+
+	for (long j = 1; j <= my numberOfColumns; j++)
+	{
+		for (long k = 1; k <= thy numberOfColumns; k++)
+		{
+			double ctmp = 0;
+			for (long i = 1; i <= my numberOfRows; i++)
+			{ ctmp += my_data[i][j] * thy_data[i][k]; }
+			his data[j][k] = ctmp;
+		}
+	}
+end:
+	NUMdmatrix_free (my_data, 1, 1); NUMdmatrix_free (thy_data, 1, 1);
 	if (Melder_hasError ()) forget (him);
 	return him;
 }
