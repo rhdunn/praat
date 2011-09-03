@@ -32,6 +32,8 @@
 
 #include "Sound_and_Spectrogram_enums.h"
 
+Spectrogram Sound_to_Espeak (Sound me, double fmin, double fmax, double maxfreq, double minFreqStep1, double maxformant, double phase);
+
 Spectrogram Sound_to_Spectrogram (Sound me, double effectiveAnalysisWidth, double fmax,
 	double minimumTimeStep1, double minimumFreqStep1, enum kSound_to_Spectrogram_windowShape windowShape,
 	double maximumTimeOversampling, double maximumFreqOversampling);
