@@ -51,33 +51,32 @@
 #include "oo_DESCRIPTION.h"
 #include "Formant_def.h"
 
-static void info (I) {
-	iam (Formant);
-	classData -> info (me);
+Thing_implement (Formant, Sampled, 2);   // version 1 = with intensity, 2 = double
+
+void structFormant :: v_info () {
+	structData :: v_info ();
 	MelderInfo_writeLine1 (L"Time domain:");
-	MelderInfo_writeLine3 (L"   Start time: ", Melder_double (my xmin), L" seconds");
-	MelderInfo_writeLine3 (L"   End time: ", Melder_double (my xmax), L" seconds");
-	MelderInfo_writeLine3 (L"   Total duration: ", Melder_double (my xmax - my xmin), L" seconds");
+	MelderInfo_writeLine3 (L"   Start time: ", Melder_double (xmin), L" seconds");
+	MelderInfo_writeLine3 (L"   End time: ", Melder_double (xmax), L" seconds");
+	MelderInfo_writeLine3 (L"   Total duration: ", Melder_double (xmax - xmin), L" seconds");
 	MelderInfo_writeLine1 (L"Time sampling:");
-	MelderInfo_writeLine2 (L"   Number of frames: ", Melder_integer (my nx));
-	MelderInfo_writeLine3 (L"   Time step: ", Melder_double (my dx), L" seconds");
-	MelderInfo_writeLine3 (L"   First frame centred at: ", Melder_double (my x1), L" seconds");
+	MelderInfo_writeLine2 (L"   Number of frames: ", Melder_integer (nx));
+	MelderInfo_writeLine3 (L"   Time step: ", Melder_double (dx), L" seconds");
+	MelderInfo_writeLine3 (L"   First frame centred at: ", Melder_double (x1), L" seconds");
 }
 
-static double getValueAtSample (I, long iframe, long which, int units) {
-	iam (Formant);
-	Formant_Frame frame = & my frame [iframe];
-	double frequency;
+double structFormant :: v_getValueAtSample (long iframe, long which, int units) {
+	Formant_Frame frame = & d_frames [iframe];
 	long iformant = which >> 1;
 	if (iformant < 1 || iformant > frame -> nFormants) return NUMundefined;
-	frequency = frame -> formant [iformant]. frequency;
+	double frequency = frame -> formant [iformant]. frequency;
 	if ((which & 1) == 0) {
 		return units ? NUMhertzToBark (frequency) : frequency;
 	} else {
 		double bandwidth = frame -> formant [iformant]. bandwidth;
 		if (units) {
 			double fleft = frequency - 0.5 * bandwidth, fright = frequency + 0.5 * bandwidth;
-			fleft = fleft <= 0 ? 0 : NUMhertzToBark (fleft);   /* Prevent NUMundefined. */
+			fleft = fleft <= 0 ? 0 : NUMhertzToBark (fleft);   // prevent NUMundefined
 			fright = NUMhertzToBark (fright);
 			return fright - fleft;
 		}
@@ -86,30 +85,13 @@ static double getValueAtSample (I, long iframe, long which, int units) {
 	return NUMundefined;
 }
 
-class_methods (Formant, Sampled) {
-	us -> version = 2;   /* With intensity, and double. */
-	class_method_local (Formant, destroy)
-	class_method_local (Formant, description)
-	class_method_local (Formant, copy)
-	class_method_local (Formant, equal)
-	class_method_local (Formant, canWriteAsEncoding)
-	class_method_local (Formant, writeText)
-	class_method_local (Formant, readText)
-	class_method_local (Formant, writeBinary)
-	class_method_local (Formant, readBinary)
-	class_method (info)
-	us -> domainQuantity = MelderQuantity_TIME_SECONDS;
-	class_method (getValueAtSample)
-	class_methods_end
-}
-
 Formant Formant_create (double tmin, double tmax, long nt, double dt, double t1,
 	int maxnFormants)
 {
 	try {
 		autoFormant me = Thing_new (Formant);
 		Sampled_init (me.peek(), tmin, tmax, nt, dt, t1); therror
-		my frame = NUMvector <structFormant_Frame> (1, nt);
+		my d_frames = NUMvector <structFormant_Frame> (1, nt);
 		my maxnFormants = maxnFormants;
 		return me.transfer();
 	} catch (MelderError) {
@@ -118,18 +100,18 @@ Formant Formant_create (double tmin, double tmax, long nt, double dt, double t1,
 }
 
 long Formant_getMinNumFormants (Formant me) {
-	long minNumFormants = 100000000, iframe;
-	for (iframe = 1; iframe <= my nx; iframe ++)
-		if (my frame [iframe]. nFormants < minNumFormants)
-			minNumFormants = my frame [iframe]. nFormants;
+	long minNumFormants = 100000000;
+	for (long iframe = 1; iframe <= my nx; iframe ++)
+		if (my d_frames [iframe]. nFormants < minNumFormants)
+			minNumFormants = my d_frames [iframe]. nFormants;
 	return minNumFormants;
 }
 
 long Formant_getMaxNumFormants (Formant me) {
-	long maxNumFormants = 0, iframe;
-	for (iframe = 1; iframe <= my nx; iframe ++)
-		if (my frame [iframe]. nFormants > maxNumFormants)
-			maxNumFormants = my frame [iframe]. nFormants;
+	long maxNumFormants = 0;
+	for (long iframe = 1; iframe <= my nx; iframe ++)
+		if (my d_frames [iframe]. nFormants > maxNumFormants)
+			maxNumFormants = my d_frames [iframe]. nFormants;
 	return maxNumFormants;
 }
 
@@ -141,7 +123,7 @@ void Formant_drawTracks (Formant me, Graphics g, double tmin, double tmax, doubl
 	Graphics_setWindow (g, tmin, tmax, 0.0, fmax);
 	for (long itrack = 1; itrack <= ntrack; itrack ++) {
 		for (long iframe = itmin; iframe < itmax; iframe ++) {
-			Formant_Frame curFrame = & my frame [iframe], nextFrame = & my frame [iframe + 1];
+			Formant_Frame curFrame = & my d_frames [iframe], nextFrame = & my d_frames [iframe + 1];
 			double x1 = Sampled_indexToX (me, iframe), x2 = Sampled_indexToX (me, iframe + 1);
 			double f1 = curFrame -> formant [itrack]. frequency;
 			double f2 = nextFrame -> formant [itrack]. frequency;
@@ -169,7 +151,7 @@ void Formant_drawSpeckles_inside (Formant me, Graphics g, double tmin, double tm
 	Graphics_setWindow (g, tmin, tmax, fmin, fmax);
 
 	for (long iframe = itmin; iframe <= itmax; iframe ++) {
-		Formant_Frame frame = & my frame [iframe];
+		Formant_Frame frame = & my d_frames [iframe];
 		if (frame -> intensity > maximumIntensity)
 			maximumIntensity = frame -> intensity;
 	}
@@ -179,7 +161,7 @@ void Formant_drawSpeckles_inside (Formant me, Graphics g, double tmin, double tm
 		minimumIntensity = maximumIntensity / pow (10, suppress_dB / 10);
 
 	for (long iframe = itmin; iframe <= itmax; iframe ++) {
-		Formant_Frame frame = & my frame [iframe];
+		Formant_Frame frame = & my d_frames [iframe];
 		double x = Sampled_indexToX (me, iframe);
 		if (frame -> intensity < minimumIntensity) continue;
 		for (long iformant = 1; iformant <= frame -> nFormants; iformant ++) {
@@ -212,13 +194,13 @@ void Formant_formula_bandwidths (Formant me, const wchar *formula, Interpreter i
 			Melder_throw (L"No formants available.");
 		autoMatrix mat = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 0.5, nrow + 0.5, nrow, 1, 1);
 		for (long iframe = 1; iframe <= my nx; iframe ++) {
-			Formant_Frame frame = & my frame [iframe];
+			Formant_Frame frame = & my d_frames [iframe];
 			for (long iformant = 1; iformant <= frame -> nFormants; iformant ++)
 				mat -> z [iformant] [iframe] = frame -> formant [iformant]. bandwidth;
 		}
 		Matrix_formula (mat.peek(), formula, interpreter, NULL); therror
 		for (long iframe = 1; iframe <= my nx; iframe ++) {
-			Formant_Frame frame = & my frame [iframe];
+			Formant_Frame frame = & my d_frames [iframe];
 			for (long iformant = 1; iformant <= frame -> nFormants; iformant ++)
 				frame -> formant [iformant]. bandwidth = mat -> z [iformant] [iframe];
 		}
@@ -234,13 +216,13 @@ void Formant_formula_frequencies (Formant me, const wchar *formula, Interpreter 
 			Melder_throw ("No formants available.");
 		autoMatrix mat = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 0.5, nrow + 0.5, nrow, 1, 1);
 		for (long iframe = 1; iframe <= my nx; iframe ++) {
-			Formant_Frame frame = & my frame [iframe];
+			Formant_Frame frame = & my d_frames [iframe];
 			for (long iformant = 1; iformant <= frame -> nFormants; iformant ++)
 				mat -> z [iformant] [iframe] = frame -> formant [iformant]. frequency;
 		}
 		Matrix_formula (mat.peek(), formula, interpreter, NULL); therror
 		for (long iframe = 1; iframe <= my nx; iframe ++) {
-			Formant_Frame frame = & my frame [iframe];
+			Formant_Frame frame = & my d_frames [iframe];
 			for (long iformant = 1; iformant <= frame -> nFormants; iformant ++)
 				frame -> formant [iformant]. frequency = mat -> z [iformant] [iframe];
 		}
@@ -257,7 +239,7 @@ void Formant_getExtrema (Formant me, int iformant, double tmin, double tmax, dou
 	if (tmax <= tmin) { tmin = my xmin; tmax = my xmax; }
 	if (! Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax)) return;
 	for (iframe = itmin; iframe <= itmax; iframe ++) {
-		Formant_Frame frame = & my frame [iframe];
+		Formant_Frame frame = & my d_frames [iframe];
 		double f;
 		if (iformant > frame -> nFormants) continue;
 		f = frame -> formant [iformant]. frequency;
@@ -322,10 +304,9 @@ double Formant_getStandardDeviation (Formant me, int iformant, double tmin, doub
 	double sum = 0.0;
 	long n = 0;
 	for (long iframe = itmin; iframe <= itmax; iframe ++) {
-		Formant_Frame frame = & my frame [iframe];
-		double f;
+		Formant_Frame frame = & my d_frames [iframe];
 		if (iformant > frame -> nFormants) continue;
-		f = frame -> formant [iformant]. frequency;
+		double f = frame -> formant [iformant]. frequency;
 		if (! f) continue;
 		if (bark) f = NUMhertzToBark (f);
 		n += 1;
@@ -364,7 +345,7 @@ void Formant_scatterPlot (Formant me, Graphics g, double tmin, double tmax,
 	Graphics_setInner (g);
 	Graphics_setWindow (g, fmin1, fmax1, fmin2, fmax2);
 	for (long iframe = itmin; iframe <= itmax; iframe ++) {
-		Formant_Frame frame = & my frame [iframe];
+		Formant_Frame frame = & my d_frames [iframe];
 		if (iformant1 > frame -> nFormants || iformant2 > frame -> nFormants) continue;
 		double x = frame -> formant [iformant1]. frequency;
 		double y = frame -> formant [iformant2]. frequency;
@@ -388,7 +369,7 @@ Matrix Formant_to_Matrix (Formant me, int iformant) {
 	try {
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 1, 1, 1, 1, 1);
 		for (long iframe = 1; iframe <= my nx; iframe ++) {
-			Formant_Frame frame = & my frame [iframe];
+			Formant_Frame frame = & my d_frames [iframe];
 			thy z [1] [iframe] = iformant <= frame -> nFormants ?
 				frame -> formant [iformant]. frequency : 0.0;
 		}
@@ -402,7 +383,7 @@ Matrix Formant_to_Matrix_bandwidths (Formant me, int iformant) {
 	try {
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 1, 1, 1, 1, 1);
 		for (long iframe = 1; iframe <= my nx; iframe ++) {
-			Formant_Frame frame = & my frame [iframe];
+			Formant_Frame frame = & my d_frames [iframe];
 			thy z [1] [iframe] = iformant <= frame -> nFormants ?
 				frame -> formant [iformant]. bandwidth : 0.0;
 		}
@@ -418,7 +399,7 @@ struct fparm { Formant me, thee; double dfCost, bfCost, octaveJumpCost, refF [1 
 
 static double getLocalCost (long iframe, long icand, int itrack, void *closure) {
 	struct fparm *me = (struct fparm *) closure;
-	Formant_Frame frame = & my my frame [iframe];
+	Formant_Frame frame = & my my d_frames [iframe];
 	Formant_Formant candidate;
 	if (icand > frame -> nFormants) return 1e30;
 	candidate = & frame -> formant [icand];
@@ -431,7 +412,7 @@ static double getLocalCost (long iframe, long icand, int itrack, void *closure) 
 }
 static double getTransitionCost (long iframe, long icand1, long icand2, int itrack, void *closure) {
 	struct fparm *me = (struct fparm *) closure;
-	Formant_Frame prevFrame = & my my frame [iframe - 1], curFrame = & my my frame [iframe];
+	Formant_Frame prevFrame = & my my d_frames [iframe - 1], curFrame = & my my d_frames [iframe];
 	double f1, f2;
 	(void) itrack;
 	if (icand1 > prevFrame -> nFormants || icand2 > curFrame -> nFormants) return 1e30;
@@ -446,8 +427,8 @@ static void putResult (long iframe, long place, int itrack, void *closure) {
 	Melder_assert (iframe > 0 && iframe <= my my nx);
 	Melder_assert (itrack > 0 && itrack <= 5);
 	Melder_assert (place > 0);
-	Melder_assert (place <= my my frame [iframe]. nFormants);
-	my thy frame [iframe]. formant [itrack] = my my frame [iframe]. formant [place];
+	Melder_assert (place <= my my d_frames [iframe]. nFormants);
+	my thy d_frames [iframe]. formant [itrack] = my my d_frames [iframe]. formant [place];
 }
 
 Formant Formant_tracker (Formant me, int ntrack,
@@ -461,14 +442,14 @@ Formant Formant_tracker (Formant me, int ntrack,
 		if (ntrack > nformmin) Melder_throw ("Number of tracks (", ntrack, ") should not exceed minimum number of formants (", nformmin, ").");
 		autoFormant thee = Formant_create (my xmin, my xmax, my nx, my dx, my x1, ntrack);
 		for (long iframe = 1; iframe <= thy nx; iframe ++) {
-			thy frame [iframe]. formant = NUMvector <structFormant_Formant> (1, ntrack);
-			thy frame [iframe]. nFormants = ntrack;
-			thy frame [iframe]. intensity = my frame [iframe]. intensity;
+			thy d_frames [iframe]. formant = NUMvector <structFormant_Formant> (1, ntrack);
+			thy d_frames [iframe]. nFormants = ntrack;
+			thy d_frames [iframe]. intensity = my d_frames [iframe]. intensity;
 		}
 		/* BUG: limit costs to 1e10 or so */
 		parm.me = me;
 		parm.thee = thee.peek();
-		parm.dfCost = dfCost / 1000;   /* Per Hz. */
+		parm.dfCost = dfCost / 1000;   // per Hz
 		parm.bfCost = bfCost;
 		parm.octaveJumpCost = octaveJumpCost;
 		parm.refF [1] = refF1;
@@ -506,7 +487,7 @@ Table Formant_downto_Table (Formant me, bool includeFrameNumbers,
 			icol = 0;
 			if (includeFrameNumbers) { Table_setNumericValue (thee.peek(), iframe, ++ icol, iframe); therror }
 			if (includeTimes) { Table_setStringValue (thee.peek(), iframe, ++ icol, Melder_fixed (my x1 + (iframe - 1) * my dx, timeDecimals)); therror }
-			Formant_Frame frame = & my frame [iframe];
+			Formant_Frame frame = & my d_frames [iframe];
 			if (includeIntensity) { Table_setStringValue (thee.peek(), iframe, ++ icol, Melder_fixed (frame -> intensity, intensityDecimals)); therror }
 			if (includeNumberOfFormants) { Table_setNumericValue (thee.peek(), iframe, ++ icol, frame -> nFormants); therror }
 			for (long iformant = 1; iformant <= frame -> nFormants; iformant ++) {
