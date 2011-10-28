@@ -23,9 +23,12 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (L"What's new?", L"ppgb", 20110929)
+MAN_BEGIN (L"What's new?", L"ppgb", 20111007)
 INTRO (L"Latest changes in Praat.")
 /*LIST_ITEM (L"\\bu Manual page about @@drawing a vowel triangle@.")*/
+NORMAL (L"##5.2.46# (7 October 2011)")
+LIST_ITEM (L"\\bu Corrected the same very old bug as in 5.2.44, but now also for opening and saving files.")
+LIST_ITEM (L"\\bu Many better messages.")
 NORMAL (L"##5.2.45# (29 September 2011)")
 LIST_ITEM (L"\\bu Spectrum window: ##Move cursor to nearest peak#.")
 LIST_ITEM (L"\\bu Table: ##Save as comma-separated file...#.")
