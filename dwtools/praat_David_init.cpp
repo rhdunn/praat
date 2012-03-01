@@ -1,6 +1,6 @@
 /* praat_David_init.cpp
  *
- * Copyright (C) 1993-2011 David Weenink
+ * Copyright (C) 1993-2012 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,6 +61,7 @@
  djmw 20091230 Covariance_and_TableOfReal_mahalanobis
  djmw 20100212 Standardize on Window length
  djmw 20100511 Categories_getNumberOfCategories
+ djmw 20111224 Latest modification.
 */
 
 #include "praat.h"
@@ -81,6 +82,8 @@
 #include "Eigen_and_SSCP.h"
 #include "Eigen_and_TableOfReal.h"
 #include "Excitations.h"
+#include "espeakdata_FileInMemory.h"
+#include "FileInMemory.h"
 #include "Formula.h"
 #include "FormantGridEditor.h"
 #include "FormantGrid_extensions.h"
@@ -100,6 +103,8 @@
 #include "Sound_extensions.h"
 #include "Spectrum_extensions.h"
 #include "Spectrogram.h"
+#include "SpeechSynthesizer.h"
+#include "SpeechSynthesizer_and_TextGrid.h"
 #include "SSCP.h"
 #include "Strings_extensions.h"
 #include "SVD.h"
@@ -1400,13 +1405,16 @@ FORM (DTW_and_Sounds_draw, L"DTW & Sounds: Draw", L"DTW & Sounds: Draw...")
 	BOOLEAN (L"Garnish", 1)
 	OK
 DO
-	Sound s1 = 0, s2 = 0;
+	Sound s1 = 0, s2 = 0; DTW dtw = 0;
 	LOOP {
-		iam (Sound);
-		(s1 ? s2 : s1) = me;
+		iam (Data);
+		if (CLASS == classSound) {
+			(s1 ? s2 : s1) = (Sound) me;
+		} else if (CLASS == classDTW) {
+			dtw = (DTW) me;
+		}
 	}
-	Melder_assert (s1 && s2);
-	DTW dtw = FIRST (DTW);
+	Melder_assert (s1 && s2 && dtw);
 	autoPraatPicture picture;
 	DTW_and_Sounds_draw (dtw, s2, s1, GRAPHICS, GET_REAL (L"left Horizontal range"),
 		GET_REAL (L"right Horizontal range"), GET_REAL (L"left Vertical range"), GET_REAL (L"right Vertical range"),
@@ -2216,6 +2224,153 @@ DIRECT (Excitations_to_TableOfReal)
 	LOOP {
 		iam (Excitations);
 		praat_new (Excitations_to_TableOfReal (me), my name);
+	}
+END
+
+
+/************************* FileInMemory ***********************************/
+
+
+FORM_READ (FileInMemory_create, L"Create file in memory", 0, true)
+	autoFileInMemory me = FileInMemory_create (file);
+	praat_new (me.transfer(), MelderFile_name (file));
+END
+
+FORM (FileInMemory_setId, L"FileInMemory: Set id", 0)
+	SENTENCE (L"New id", L"New id")
+	OK
+DO
+	LOOP {
+		iam (FileInMemory);
+		FileInMemory_setId (me, GET_STRING (L"New id"));
+		praat_dataChanged (me);
+	}
+END
+
+FORM (FileInMemory_showAsCode, L"FileInMemory: Show as code", 0)
+	WORD (L"Name", L"example")
+	INTEGER (L"Number of bytes per line", L"20")
+	OK
+DO
+	const wchar_t *name = GET_STRING (L"Name");
+	LOOP {
+		iam (FileInMemory);
+		MelderInfo_open ();
+		FileInMemory_showAsCode (me, name, GET_INTEGER (L"Number of bytes per line"));
+		MelderInfo_close ();
+	}
+END
+
+/************************* FilesInMemory ***********************************/
+
+FORM (FilesInMemory_createFromDirectoryContents, L"Create files in memory from directory contents", 0)
+	SENTENCE (L"Name", L"list")
+	LABEL (L"", L"Directory:")
+	TEXTFIELD (L"Directory", L"/home/david/praat/src/espeak-work/espeak-1.46.13/espeak-data")
+	WORD (L"Only files that match pattern", L"*.txt")
+	OK
+DO
+	autoFilesInMemory me = FilesInMemory_createFromDirectoryContents (GET_STRING (L"Directory"), GET_STRING (L"Only files that match pattern"));
+	praat_new (me.transfer(), GET_STRING (L"Name"));
+END
+
+FORM (FilesInMemory_createCopyFromFilesInMemory, L"", 0)
+	OPTIONMENU (L"Espeakdata", 5)
+	OPTION (L"phons")
+	OPTION (L"dicts")
+	OPTION (L"voices")
+	OPTION (L"variants")
+	OPTION (L"voices_names")
+	OPTION (L"variants_names")
+	OK
+DO
+	long choice = GET_INTEGER (L"Espeakdata");
+	if (choice == 1) {
+		autoFilesInMemory f = (FilesInMemory) Data_copy (espeakdata_phons);
+		praat_new (f.transfer(), L"espeakdata_phons");
+	}
+	else if (choice == 2) {
+		autoFilesInMemory f = (FilesInMemory) Data_copy (espeakdata_dicts);
+		praat_new (f.transfer(), L"espeakdata_dicts");
+	}
+	else if (choice == 3) {
+		autoFilesInMemory f = (FilesInMemory) Data_copy (espeakdata_voices);
+		praat_new (f.transfer(), L"espeakdata_voices");
+	}
+	else if (choice == 4) {
+		autoFilesInMemory f = (FilesInMemory) Data_copy (espeakdata_variants);
+		praat_new (f.transfer(), L"espeakdata_variants");
+	}
+	else if (choice == 5) {
+		autoStrings s = (Strings) Data_copy (espeakdata_voices_names);
+		praat_new (s.transfer(), L"espeakdata_voices_names");
+	}
+	else if (choice == 6) {
+		autoStrings s = (Strings) Data_copy (espeakdata_variants_names);
+		praat_new (s.transfer(), L"espeakdata_variants_names");
+	}
+END
+
+FORM (FilesInMemory_showAsCode, L"FilesInMemory: Show as code", 0)
+	WORD (L"Name", L"example")
+	INTEGER (L"Number of bytes per line", L"20")
+	OK
+DO
+	LOOP {
+		iam (FilesInMemory);
+		MelderInfo_open ();
+		FilesInMemory_showAsCode (me, GET_STRING (L"Name"), GET_INTEGER (L"Number of bytes per line"));
+		MelderInfo_close ();
+	}
+END
+
+FORM (FilesInMemory_showOneFileAsCode, L"FilesInMemory: Show one file as code", 0)
+	NATURAL (L"Index", L"1")
+	WORD (L"Name", L"example")
+	INTEGER (L"Number of bytes per line", L"20")
+	OK
+DO
+	LOOP {
+		iam (FilesInMemory);
+		MelderInfo_open ();
+		FilesInMemory_showOneFileAsCode (me, GET_INTEGER (L"Index"), GET_STRING (L"Name"), GET_INTEGER (L"Number of bytes per line"));
+		MelderInfo_close ();
+	}
+END
+
+DIRECT (FileInMemory_to_FilesInMemory)
+	autoFilesInMemory thee = FilesInMemory_create ();
+	LOOP {
+		iam (FileInMemory);
+		FileInMemory him = Data_copy (me);
+		Collection_addItem (thee.peek(), him);
+	}
+	praat_new (thee.transfer(), L"files");
+END
+
+DIRECT (FilesInMemory_addItems)
+	FilesInMemory thee = FIRST (FilesInMemory);
+	LOOP {
+		iam (Data);
+		if (CLASS == classFileInMemory) {
+			FileInMemory t1 = (FileInMemory) Data_copy (me);
+			Collection_addItem (thee, t1);
+		}
+	}
+END
+
+DIRECT (FilesInMemory_merge)
+	FilesInMemory f1 = 0, f2 = 0;
+	LOOP { iam (FilesInMemory); (f1 ? f2 : f1) = me; }
+	Melder_assert (f1 != 0 && f2 != 0);
+	autoFilesInMemory fim = (FilesInMemory) Collections_merge (f1, f2);
+	praat_new (fim.transfer(), f1 -> name, L"_", f2 -> name);
+END
+
+DIRECT (FilesInMemory_to_Strings_id)
+	LOOP {
+		iam (FilesInMemory);
+		praat_new (FilesInMemory_to_Strings_id (me), my name);
 	}
 END
 
@@ -4357,6 +4512,33 @@ DO
 	}
 END
 
+FORM (Sound_trimSilences, L"Sound: Trim silences", 0)
+	BOOLEAN (L"At start", 1)
+	BOOLEAN (L"At end", 1)
+	LABEL (L"", L"Parameters for the intensity analysis")
+	POSITIVE (L"Minimum pitch (Hz)", L"100")
+	REAL (L"Time step (s)", L"0.0 (= auto)")
+	LABEL (L"", L"Silent intervals detection")
+	REAL (L"Silence threshold (dB)", L"-25.0")
+	POSITIVE (L"Minimum silent interval duration (s)", L"0.1")
+	POSITIVE (L"Minimum sounding interval duration (s)", L"0.1")
+	OK
+DO
+	bool atStart = GET_INTEGER (L"At start");
+	bool atEnd = GET_INTEGER (L"At end");
+	double minPitch = GET_REAL (L"Minimum pitch");
+	double timeStep = GET_REAL (L"Time step");
+	double silenceThreshold = GET_REAL (L"Silence threshold");
+	double minSilenceDuration = GET_REAL (L"Minimum silent interval duration");
+	double minSoundingDuration = GET_REAL (L"Minimum sounding interval duration");
+	LOOP {
+		iam (Sound);
+		autoSound thee = Sound_trimSilences (me, atStart, atEnd, minPitch, timeStep, silenceThreshold,
+			minSilenceDuration, minSoundingDuration, NULL, NULL);
+		praat_new (thee.transfer(), my name, L"_trimmed");
+	}
+END
+
 FORM (Sound_to_BarkFilter, L"Sound: To BarkFilter", L"Sound: To BarkFilter...")
 	POSITIVE (L"Window length (s)", L"0.015")
 	POSITIVE (L"Time step (s)", L"0.005")
@@ -4771,6 +4953,231 @@ DIRECT (Spectrum_to_Cepstrum)
 	}
 END
 
+/************* SpeechSynthesizer *************************************************/
+
+static void SpeechSynthesizer_addCommonFields (void *dia) {
+	REAL (L"Gap between words (s)", L"0.01")
+	INTEGER (L"Pitch adjustment (0-99)", L"50")
+	INTEGER (L"Pitch range (0-99)", L"50");
+	NATURAL (L"Words per minute (80-450)", L"175");
+	BOOLEAN (L"Interpret SSML", 1);
+	BOOLEAN (L"Interpret phoneme codes", 0);
+}
+
+static void SpeechSynthesizer_CheckCommonFields (void *dia, double *wordgap, long *pitchAdjustment,
+	long *pitchRange, long *wordsPerMinute, bool *interpretSSML, bool *interpretPhonemeCodes)
+{
+	*wordgap = GET_REAL (L"Gap between words");
+	if (*wordgap < 0) *wordgap = 0;
+	*pitchAdjustment = GET_INTEGER (L"Pitch adjustment");
+	if (*pitchAdjustment < 0) *pitchAdjustment = 0;
+	if (*pitchAdjustment > 99) *pitchAdjustment = 99;
+	*pitchRange = GET_INTEGER (L"Pitch range");
+	if (*pitchRange < 0) *pitchRange = 0;
+	if (*pitchRange > 99) *pitchRange = 99;
+
+	*wordsPerMinute = GET_INTEGER (L"Words per minute");
+	*interpretSSML = GET_INTEGER (L"Interpret SSML");
+	*interpretPhonemeCodes = GET_INTEGER (L"Interpret phoneme codes");
+}
+
+DIRECT (SpeechSynthesizer_help)
+	Melder_help (L"SpeechSynthesizer");
+END
+
+FORM (SpeechSynthesizer_create, L"Create a speech synthesizer", L"Create SpeechSynthesizer...")
+	long prefVoice = Strings_findString (espeakdata_voices_names, L"english");
+	if (prefVoice == 0) {
+		prefVoice = 1;
+	}
+	LIST (L"Voice", espeakdata_voices_names -> numberOfStrings, (const wchar_t **) espeakdata_voices_names -> strings, prefVoice)
+	long prefVariant = Strings_findString (espeakdata_variants_names, L"default");
+	LABEL (L"", L"The voice variants will only work in a future version o Praat")
+	LIST (L"Voice variant", espeakdata_variants_names -> numberOfStrings,
+		(const wchar_t **) espeakdata_variants_names -> strings, prefVariant)
+	POSITIVE (L"Sampling frequency (Hz)", L"44100")
+	SpeechSynthesizer_addCommonFields (dia);
+	OK
+DO
+	long voiceIndex = GET_INTEGER (L"Voice");
+	long variantIndex = GET_INTEGER (L"Voice variant");
+	double wordgap;
+	long pitchAdjustment, pitchRange, wordsPerMinute;
+	bool interpretSSML, interpretPhonemeCodes;
+	SpeechSynthesizer_CheckCommonFields (dia, &wordgap, &pitchAdjustment, &pitchRange, &wordsPerMinute,
+		&interpretSSML, &interpretPhonemeCodes);
+	autoSpeechSynthesizer me = SpeechSynthesizer_create (voiceIndex, variantIndex,
+		GET_REAL (L"Sampling frequency"), wordgap,
+		pitchAdjustment, pitchRange, wordsPerMinute, interpretSSML, interpretPhonemeCodes); therror
+	praat_new (me.transfer(), espeakdata_voices_names -> strings[voiceIndex], L"_",
+		espeakdata_variants_names -> strings[variantIndex]);
+END
+
+FORM (SpeechSynthesizer_playText, L"SpeechSynthesizer: Play text", 0)
+	SENTENCE (L"Text", L"This is some text.")
+	OK
+DO
+	const wchar_t *text = GET_STRING (L"Text");
+	LOOP {
+		iam (SpeechSynthesizer);
+		SpeechSynthesizer_playText (me, text);
+	}
+END
+
+FORM (SpeechSynthesizer_playText_special, L"SpeechSynthesizer: Play text (special)", 0)
+	SENTENCE (L"Text", L"This is some text.")
+	SpeechSynthesizer_addCommonFields (dia);
+	OK
+DO
+	const wchar_t *text = GET_STRING (L"Text");
+	double wordgap;
+	long pitchAdjustment, pitchRange, wordsPerMinute;
+	bool interpretSSML, interpretPhonemeCodes;
+	SpeechSynthesizer_CheckCommonFields (dia, &wordgap, &pitchAdjustment, &pitchRange, &wordsPerMinute,
+		&interpretSSML, &interpretPhonemeCodes);
+	LOOP {
+		iam (SpeechSynthesizer);
+		autoSound thee = SpeechSynthesizer_to_Sound_special (me, text, wordgap, pitchAdjustment, pitchRange,
+			wordsPerMinute, interpretSSML, interpretPhonemeCodes, false, NULL, NULL);
+		Sound_play (thee.peek(), 0, 0);
+	}
+END
+
+
+FORM (SpeechSynthesizer_to_Sound, L"SpeechSynthesizer: To_Sound", L"")
+	SENTENCE (L"Text", L"This is some text.")
+	OK
+DO
+	const wchar_t *text = GET_STRING (L"Text");
+	LOOP {
+		iam (SpeechSynthesizer);
+		autoSound thee = SpeechSynthesizer_to_Sound (me, text);
+		praat_new (thee.transfer(), my name);
+	}
+END
+
+FORM (SpeechSynthesizer_to_Sound_special, L"SpeechSynthesizer: To_Sound (special)", L"")
+	SENTENCE (L"Text", L"This is some text.")
+	SpeechSynthesizer_addCommonFields (dia);
+	BOOLEAN (L"TextGrid with annotations", 0);
+	BOOLEAN (L"IPA annotation", 1);
+	OK
+DO
+	const wchar_t *text = GET_STRING (L"Text");
+	double wordgap;
+	long pitchAdjustment, pitchRange, wordsPerMinute;
+	bool interpretSSML, interpretPhonemeCodes;
+	SpeechSynthesizer_CheckCommonFields (dia, &wordgap, &pitchAdjustment, &pitchRange, &wordsPerMinute,
+		&interpretSSML, &interpretPhonemeCodes);
+	bool getAnnotation = GET_INTEGER (L"TextGrid with annotations");
+	bool ipa = GET_INTEGER (L"IPA annotation");
+	LOOP {
+		iam (SpeechSynthesizer);
+		TextGrid tg = 0; Table t = 0;
+		autoSound thee = SpeechSynthesizer_to_Sound_special (me, text, wordgap,
+			pitchAdjustment, pitchRange, wordsPerMinute, interpretSSML, interpretPhonemeCodes, ipa,
+			(getAnnotation ? &tg : NULL), (Melder_debug == -2 ? &t : NULL));
+		autoTextGrid atg = tg; autoTable atr = t;
+		praat_new (thee.transfer(), my name);
+		if (getAnnotation) {
+			praat_new (atg.transfer(), my name);
+		}
+		if (Melder_debug == -2) {
+			praat_new (atr.transfer(), my name);
+		}
+	}
+END
+
+DIRECT (SpeechSynthesizer_getVoiceName)
+	LOOP {
+		iam (SpeechSynthesizer);
+		Melder_information (espeakdata_voices_names -> strings [my d_voice]);
+	}
+END
+
+DIRECT (SpeechSynthesizer_getVoiceVariant)
+	LOOP {
+		iam (SpeechSynthesizer);
+		Melder_information (espeakdata_variants_names -> strings[my d_voiceVariant]);
+	}
+END
+
+FORM (SpeechSynthesizer_setSamplingFrequency, L"SpeechSynthesizer: Set sampling frequency", 0)
+	POSITIVE (L"Sampling frequency (Hz)", L"44100")
+	OK
+DO
+	double samplingFrequency = GET_REAL (L"Sampling frequency");
+	LOOP {
+		iam (SpeechSynthesizer);
+		SpeechSynthesizer_setSamplingFrequency (me, samplingFrequency);
+	}
+END
+
+FORM (SpeechSynthesizer_setSpeakingRate, L"SpeechSynthesizer: Set speaking rate", 0)
+	POSITIVE (L"Speaking rate (words per minute)", L"175")
+	OK
+DO
+	double speakingRate = GET_REAL (L"Speaking rate");
+	LOOP {
+		iam (SpeechSynthesizer);
+		SpeechSynthesizer_setSpeakingRate (me, speakingRate);
+	}
+END
+
+FORM (SpeechSynthesizer_setWordGap, L"SpeechSynthesizer: Set word gap", 0)
+	POSITIVE (L"Gap between words (s)", L"0.01")
+	OK
+DO
+	double wordgap = GET_REAL (L"Gap between words");
+	LOOP {
+		iam (SpeechSynthesizer);
+		SpeechSynthesizer_setWordGap (me, wordgap);
+	}
+END
+
+/************* SpeechSynthesizer and TextGrid ************************/
+
+FORM (SpeechSynthesizer_and_TextGrid_to_Sound, L"SpeechSynthesizer & TextGrid: To Sound", 0)
+	NATURAL (L"Tier number", L"1")
+	NATURAL (L"Interval number", L"1")
+	BOOLEAN (L"Add phoneme identification", 0)
+	BOOLEAN (L"TextGrid with annotations", 0);
+	OK
+DO
+	bool getAnnotation = GET_INTEGER (L"TextGrid with annotations");
+	SpeechSynthesizer me = FIRST (SpeechSynthesizer);
+	TextGrid thee = FIRST (TextGrid), tg = 0;
+	autoSound him = SpeechSynthesizer_and_TextGrid_to_Sound (me, thee,
+		GET_INTEGER (L"Tier number"), GET_INTEGER (L"Interval number"),
+		GET_INTEGER (L"Add phoneme identification"), (getAnnotation ? &tg : NULL));
+	autoTextGrid atg = tg;
+	praat_new (him.transfer(), my name);
+	if (getAnnotation) {
+		praat_new (atg.transfer(), my name);
+	}
+END
+
+FORM (SpeechSynthesizer_and_Sound_and_TextGrid_align, L"SpeechSynthesizer & Sound & TextGrid: To TextGrid (align)", 0)
+	NATURAL (L"Tier number", L"1")
+	NATURAL (L"From interval number", L"1")
+	NATURAL (L"To interval number", L"1")
+	REAL (L"Silence threshold (dB)", L"-35.0")
+	POSITIVE (L"Minimum silent interval duration (s)", L"0.1")
+	POSITIVE (L"Minimum sounding interval duration (s)", L"0.1")
+	OK
+DO
+	double silenceThreshold = GET_REAL (L"Silence threshold");
+	double minSilenceDuration = GET_REAL (L"Minimum silent interval duration");
+	double minSoundingDuration = GET_REAL (L"Minimum sounding interval duration");
+	SpeechSynthesizer synth = FIRST (SpeechSynthesizer);
+	Sound s = FIRST (Sound);
+	TextGrid tg = FIRST (TextGrid);
+	autoTextGrid thee = SpeechSynthesizer_and_Sound_and_TextGrid_align (synth, s, tg,
+		GET_INTEGER (L"Tier number"), GET_INTEGER (L"From interval number"),
+		GET_INTEGER (L"To interval number"), silenceThreshold, minSilenceDuration, minSoundingDuration);
+	praat_new (thee.transfer(), thy name, L"_aligned");
+END
+
 /************* Spline *************************************************/
 
 FORM (Spline_drawKnots, L"Spline: Draw knots", 0)
@@ -4990,6 +5397,9 @@ DIRECT (SSCP_to_PCA)
 END
 
 /******************* Strings ****************************/
+DIRECT (Strings_createFromEspeakVoices)
+	praat_new (NULL, L"voices");
+END
 
 DIRECT (Strings_append)
 	autoCollection set = praat_getSelectedObjects ();
@@ -5879,15 +6289,19 @@ void praat_uvafon_David_init () {
 		classCategories, classCepstrum, classCCA,
 		classChebyshevSeries, classClassificationTable, classConfusion,
 		classCorrelation, classCovariance, classDiscriminant, classDTW,
-		classEigen, classExcitations, classFormantFilter, classIndex, classKlattTable,
+		classEigen, classExcitations, classFileInMemory, classFilesInMemory, classFormantFilter,
+		classIndex, classKlattTable,
 		classPermutation, classISpline, classLegendreSeries,
 		classMelFilter, classMSpline, classPattern, classPCA, classPolynomial, classRoots,
-		classSimpleString, classStringsIndex, classSPINET, classSSCP, classSVD, NULL);
+		classSimpleString, classStringsIndex, classSpeechSynthesizer, classSPINET, classSSCP,
+		classSVD, NULL);
 
 	VowelEditor_prefs ();
 
-	praat_addMenuCommand (L"Objects", L"Goodies", L"Report floating point properties", 0, 0, DO_Praat_ReportFloatingPointProperties);
+	espeakdata_praat_init ();
 
+	praat_addMenuCommand (L"Objects", L"Goodies", L"Report floating point properties", 0, 0, DO_Praat_ReportFloatingPointProperties);
+	praat_addMenuCommand (L"Objects", L"New", L"Create Strings from espeak voices", L"Create Strings as directory list...", 1 + praat_HIDDEN, DO_Strings_createFromEspeakVoices);
 	praat_addMenuCommand (L"Objects", L"New", L"Create iris data set", L"Create TableOfReal...", 1, DO_New_CreateIrisDataset);
 	praat_addMenuCommand (L"Objects", L"New", L"Create Permutation...", 0, 0, DO_Permutation_create);
 	praat_addMenuCommand (L"Objects", L"New", L"Polynomial", 0, 0, 0);
@@ -5900,6 +6314,7 @@ void praat_uvafon_David_init () {
 	praat_addMenuCommand (L"Objects", L"New", L"Create Sound from gamma-tone...", L"Create Sound from tone complex...", praat_DEPTH_1 | praat_HIDDEN, DO_Sound_createFromGammaTone);
 	praat_addMenuCommand (L"Objects", L"New", L"Create Sound from Shepard tone...", L"Create Sound from gammatone...", 1, DO_Sound_createFromShepardTone);
 	praat_addMenuCommand (L"Objects", L"New", L"Create Sound from VowelEditor...", L"Create Sound from Shepard tone...", praat_DEPTH_1, DO_VowelEditor_create);
+	praat_addMenuCommand (L"Objects", L"New", L"Create SpeechSynthesizer...", L"Create Sound from VowelEditor...", 1, DO_SpeechSynthesizer_create);
 	praat_addMenuCommand (L"Objects", L"New", L"Create formant table (Pols & Van Nierop 1973)", L"Create Table...", 1, DO_Table_createFromPolsVanNieropData);
 	praat_addMenuCommand (L"Objects", L"New", L"Create formant table (Peterson & Barney 1952)", L"Create Table...", 1, DO_Table_createFromPetersonBarneyData);
 	praat_addMenuCommand (L"Objects", L"New", L"Create formant table (Weenink 1985)", L"Create formant table (Peterson & Barney 1952)", 1, DO_Table_createFromWeeninkData);
@@ -5910,7 +6325,11 @@ void praat_uvafon_David_init () {
 	praat_addMenuCommand (L"Objects", L"New", L"Create simple Covariance...", L"Create simple Confusion...", 1, DO_Covariance_createSimple);
 	praat_addMenuCommand (L"Objects", L"New", L"Create KlattTable example", L"Create TableOfReal (Weenink 1985)...", praat_DEPTH_1 + praat_HIDDEN, DO_KlattTable_createExample);
 	praat_addMenuCommand (L"Objects", L"New", L"Create simple Polygon...", 0, praat_HIDDEN, DO_Polygon_createSimple);
-	praat_addMenuCommand (L"Objects", L"New", L"Create Polygon (random vertices)...", 0,   praat_HIDDEN, DO_Polygon_createFromRandomVertices);
+	praat_addMenuCommand (L"Objects", L"New", L"Create Polygon (random vertices)...", 0, praat_HIDDEN, DO_Polygon_createFromRandomVertices);
+	praat_addMenuCommand (L"Objects", L"New", L"FilesInMemory", 0, praat_HIDDEN, 0);
+		praat_addMenuCommand (L"Objects", L"New", L"Create FileInMemory...", 0, praat_DEPTH_1 + praat_HIDDEN, DO_FileInMemory_create);
+		praat_addMenuCommand (L"Objects", L"New", L"Create copy from FilesInMemory...", 0, praat_DEPTH_1 + praat_HIDDEN, DO_FilesInMemory_createCopyFromFilesInMemory);
+		praat_addMenuCommand (L"Objects", L"New", L"Create FilesInMemory from directory contents...", 0, praat_DEPTH_1 + praat_HIDDEN, DO_FilesInMemory_createFromDirectoryContents);
 	praat_addMenuCommand (L"Objects", L"Open", L"Read Sound from raw 16-bit Little Endian file...", L"Read from special sound file", 1,
 	                      DO_Sound_readFromRawFileLE);
 	praat_addMenuCommand (L"Objects", L"Open", L"Read Sound from raw 16-bit Big Endian file...", L"Read Sound from raw 16-bit Little Endian file...", 1, DO_Sound_readFromRawFileBE);
@@ -6192,6 +6611,16 @@ void praat_uvafon_David_init () {
 
 	praat_addAction2 (classExcitations, 1, classExcitation, 0, L"Add to Excitations", 0, 0, DO_Excitations_addItem);
 
+	praat_addAction1 (classFileInMemory, 1, L"Show as code...", 0, 0, DO_FileInMemory_showAsCode);
+	praat_addAction1 (classFileInMemory, 1, L"Set id...", 0, 0, DO_FileInMemory_setId);
+	praat_addAction1 (classFileInMemory, 0, L"To FilesInMemory", 0, 0, DO_FileInMemory_to_FilesInMemory);
+
+	praat_addAction1 (classFilesInMemory, 1, L"Show as code...", 0, 0, DO_FilesInMemory_showAsCode);
+	praat_addAction1 (classFilesInMemory, 1, L"Show one file as code...", 0, 0, DO_FilesInMemory_showOneFileAsCode);
+	praat_addAction1 (classFilesInMemory, 0, L"Merge", 0, 0, DO_FilesInMemory_merge);
+	praat_addAction1 (classFilesInMemory, 0, L"To Strings (id)", 0, 0, DO_FilesInMemory_to_Strings_id);
+
+	praat_addAction2 (classFilesInMemory, 1, classFileInMemory, 0, L"Add items to Collection", 0, 0, DO_FilesInMemory_addItems);
 
 	praat_addAction1 (classFormantFilter, 0, L"FormantFilter help", 0, 0, DO_FormantFilter_help);
 	praat_FilterBank_all_init (classFormantFilter);
@@ -6396,6 +6825,7 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classSound, 0, L"Change gender...", L"Deepen band modulation...", 1, DO_Sound_changeGender);
 
 	praat_addAction1 (classSound, 0, L"Change speaker...", L"Deepen band modulation...", praat_DEPTH_1 | praat_HIDDEN, DO_Sound_changeSpeaker);
+	praat_addAction1 (classSound, 0, L"Trim silences...", L"Resample...", praat_DEPTH_1 | praat_HIDDEN, DO_Sound_trimSilences);
 	praat_addAction1 (classSound, 0, L"To KlattGrid (simple)...", L"To Manipulation...", 1, DO_Sound_to_KlattGrid_simple);
 	praat_addAction2 (classSound, 1, classPitch, 1, L"To FormantFilter...", 0, 0, DO_Sound_and_Pitch_to_FormantFilter);
 
@@ -6409,6 +6839,23 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classSpectrum, 2, L"Multiply", L"To Sound (fft)", praat_HIDDEN, DO_Spectra_multiply);
 	praat_addAction1 (classSpectrum, 0, L"To Matrix (unwrap)", L"To Matrix", 0, DO_Spectrum_unwrap);
 	praat_addAction1 (classSpectrum, 0, L"To Cepstrum", L"To Spectrogram", 0, DO_Spectrum_to_Cepstrum);
+
+	praat_addAction1 (classSpeechSynthesizer, 0, L"SpeechSynthesizer help", 0, 0, DO_SpeechSynthesizer_help);
+	praat_addAction1 (classSpeechSynthesizer, 0, L"Play text...", 0, 0, DO_SpeechSynthesizer_playText);
+	praat_addAction1 (classSpeechSynthesizer, 0, L"Play text (special)...", 0, 0, DO_SpeechSynthesizer_playText_special);
+	praat_addAction1 (classSpeechSynthesizer, 0, L"To Sound...", 0, 0, DO_SpeechSynthesizer_to_Sound);
+	praat_addAction1 (classSpeechSynthesizer, 0, L"To Sound (special)...", 0, 0, DO_SpeechSynthesizer_to_Sound_special);
+	praat_addAction1 (classSpeechSynthesizer, 0, QUERY_BUTTON, 0, 0, 0);
+		praat_addAction1 (classSpeechSynthesizer, 1, L"Get voice name", 0, 1, DO_SpeechSynthesizer_getVoiceName);
+		praat_addAction1 (classSpeechSynthesizer, 1, L"Get voice variant", 0, 1, DO_SpeechSynthesizer_getVoiceVariant);
+	praat_addAction1 (classSpeechSynthesizer, 0, MODIFY_BUTTON, 0, 0, 0);
+		praat_addAction1 (classSpeechSynthesizer, 0, L"Set sampling frequency...", 0, 1, DO_SpeechSynthesizer_setSamplingFrequency);
+		praat_addAction1 (classSpeechSynthesizer, 0, L"Set speaking rate...", 0, 1, DO_SpeechSynthesizer_setSpeakingRate);
+		praat_addAction1 (classSpeechSynthesizer, 0, L"Set word gap...", 0, 1, DO_SpeechSynthesizer_setWordGap);
+
+	praat_addAction2 (classSpeechSynthesizer, 1, classTextGrid, 1, L"To Sound...", 0, 0, DO_SpeechSynthesizer_and_TextGrid_to_Sound);
+
+	praat_addAction3 (classSpeechSynthesizer, 1, classSound, 1, classTextGrid, 1, L"To TextGrid (align)...", 0, 0, DO_SpeechSynthesizer_and_Sound_and_TextGrid_align);
 
 	praat_addAction1 (classSSCP, 0, L"SSCP help", 0, 0, DO_SSCP_help);
 	praat_TableOfReal_init2 (classSSCP);
