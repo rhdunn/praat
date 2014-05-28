@@ -50,7 +50,7 @@ double *NUMstring_to_numbers (const wchar_t *s, long *numbers_found);
  */
 long *NUMstring_getElementsOfRanges (const wchar_t *ranges, long maximumElement, long *numberOfElements, long *numberOfMultiples, const wchar_t *elementType, bool sortedUniques);
 
-
+wchar_t * NUMstring_timeNoDot (double time);
 int NUMstrings_equal (const wchar_t **s1, const wchar_t **s2, long lo, long hi);
 void NUMstrings_copyElements (wchar_t **from, wchar_t**to, long lo, long hi);
 void NUMstrings_free (wchar_t **s, long lo, long hi);
@@ -253,6 +253,9 @@ void NUMcolumn2_avevar (double **a, long nr, long nc, long icol1, long icol2,
 	When average and/or variance are NULL, the corresponding output is
 	NOT given.
  */
+
+void NUMvector_smoothByMovingAverage (double *xin, long n, long nwindow, double *xout);
+
 
 void NUMcovarianceFromColumnCentredMatrix (double **x, long nrows, long ncols, long ndf, double **covar);
 /*
@@ -1254,18 +1257,34 @@ void NUMrealft (double *data, long n, int direction);
 
 long NUMgetIndexFromProbability (double *probs, long nprobs, double p);
 
-
-/*  Model y = C * exp(a * x) + yOffset
-	y - yOffset = C * exp (a * x) => log (y - yOffset) = a * x + log (C)
-	Line fit of log() versus x:
-		C = exp (intercept)
-*/
-void NUMfitExponentialDecayWithKnownVerticalOffset (double *x, double *y, long numberOfPoints, double yOffset, double *a, double *y0, int method);
-
 // Fit the line y= ax+b
-// method == 0 then theil, else LS
-void NUMlineFit (double *x, double *y, long numberOfPoints, double *m, double *intercept,int method);
-void NUMlineFit_theil (double *x, double *y, long numberOfPoints, double *m, double *intercept);
+void NUMlineFit (double *x, double *y, long numberOfPoints, double *m, double *intercept, int method);
+/* method
+ * 1 least squares
+ * 2 rubust incomplete Theil O(N/2)
+ * 3 robust complete Theil (very slow for large N, O(N^2))
+ */
+
+void NUMlineFit_theil (double *x, double *y, long numberOfPoints, double *m, double *intercept, bool incompleteMethod);
+/*
+ * Preconditions:
+ *		all x[i] must be different, i.e. x[i] != x[j] for all i = 1..(numberOfPoints - 1), j = (i+1) ..numberOfPoints
+ * Algorithm:
+ * Theils robust line fit method:
+ * 1. Use all combination of pairs (x[i],y[i]), (x[j],y[j]) to calculate an intercept m[k] as
+ *    m[k] = (y[j] - y[i]) / (x[j] - x[i]).
+ *    There will be (numberOfPoints - 1) * numberOfPoints / 2 numbers m[k].
+ * 2. Take the median value m of all the m[k].
+ * 3. Calculate the numberOfPoints intercepts b[i] as b[i] = y[i] - m * x[i]
+ * 4. Take the median value b of all the b[i] values
+ * 
+ * If incompleteMethod we use Theil's incomplete method to reduce the number of combinations.
+ * I.e. split the data in two equal parts at n2 = numberOfPoints / 2  and then calculate the numberOfPoints/2 intercepts m[i] as
+ *   m[i] = (y[n2+i] - y[i]) / (x[n2 + i] - x[i]).
+ * The rest proceeds as outlined above
+ */
+
+
 void NUMlineFit_LS (double *x, double *y, long numberOfPoints, double *m, double *intercept);
 
 /* The binomial distribution has the form,

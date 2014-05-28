@@ -502,8 +502,9 @@ static void gui_cb_list (void *void_me, GuiListEvent event) {
 			long readableClassId = ((Thing) theCurrentPraatObjects -> list [IOBJECT]. object) -> classInfo -> sequentialUniqueIdOfReadableClass;
 			theCurrentPraatObjects -> numberOfSelected [readableClassId] ++;
 			Melder_assert (theCurrentPraatObjects -> numberOfSelected [readableClassId] > 0);
-			UiHistory_write (first ? L"\nselect " : L"\nplus ");
-			UiHistory_write (FULL_NAME);
+			UiHistory_write (first ? L"\nselectObject (\"" : L"\nplusObject (\"");
+			UiHistory_write_expandQuotes (FULL_NAME);
+			UiHistory_write (L"\")");
 			first = FALSE;
 			theCurrentPraatObjects -> totalSelection += 1;
 		}
@@ -863,9 +864,29 @@ void praat_dontUsePictureWindow (void) { praatP.dontUsePictureWindow = TRUE; }
 /********** INITIALIZATION OF THE PRAAT SHELL **********/
 
 #if defined (UNIX)
+	static void cb_sigusr1 (int signum) {
+		Melder_assert (signum == SIGUSR1);
+		#if 0
+			gboolean retval;
+			g_signal_emit_by_name (GTK_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "client-event", NULL, & retval);
+		#else
+			GdkEventClient gevent;
+			gevent. type = GDK_CLIENT_EVENT;
+			gevent. window = GTK_WIDGET (theCurrentPraatApplication -> topShell -> d_gtkWindow) -> window;
+			gevent. send_event = 1;
+			gevent. message_type = gdk_atom_intern_static_string ("SENDPRAAT");
+			gevent. data_format = 8;
+			// Melder_casual ("event put");
+			gdk_event_put ((GdkEvent *) & gevent);
+		#endif
+	}
+#endif
+
+#if defined (UNIX)
 	static gboolean cb_userMessage (GtkWidget widget, GdkEventClient *event, gpointer user_data) {
 		(void) widget;
 		(void) user_data;
+		//Melder_casual ("client event called");
 		autofile f;
 		try {
 			f.reset (Melder_fopen (& messageFile, "r"));
@@ -873,10 +894,10 @@ void praat_dontUsePictureWindow (void) { praatP.dontUsePictureWindow = TRUE; }
 			Melder_clearError ();
 			return true;   // OK
 		}
-		long pid;
+		long pid = 0;
 		int narg = fscanf (f, "#%ld", & pid);
 		f.close (& messageFile);
-		{ // scope
+		{// scope
 			autoPraatBackground background;
 			try {
 				praat_executeScriptFromFile (& messageFile, NULL);
@@ -885,7 +906,7 @@ void praat_dontUsePictureWindow (void) { praatP.dontUsePictureWindow = TRUE; }
 				Melder_flushError (NULL);
 			}
 		}
-		if (narg) kill (pid, SIGUSR2);
+		if (narg && pid) kill (pid, SIGUSR2);
 		return true;
 	}
 #elif defined (_WIN32)
@@ -1254,7 +1275,7 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 		#endif
 		#if ! defined (CONSOLE_APPLICATION) && ! defined (macintosh)
 			trace ("initializing the Gui late");
-			MelderGui_create (theCurrentPraatApplication -> topShell);   /* Mac: done this earlier. */
+			MelderGui_create (theCurrentPraatApplication -> topShell);   // Mac: done this earlier
 		#endif
 		Melder_setHelpProc (helpProc);
 	}
@@ -1442,7 +1463,7 @@ void praat_run (void) {
 		/* Each line separately: every error should be ignored.
 		 */
 		praatP.phase = praat_READING_BUTTONS;
-		{ // scope
+		{// scope
 			autostring buttons;
 			try {
 				buttons.reset (MelderFile_readText (& buttonsFile));
@@ -1477,6 +1498,7 @@ void praat_run (void) {
 			trace ("install GTK key snooper");
 			trace ("locale is %s", setlocale (LC_ALL, NULL));
 			g_signal_connect (G_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "client-event", G_CALLBACK (cb_userMessage), NULL);
+			signal (SIGUSR1, cb_sigusr1);
 			gtk_key_snooper_install (theKeySnooper, 0);
 			trace ("start the GTK event loop");
 			trace ("locale is %s", setlocale (LC_ALL, NULL));

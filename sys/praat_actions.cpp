@@ -32,6 +32,7 @@ static struct structPraat_Command *theActions;
 static GuiMenu praat_writeMenu;
 static GuiMenuItem praat_writeMenuSeparator;
 static GuiForm praat_form;
+static bool actionsInvisible = false;
 
 static void fixSelectionSpecification (ClassInfo *class1, int *n1, ClassInfo *class2, int *n2, ClassInfo *class3, int *n3) {
 /*
@@ -176,15 +177,19 @@ void praat_addAction4 (ClassInfo class1, int n1, ClassInfo class2, int n2, Class
 
 static void deleteDynamicMenu (void) {
 	if (praatP.phase != praat_HANDLING_EVENTS) return;
+	if (actionsInvisible) return;
 	static long numberOfDeletions;
 	trace ("deletion #%ld", ++ numberOfDeletions);
 	for (int i = 1; i <= theNumberOfActions; i ++) {
 		if (theActions [i]. button) {
-			#if gtk
+			trace ("trying to destroy action %d of %d: %ls", i, (int) theNumberOfActions, theActions [i]. title);
+			#if gtk || cocoa
 				if (theActions [i]. button -> d_parent == praat_form) {
-					GuiObject_destroy (theActions [i]. button -> d_widget);   // a label or a push button or a cascade button
+					trace ("destroy a label or a push button or a cascade button");
+					GuiObject_destroy (theActions [i]. button -> d_widget);
 				} else if (praat_writeMenu && theActions [i]. button -> d_parent == praat_writeMenu) {
-					GuiObject_destroy (theActions [i]. button -> d_widget);   // a Save menu item
+					trace ("destroying Save menu item");
+					GuiObject_destroy (theActions [i]. button -> d_widget);
 				}
 			#elif motif
 				if (theActions [i]. button -> classInfo == classGuiButton && theActions [i]. button -> d_widget -> subMenuId) {   // a cascade button (not a direct child of the form)?
@@ -199,8 +204,9 @@ static void deleteDynamicMenu (void) {
 		}
 	}
 	if (praat_writeMenu) {
-		#if gtk
+		#if gtk || cocoa
 			if (praat_writeMenuSeparator) {
+				trace ("destroy the Save menu separator");
 				GuiObject_destroy (praat_writeMenuSeparator -> d_widget);
 			}
 			//praat_writeMenu -> f_empty ();
@@ -211,6 +217,7 @@ static void deleteDynamicMenu (void) {
 		#endif
 		praat_writeMenuSeparator = NULL;
 	}
+	actionsInvisible = true;
 }
 
 static void updateDynamicMenu (void) {
@@ -611,6 +618,7 @@ void praat_actions_show (void) {
 
 	/* Create a new column of buttons in the dynamic menu. */
 	if (! theCurrentPraatApplication -> batch && ! Melder_backgrounding) {
+		actionsInvisible = false;
 		GuiMenu currentSubmenu1 = NULL, currentSubmenu2 = NULL;
 		int writeMenuGoingToSeparate = FALSE;
 		int y = Machine_getMenuBarHeight () + 10;

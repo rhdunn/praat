@@ -47,6 +47,8 @@ Thing_implement (FunctionEditor, Editor, 0);
 static int nGroup = 0;
 static FunctionEditor theGroup [1 + maxGroup];
 
+static void drawWhileDragging (FunctionEditor me, double x1, double x2);
+
 static int group_equalDomain (double tmin, double tmax) {
 	if (nGroup == 0) return 1;
 	for (int i = 1; i <= maxGroup; i ++)
@@ -537,15 +539,19 @@ static void do_zoomToSelection (FunctionEditor me) {
 	if (my d_endSelection > my d_startSelection) {
 		my startZoomHistory = my d_startWindow;   // remember for Zoom Back
 		my endZoomHistory = my d_endWindow;   // remember for Zoom Back
-		//Melder_casual ("Zoomed in to %f ~ %f seconds.", my startSelection, my endSelection);
+		trace ("Zooming in to %.17g ~ %.17g seconds.", my d_startSelection, my d_endSelection);
 		my d_startWindow = my d_startSelection;
 		my d_endWindow = my d_endSelection;
+		trace ("Zoomed in to %.17g ~ %.17g seconds (1).", my d_startWindow, my d_endWindow);
 		my v_updateText ();
+		trace ("Zoomed in to %.17g ~ %.17g seconds (2).", my d_startWindow, my d_endWindow);
 		updateScrollBar (me);
+		trace ("Zoomed in to %.17g ~ %.17g seconds (3).", my d_startWindow, my d_endWindow);
 		/*Graphics_updateWs (my d_graphics);*/ drawNow (me);
 		if (my pref_synchronizedZoomAndScroll ()) {
 			updateGroup (me);
 		}
+		trace ("Zoomed in to %.17g ~ %.17g seconds (4).", my d_startWindow, my d_endWindow);
 	}
 }
 
@@ -763,6 +769,7 @@ static void menu_cb_moveEby (EDITOR_ARGS) {
 void FunctionEditor_shift (FunctionEditor me, double shift, bool needsUpdateGroup) {
 	double windowLength = my d_endWindow - my d_startWindow;
 	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);   /* Quickly, before window changes. */
+	trace ("shifting by %.17g", shift);
 	if (shift < 0.0) {
 		my d_startWindow += shift;
 		if (my d_startWindow < my d_tmin + 1e-12)
@@ -1030,7 +1037,6 @@ static void gui_drawingarea_cb_expose (I, GuiDrawingAreaExposeEvent event) {
 static void gui_drawingarea_cb_click (I, GuiDrawingAreaClickEvent event) {
 	iam (FunctionEditor);
 	if (my d_graphics == NULL) return;   // Could be the case in the very beginning.
-if (gtk && event -> type != BUTTON_PRESS) return;
 	double xWC, yWC;
 	my shiftKeyPressed = event -> shiftKeyPressed;
 	Graphics_setWindow (my d_graphics, my functionViewerLeft, my functionViewerRight, 0, my height);
@@ -1048,9 +1054,6 @@ if (gtk && event -> type != BUTTON_PRESS) return;
 			Melder_casual ("FunctionEditor::gui_drawingarea_cb_click: button %d shift %d option %d command %d control %d",
 				event -> button, my shiftKeyPressed, event -> optionKeyPressed, event -> commandKeyPressed, event -> extraControlKeyPressed);
 		}
-#if cocoa
-        my clickEvent = event;
-#endif
 #if defined (macintosh)
 		needsUpdate =
 			event -> optionKeyPressed || event -> extraControlKeyPressed ? my v_clickB (xWC, yWC) :
@@ -1070,13 +1073,14 @@ if (gtk && event -> type != BUTTON_PRESS) return;
 #endif
 		if (needsUpdate) my v_updateText ();
 		Graphics_setViewport (my d_graphics, my functionViewerLeft, my functionViewerRight, 0, my height);
-		if (needsUpdate) /*Graphics_updateWs (my d_graphics);*/ drawNow (me);
+		if (needsUpdate) {
+			#if cocoa
+				Graphics_updateWs (my d_graphics);
+			#else
+				drawNow (me);
+			#endif
+		}
 		if (needsUpdate) updateGroup (me);
-#if cocoa
-        if (needsUpdate) {
-            [(GuiCocoaDrawingArea*)my drawingArea -> d_widget flush];
-        }
-#endif
 	}
 	else   /* Clicked outside signal region? Let us hear it. */
 	{
@@ -1142,6 +1146,10 @@ void structFunctionEditor :: v_createChildren () {
 		#if gtk
 			Melder_assert (text -> d_widget);
 			gtk_widget_grab_focus (GTK_WIDGET (text -> d_widget));   // BUG: can hardly be correct (the text should grab the focus of the window, not the global focus)
+		#elif cocoa
+			Melder_assert ([(NSView *) text -> d_widget window]);
+			//[[(NSView *) text -> d_widget window] setInitialFirstResponder: (NSView *) text -> d_widget];
+			[[(NSView *) text -> d_widget window] makeFirstResponder: (NSView *) text -> d_widget];
 		#endif
 	}
 
@@ -1187,20 +1195,12 @@ static void drawWhileDragging (FunctionEditor me, double x1, double x2) {
 	Graphics_setTextAlignment (my d_graphics, Graphics_LEFT, Graphics_BOTTOM);
 	Graphics_text1 (my d_graphics, xright, 0.0, Melder_fixed (xright, 6));
 	Graphics_xorOff (my d_graphics);
-#if cocoa
-    [(GuiCocoaDrawingArea*)my drawingArea -> d_widget flush];
-#endif
 }
 
 int structFunctionEditor :: v_click (double xbegin, double ybegin, bool shiftKeyPressed) {
 	bool drag = false;
 	double x = xbegin, y = ybegin;
     
-#if cocoa
-    // Need to rewrite this to handle moved events
-    if (clickEvent->type == BUTTON_RELEASE || clickEvent->type == MOTION_NOTIFY)
-        return FunctionEditor_NO_UPDATE_NEEDED;
-#endif
     
 	/*
 	 * The 'anchor' is the point that will stay fixed during dragging.
@@ -1209,8 +1209,10 @@ int structFunctionEditor :: v_click (double xbegin, double ybegin, bool shiftKey
 	 * even if she later chooses to drag the mouse to the left of it.
 	 * Another example: if she shift-clicks near E, B will become (and stay) the anchor.
 	 */
-	double anchorForDragging = xbegin;   // the default (for if the shift key isn't pressed)
+
 	Graphics_setWindow (d_graphics, d_startWindow, d_endWindow, 0, 1);
+
+	double anchorForDragging = xbegin;   // the default (for if the shift key isn't pressed)
 	if (shiftKeyPressed) {
 		/*
 		 * Extend the selection.
@@ -1293,6 +1295,7 @@ int structFunctionEditor :: v_click (double xbegin, double ybegin, bool shiftKey
 	/*
 	 * Find out whether this is a click or a drag.
 	 */
+    
 	while (Graphics_mouseStillDown (d_graphics)) {
 		Graphics_getMouseLocation (d_graphics, & x, & y);
 		if (x < d_startWindow) x = d_startWindow;
@@ -1302,6 +1305,7 @@ int structFunctionEditor :: v_click (double xbegin, double ybegin, bool shiftKey
 			break;
 		}
 	}
+    
 	if (drag) {
 		/*
 		 * First undraw the old selection.
@@ -1322,7 +1326,7 @@ int structFunctionEditor :: v_click (double xbegin, double ybegin, bool shiftKey
 		 * Draw the text at least once.
 		 */
 		/*if (x < d_startWindow) x = d_startWindow; else if (x > d_endWindow) x = d_endWindow;*/
-		drawWhileDragging (this, anchorForDragging, x);
+        drawWhileDragging (this, anchorForDragging, x);
 		/*
 		 * Draw the dragged selection at least once.
 		 */
@@ -1334,21 +1338,25 @@ int structFunctionEditor :: v_click (double xbegin, double ybegin, bool shiftKey
 		/*
 		 * Drag for the new selection.
 		 */
-		while (Graphics_mouseStillDown (d_graphics)) {
+        
+		while (Graphics_mouseStillDown (d_graphics))
+		{
 			double xold = x, x1, x2;
 			Graphics_getMouseLocation (d_graphics, & x, & y);
 			/*
 			 * Clip to the visible window. Ideally, we should perform autoscrolling instead, though...
 			 */
 			if (x < d_startWindow) x = d_startWindow; else if (x > d_endWindow) x = d_endWindow;
+            
 			if (x == xold)
 				continue;
+            
 			/*
-			 * Undraw and redraw the text at the top.
+			 * Undraw the text.
 			 */
 			drawWhileDragging (this, anchorForDragging, xold);
 			/*
-			 * Remove previous dragged selection.
+			 * Undraw previous dragged selection.
 			 */
 			if (xold > anchorForDragging) x1 = anchorForDragging, x2 = xold; else x1 = xold, x2 = anchorForDragging;
 			if (x1 != x2) v_unhighlightSelection (x1, x2, 0, 1);
@@ -1358,10 +1366,10 @@ int structFunctionEditor :: v_click (double xbegin, double ybegin, bool shiftKey
 			if (x > anchorForDragging) x1 = anchorForDragging, x2 = x; else x1 = x, x2 = anchorForDragging;
 			if (x1 != x2) v_highlightSelection (x1, x2, 0, 1);
 			/*
-			 * Redraw the text at the top.
+			 * Redraw the text at the new location.
 			 */
-			drawWhileDragging (this, anchorForDragging, x);
-		} ;
+            drawWhileDragging (this, anchorForDragging, x);
+        } ;
 		/*
 		 * Set the new selection.
 		 */

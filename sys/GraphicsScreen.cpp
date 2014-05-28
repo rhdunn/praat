@@ -107,10 +107,17 @@ void structGraphicsScreen :: v_destroy () {
 void structGraphicsScreen :: v_flushWs () {
 	#if cairo
 		// Ik weet niet of dit is wat het zou moeten zijn ;)
-		// gdk_window_process_updates (my window, TRUE);
-		gdk_flush ();
+		//gdk_window_process_updates (d_window, TRUE);   // this "works" but is incorrect because it's not the expose events that have to be carried out
+		//gdk_window_flush (d_window);
+		//gdk_flush ();
 		// TODO: een aanroep die de eventuele grafische buffer ledigt,
 		// zodat de gebruiker de grafica ziet ook al blijft Praat in hetzelfde event zitten
+	#elif cocoa
+		if (d_drawingArea) {
+			GuiShell shell = d_drawingArea -> d_shell;
+			Melder_assert (shell != NULL);
+        	[shell -> d_cocoaWindow   flushWindow];
+		}
 	#elif win
 		/*GdiFlush ();*/
 	#elif mac
@@ -155,8 +162,7 @@ void structGraphicsScreen :: v_clearWs () {
 			cairo_set_source_rgb (d_cairoGraphicsContext, 0.0, 0.0, 0.0);
 		}
 	#elif cocoa
-
-        GuiCocoaDrawingArea *cocoaDrawingArea = (GuiCocoaDrawingArea*) d_drawingArea -> d_widget;
+        GuiCocoaDrawingArea *cocoaDrawingArea = (GuiCocoaDrawingArea *) d_drawingArea -> d_widget;
         if (cocoaDrawingArea) {
             NSRect rect;
             if (this -> d_x1DC < this -> d_x2DC) {
@@ -173,17 +179,24 @@ void structGraphicsScreen :: v_clearWs () {
                 rect.origin.y = this -> d_y2DC;
                 rect.size.height = this -> d_y1DC - this -> d_y2DC;
             }
-            
-            CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
-            CGContextSaveGState(context);
+			[cocoaDrawingArea lockFocus];
+            CGContextRef context = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+            CGContextSaveGState (context);
             CGContextSetAlpha (context, 1.0);
             CGContextSetBlendMode (context, kCGBlendModeNormal);
             CGContextSetRGBFillColor (context, 1.0, 1.0, 1.0, 1.0);
+			//rect.origin.x -= 1000;
+			//rect.origin.y -= 1000;
+			//rect.size.width += 2000;
+			//rect.size.height += 2000;
+			trace ("clearing %f %f %f %f", rect.origin.x, rect.origin.y, rect.size.width, rect.size.height);
+                //CGContextTranslateCTM (context, 0, cocoaDrawingArea.bounds.size.height);
+                //CGContextScaleCTM (context, 1.0, -1.0);
             CGContextFillRect (context, rect);
-            CGContextSynchronize ( context);
-            CGContextRestoreGState(context);
+            //CGContextSynchronize (context);
+            CGContextRestoreGState (context);
+			[cocoaDrawingArea unlockFocus];
         }
-
 	#elif win
 		RECT rect;
 		rect. left = rect. top = 0;
@@ -263,7 +276,8 @@ void structGraphicsScreen :: v_updateWs () {
             rect.size.height = this -> d_y1DC - this -> d_y2DC;
         }
     
-        [view setNeedsDisplayInRect:rect];
+        //[view setNeedsDisplayInRect: rect];
+        [view setNeedsDisplay: YES];
     
 	#elif win
 		//clear (this); // lll
@@ -554,12 +568,12 @@ Graphics Graphics_create_pdf (void *context, int resolution,
         #else
             if (my d_macView) {            
                 [my d_macView lockFocus];
-                my d_macGraphicsContext = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
-                NSCAssert(my d_macGraphicsContext, @"nil context");
-                GuiCocoaDrawingArea *cocoaDrawingArea = (GuiCocoaDrawingArea*)my d_drawingArea -> d_widget;
+                my d_macGraphicsContext = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+                Melder_assert (my d_macGraphicsContext != NULL);
+                GuiCocoaDrawingArea *cocoaDrawingArea = (GuiCocoaDrawingArea *) my d_drawingArea -> d_widget;
                 CGContextTranslateCTM (my d_macGraphicsContext, 0, cocoaDrawingArea.bounds.size.height);
                 CGContextScaleCTM (my d_macGraphicsContext, 1.0, -1.0);
-        }
+			}
 		#endif
 	}
 	void GraphicsQuartz_exitDraw (GraphicsScreen me) {
@@ -570,7 +584,7 @@ Graphics Graphics_create_pdf (void *context, int resolution,
 			}
         #else
             if (my d_macView) {
-                CGContextSynchronize (my d_macGraphicsContext);
+                CGContextSynchronize (my d_macGraphicsContext);   // BUG: should not be needed
                 [my d_macView unlockFocus];
             }
 		#endif

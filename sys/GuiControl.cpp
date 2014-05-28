@@ -1,6 +1,6 @@
 /* GuiControl.cpp
  *
- * Copyright (C) 1993-2012 Paul Boersma, 2008 Stefan de Koninck, 2010 Franz Brausse, 2013 Tom Naughton
+ * Copyright (C) 1993-2012,2013 Paul Boersma, 2008 Stefan de Koninck, 2010 Franz Brausse, 2013 Tom Naughton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ int structGuiControl :: f_getX () {
 	#if gtk
 		return GTK_WIDGET (d_widget) -> allocation.x;
 	#elif cocoa
-		return 100;//[(NSView *) d_widget x];
+		return [(NSView *) d_widget frame]. origin. x;
 	#elif motif
 		return d_widget -> x;
 	#endif
@@ -34,7 +34,7 @@ int structGuiControl :: f_getY () {
 	#if gtk
 		return GTK_WIDGET (d_widget) -> allocation.y;
 	#elif cocoa
-		return 100;//[(NSView *) d_widget y];
+		return [(NSView *) d_widget frame]. origin. y;
 	#elif motif
 		return d_widget -> y;
 	#endif
@@ -44,7 +44,7 @@ int structGuiControl :: f_getWidth () {
 	#if gtk
 		return GTK_WIDGET (d_widget) -> allocation.width;
 	#elif cocoa
-		return 100;//[(NSView *) d_widget width];
+		return [(NSView *) d_widget frame]. size. width;
 	#elif motif
 		return d_widget -> width;
 	#endif
@@ -54,7 +54,7 @@ int structGuiControl :: f_getHeight () {
 	#if gtk
 		return GTK_WIDGET (d_widget) -> allocation.height;
 	#elif cocoa
-		return 100;//[(NSView *) d_widget height];
+		return [(NSView *) d_widget frame]. size. height;
 	#elif motif
 		return d_widget -> height;
 	#endif
@@ -101,14 +101,14 @@ void structGuiControl :: v_positionInForm (GuiObject widget, int left, int right
 		//parentHeight = GTK_WIDGET (parent -> d_widget) -> allocation.height;
 		if (left   <  0) left   += parentWidth;
 		if (right  <= 0) right  += parentWidth;
-		if (top    <  0) top    += parentHeight;
+        if (top    <  0) top    += parentHeight;
 		if (bottom <= 0) bottom += parentHeight;
 		trace ("fixed: parent width %d height %d", parentWidth, parentHeight);
 		gtk_widget_set_size_request (GTK_WIDGET (widget), right - left, bottom - top);
 		gtk_fixed_put (GTK_FIXED (parent -> d_widget), GTK_WIDGET (widget), left, top);
 	#elif cocoa
-        NSView *superView = (NSView*)parent -> d_widget;
-        NSView *widgetView = (NSView*) d_widget;
+        NSView *superView = (NSView *) parent -> d_widget;
+        NSView *widgetView = (NSView *) widget;
 		NSRect parentRect = [superView frame];
         int parentWidth = parentRect.size.width;
         int parentHeight = parentRect.size.height;
@@ -136,12 +136,24 @@ void structGuiControl :: v_positionInForm (GuiObject widget, int left, int right
 		if (bottom <= 0) bottom += parentHeight;
 		top = parentHeight - top;         // flip
 		bottom = parentHeight - bottom;   // flip
-		NSRect rect = { { left, bottom }, { right - left, top - bottom } };
-		[widgetView initWithFrame: rect];
-
-        [widgetView setAutoresizingMask:horizMask | vertMask];
-        [superView addSubview:widgetView];   // parent will retain the subview...
-        [widgetView setBounds: rect];
+        int width = right - left;
+        int height = top - bottom;
+		if ([widgetView isKindOfClass: [NSButton class]]) {
+			if (! [widgetView isKindOfClass: [NSPopUpButton class]]) {
+				/*
+				 * On Cocoa, NSButton views show up 12 pixels less wide and 5 pixels less high than their frame.
+				 * Compensate for this (undocumented?) Cocoa phenomenon.
+				 */
+				left -= 6;
+				width += 12;
+				bottom -= 5;
+				height += 5;
+			}
+		}
+        NSRect rect = NSMakeRect (left, bottom, width, height);
+        [widgetView setAutoresizingMask: horizMask | vertMask];
+        [superView addSubview: widgetView];   // parent will retain the subview...
+        [widgetView setFrame: rect];
 		[widgetView release];   // ... so we can release the item already
 	#elif motif
 		(void) parent;
@@ -177,13 +189,13 @@ void structGuiControl :: v_positionInScrolledWindow (GuiObject widget, int width
 		gtk_widget_set_size_request (GTK_WIDGET (widget), width, height);
 		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (parent -> d_widget), GTK_WIDGET (widget));
 	#elif cocoa
-        GuiCocoaScrolledWindow *scrolledWindow = (GuiCocoaScrolledWindow*)parent->d_widget;
-        NSView *widgetView = (NSView*)widget;
-        NSRect rect = NSMakeRect(0, 0, width, height);
-        [widgetView initWithFrame:rect];
-        [widgetView setBounds:rect];
-        [scrolledWindow setDocumentView:widgetView];
-        [widgetView release];   // ... so we can release the item already
+		GuiCocoaScrolledWindow *scrolledWindow = (GuiCocoaScrolledWindow *) parent -> d_widget;
+		NSView *widgetView = (NSView *) widget;
+		NSRect rect = NSMakeRect (0, 0, width, height);
+		[widgetView initWithFrame: rect];
+		[widgetView setBounds: rect];
+		[scrolledWindow setDocumentView: widgetView];
+		[widgetView release];   // ... so we can release the item already
 	#elif motif
 		(void) parent;
 		XtVaSetValues (widget, XmNwidth, width, XmNheight, height, NULL);

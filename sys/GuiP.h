@@ -2,7 +2,7 @@
 #define _GuiP_h_
 /* GuiP.h
  *
- * Copyright (C) 1993-2011,2012 Paul Boersma
+ * Copyright (C) 1993-2011,2012,2013 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,6 +43,18 @@
 void _GuiObject_position (GuiObject me, int left, int right, int top, int bottom, GuiForm parent);
 void * _GuiObject_getUserData (GuiObject me);
 void _GuiObject_setUserData (GuiObject me, void *userData);
+
+class GuiControlBlockValueChangedCallbacks {
+	private:
+		GuiControl d_control;
+	public:
+		GuiControlBlockValueChangedCallbacks (GuiControl control) : d_control (control) {
+			d_control -> d_blockValueChangedCallbacks = true;
+		}
+		~GuiControlBlockValueChangedCallbacks () {
+			d_control -> d_blockValueChangedCallbacks = false;
+		}
+};
 
 #if gtk
 	void GuiGtk_initialize ();

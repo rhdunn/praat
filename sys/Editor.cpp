@@ -211,12 +211,14 @@ void Editor_doMenuCommand (Editor me, const wchar_t *commandTitle, int narg, Sta
 /********** class Editor **********/
 
 void structEditor :: v_destroy () {
+	trace ("enter");
 	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);
 	/*
 	 * The following command must be performed before the shell is destroyed.
 	 * Otherwise, we would be forgetting dangling command dialogs here.
 	 */
 	forget (menus);
+	broadcastDestruction ();
 	if (d_windowForm) {
 		#if gtk
 			if (d_windowForm -> d_gtkWindow) {
@@ -224,13 +226,17 @@ void structEditor :: v_destroy () {
 				gtk_widget_destroy (GTK_WIDGET (d_windowForm -> d_gtkWindow));
 			}
 		#elif cocoa
+			if (d_windowForm -> d_cocoaWindow) {
+				NSWindow *cocoaWindow = d_windowForm -> d_cocoaWindow;
+				//d_windowForm -> d_cocoaWindow = NULL;
+				[cocoaWindow close];
+			}
 		#elif motif
 			if (d_windowForm -> d_xmShell) {
 				XtDestroyWidget (d_windowForm -> d_xmShell);
 			}
 		#endif
 	}
-	broadcastDestruction ();
 	forget (previousData);
 	if (d_ownData) forget (data);
 	Editor_Parent :: v_destroy ();
@@ -378,6 +384,8 @@ void structEditor :: v_do_pictureMargins (EditorCommand cmd) {
 
 static void gui_window_cb_goAway (I) {
 	iam (Editor);
+	Melder_assert (me != NULL);
+	Melder_assert (Thing_member (me, classEditor));
 	my v_goAway ();
 }
 

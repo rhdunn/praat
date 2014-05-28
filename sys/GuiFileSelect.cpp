@@ -1,6 +1,6 @@
 /* GuiFileSelect.cpp
  *
- * Copyright (C) 2010-2012 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 2010-2012,2013 Paul Boersma, 2013 Tom Naughton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "Gui.h"
+#include "GuiP.h"
 #include <locale.h>
 #ifdef _WIN32
 	#include <Shlobj.h>
@@ -52,25 +52,20 @@ SortedSetOfString GuiFileSelect_getInfileNames (GuiWindow parent, const wchar_t 
 		gtk_widget_destroy (GTK_WIDGET (dialog));
 		setlocale (LC_ALL, "C");
 	#elif cocoa
-    
-        (void) parent;
-        static structMelderDir dir;
-        if (MelderDir_isNull (& dir))   // first time?
-            Melder_getDefaultDir (& dir);
-        
-        NSOpenPanel	*openPanel = [NSOpenPanel openPanel];
-        [openPanel setTitle:[NSString stringWithUTF8String:Melder_peekWcsToUtf8(title)]];
-        [openPanel setAllowsMultipleSelection:allowMultipleFiles];
-        [openPanel setCanChooseDirectories:NO];
-        [openPanel setDirectoryURL:[NSURL fileURLWithPath:[NSString stringWithUTF8String:Melder_peekWcsToUtf8 (Melder_dirToPath (& dir))]]];
-        
-        if ([openPanel runModal] == NSFileHandlingPanelOKButton) {
-            for (NSURL *url in [openPanel URLs]) {
-                my addString (Melder_peekUtf8ToWcs ([[url path] UTF8String]));
-            }
-        }
-
-	#elif defined (macintosh)
+		(void) parent;
+		NSOpenPanel	*openPanel = [NSOpenPanel openPanel];
+		[openPanel setTitle: [NSString stringWithUTF8String: Melder_peekWcsToUtf8 (title)]];
+		[openPanel setAllowsMultipleSelection: allowMultipleFiles];
+		[openPanel setCanChooseDirectories: NO];
+		if ([openPanel runModal] == NSFileHandlingPanelOKButton) {
+			for (NSURL *url in [openPanel URLs]) {
+				structMelderFile file = { 0 };
+				Melder_8bitFileRepresentationToWcs_inline ([[url path] UTF8String], file. path);
+				my addString (file. path);
+			}
+		}
+		setlocale (LC_ALL, "en_US");
+	#elif mac
 		(void) parent;
 		OSStatus err;
 		NavDialogRef dialogRef;
@@ -103,7 +98,7 @@ SortedSetOfString GuiFileSelect_getInfileNames (GuiWindow parent, const wchar_t 
 			NavDialogDispose (dialogRef);
 		}
 		setlocale (LC_ALL, "en_US");
-	#elif defined (_WIN32)
+	#elif win
 		static OPENFILENAMEW openFileName, dummy;
 		static wchar_t fullFileName [3000+2];
 		ZeroMemory (& openFileName, sizeof (OPENFILENAMEW));
@@ -179,7 +174,18 @@ wchar_t * GuiFileSelect_getOutfileName (GuiWindow parent, const wchar_t *title, 
 		gtk_widget_destroy (GTK_WIDGET (dialog));
 		setlocale (LC_ALL, "C");
 	#elif cocoa
-	#elif defined (macintosh)
+		(void) parent;
+		NSSavePanel	*savePanel = [NSSavePanel savePanel];
+		[savePanel setTitle: [NSString stringWithUTF8String: Melder_peekWcsToUtf8 (title)]];
+		[savePanel setNameFieldStringValue: [NSString stringWithUTF8String: Melder_peekWcsToUtf8 (defaultName)]];
+		if ([savePanel runModal] == NSFileHandlingPanelOKButton) {
+			const char *outfileName_utf8 = [[[savePanel URL] path] UTF8String];
+			structMelderFile file = { 0 };
+			Melder_8bitFileRepresentationToWcs_inline (outfileName_utf8, file. path);
+			outfileName = Melder_wcsdup (file. path);
+		}
+		setlocale (LC_ALL, "en_US");
+	#elif mac
 		(void) parent;
 		const wchar_t *lastSlash = wcsrchr (defaultName, Melder_DIRECTORY_SEPARATOR);
 		OSStatus err;
@@ -227,7 +233,7 @@ wchar_t * GuiFileSelect_getOutfileName (GuiWindow parent, const wchar_t *title, 
 			NavDialogDispose (dialogRef);
 		}
 		setlocale (LC_ALL, "en_US");
-	#elif defined (_WIN32)
+	#elif win
 		OPENFILENAMEW openFileName;
 		static wchar_t customFilter [100+2];
 		static wchar_t fullFileName [300+2];
@@ -274,7 +280,23 @@ wchar_t * GuiFileSelect_getDirectoryName (GuiWindow parent, const wchar_t *title
 		gtk_widget_destroy (GTK_WIDGET (dialog));
 		setlocale (LC_ALL, "C");
 	#elif cocoa
-	#elif defined (macintosh)
+		(void) parent;
+		NSOpenPanel	*openPanel = [NSOpenPanel openPanel];
+		[openPanel setTitle: [NSString stringWithUTF8String: Melder_peekWcsToUtf8 (title)]];
+		[openPanel setAllowsMultipleSelection: NO];
+		[openPanel setCanChooseDirectories: YES];
+		[openPanel setCanChooseFiles: NO];
+		[openPanel setPrompt: @"Choose"];
+		if ([openPanel runModal] == NSFileHandlingPanelOKButton) {
+			for (NSURL *url in [openPanel URLs]) {
+				const char *directoryName_utf8 = [[url path] UTF8String];
+				structMelderDir dir = { 0 };
+				Melder_8bitFileRepresentationToWcs_inline (directoryName_utf8, dir. path);
+				directoryName = Melder_wcsdup (dir. path);
+			}
+		}
+		setlocale (LC_ALL, "en_US");
+	#elif mac
 		(void) parent;
 		OSStatus err;
 		NavDialogRef dialogRef;
@@ -306,7 +328,7 @@ wchar_t * GuiFileSelect_getDirectoryName (GuiWindow parent, const wchar_t *title
 			NavDialogDispose (dialogRef);
 		}
 		setlocale (LC_ALL, "en_US");
-	#elif defined (_WIN32)
+	#elif win
 		static wchar_t fullFileName [3000+2];
 		static bool comInited = false;
 		if (! comInited) {

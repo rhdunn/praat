@@ -192,7 +192,7 @@ GuiButton GuiButton_create (GuiForm parent, int left, int right, int top, int bo
 //			parent -> shell -> cancelButton = parent -> cancelButton = my widget;
 //		}
 	#elif cocoa
-        GuiCocoaButton *button = [GuiCocoaButton alloc];
+		GuiCocoaButton *button = [[GuiCocoaButton alloc] init];
 		my d_widget = (GuiObject) button;
 		my v_positionInForm (my d_widget, left, right, top, bottom, parent);
 		[button setUserData: me];
@@ -200,14 +200,24 @@ GuiButton GuiButton_create (GuiForm parent, int left, int right, int top, int bo
 		[button setBezelStyle: NSRoundedBezelStyle];
 		[button setImagePosition: NSNoImage];
 		[button setBordered: YES];
+		static NSFont *theButtonFont;
+		if (! theButtonFont) {
+			theButtonFont = [NSFont systemFontOfSize: 13.0];
+		}
+		[button setFont: theButtonFont];
 		[button setTitle: (NSString *) Melder_peekWcsToCfstring (buttonText)];
 		[button setTarget: (id) my d_widget];
 		[button setAction: @selector (_guiCocoaButton_activateCallback:)];
-    
-        if (flags & GuiButton_DEFAULT || flags & GuiButton_ATTRACTIVE) {
-            [button setKeyEquivalent:@"\r"];
-        }
-
+		//[button setAutoresizingMask: NSViewNotSizable];
+		if (flags & GuiButton_DEFAULT) {
+			[button setKeyEquivalent: @"\r"];
+		}
+		if (flags & GuiButton_ATTRACTIVE) {
+			//[button setKeyEquivalent: @"\r"];   // slow!
+			[button highlight: YES];   // lasts only till it's clicked!
+			//[button setBezelStyle: NSThickerSquareBezelStyle];
+			//[button setFont: [NSFont boldSystemFontOfSize: 14.0]];
+		}
 	#elif win
 		my d_widget = _Gui_initializeWidget (xmPushButtonWidgetClass, parent -> d_widget, buttonText);
 		_GuiObject_setUserData (my d_widget, me);
@@ -248,7 +258,6 @@ GuiButton GuiButton_create (GuiForm parent, int left, int right, int top, int bo
 	if (flags & GuiButton_INSENSITIVE) {
 		my f_setSensitive (false);
 	}
-
 	return me;
 }
 

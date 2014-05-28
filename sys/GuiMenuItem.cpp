@@ -198,19 +198,21 @@ GuiMenuItem GuiMenu_addItem (GuiMenu menu, const wchar_t *title, long flags,
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu -> d_widget), GTK_WIDGET (my d_widget));
 		_GuiObject_setUserData (my d_widget, me);
 	#elif cocoa
-        NSString *string = (NSString *) Melder_peekWcsToCfstring (title);
+		NSString *string = (NSString *) Melder_peekWcsToCfstring (title);
 		GuiCocoaMenuItem *menuItem = [[GuiCocoaMenuItem alloc]
 			initWithTitle:string
 			action: NULL
 			keyEquivalent: @""];
-        my d_widget = menuItem;
+		//Melder_assert ([string retainCount] == 2 || [string retainCount] == -1);   // the menu item retains the string (assertion can fail on 10.6)
+		trace ("string retain count = %d", (int) [string retainCount]);
+		my d_widget = menuItem;
 		trace ("installing item in GuiMenu %p (NSMenu %p); retain count = %d", menu, menu -> d_cocoaMenu, [menuItem retainCount]);
 		[menu -> d_cocoaMenu  addItem: (NSMenuItem *) my d_widget];   // the menu will retain the item...
 		trace ("installed item in GuiMenu %p (NSMenu %p); retain count = %d", menu, menu -> d_cocoaMenu, [menuItem retainCount]);
 		trace ("release the item");
 		[menuItem release];   // ... so we can release the item already
 		trace ("set user data");
-		[menuItem setUserData:me];
+		[menuItem setUserData: me];
 	#elif motif
 		my d_widget = XtVaCreateManagedWidget (Melder_peekWcsToUtf8 (title),
 			toggle ? xmToggleButtonGadgetClass : xmPushButtonGadgetClass, menu -> d_widget, NULL);
@@ -227,7 +229,7 @@ GuiMenuItem GuiMenu_addItem (GuiMenu menu, const wchar_t *title, long flags,
 		#if gtk
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (my d_widget), TRUE);
 		#elif cocoa
-            [menuItem setState:NSOnState];
+			[menuItem setState: NSOnState];
 		#elif motif
 			XmToggleButtonGadgetSetState (my d_widget, True, False);
 		#endif
@@ -267,19 +269,28 @@ GuiMenuItem GuiMenu_addItem (GuiMenu menu, const wchar_t *title, long flags,
 					ag, key, modifiers, GTK_ACCEL_VISIBLE);
 
 		#elif cocoa
-        
-            NSUInteger mask = 0;
-            if (flags & GuiMenu_COMMAND) mask |= NSCommandKeyMask;
-            if (flags & GuiMenu_SHIFT) mask |= NSShiftKeyMask;
-            if (flags & GuiMenu_OPTION) mask |= NSAlternateKeyMask;
-            [menuItem setKeyEquivalentModifierMask:mask];
-            [menuItem setKeyEquivalent:[NSString stringWithFormat:@"%c", accelerator]];
-
+			accelerator = tolower (accelerator);   // otherwise, a Shift key is introduced in the mask
+			NSUInteger mask = 0;
+			if (flags & GuiMenu_COMMAND) mask |= NSCommandKeyMask;
+			if (flags & GuiMenu_SHIFT)   mask |= NSShiftKeyMask;
+			if (flags & GuiMenu_OPTION)  mask |= NSAlternateKeyMask;
+			[menuItem setKeyEquivalentModifierMask: mask];
+			if (accelerator > 0 && accelerator < 32) {
+				static unichar acceleratorKeys [] = { 0,
+					NSLeftArrowFunctionKey, NSRightArrowFunctionKey, NSUpArrowFunctionKey, NSDownArrowFunctionKey, NSPauseFunctionKey, NSDeleteFunctionKey, NSInsertFunctionKey, NSBackspaceCharacter,
+					NSTabCharacter, NSNewlineCharacter, NSHomeFunctionKey, NSEndFunctionKey, NSCarriageReturnCharacter, NSPageUpFunctionKey, NSPageDownFunctionKey, 27,
+					NSF1FunctionKey, NSF2FunctionKey, NSF3FunctionKey, NSF4FunctionKey, NSF5FunctionKey, NSF6FunctionKey,
+					NSF7FunctionKey, NSF8FunctionKey, NSF9FunctionKey, NSF10FunctionKey, NSF11FunctionKey, NSF12FunctionKey,
+					0, 0, 0 };
+				[menuItem   setKeyEquivalent: [NSString   stringWithCharacters: & acceleratorKeys [accelerator]   length: 1]];
+			} else {
+				[menuItem setKeyEquivalent: [NSString stringWithFormat: @"%c", accelerator]];
+			}
 		#elif motif
 			int modifiers = 0;
 			if (flags & GuiMenu_COMMAND) modifiers |= _motif_COMMAND_MASK;
-			if (flags & GuiMenu_SHIFT) modifiers |= _motif_SHIFT_MASK;
-			if (flags & GuiMenu_OPTION) modifiers |= _motif_OPTION_MASK;
+			if (flags & GuiMenu_SHIFT)   modifiers |= _motif_SHIFT_MASK;
+			if (flags & GuiMenu_OPTION)  modifiers |= _motif_OPTION_MASK;
 			if (accelerator > 0 && accelerator < 32) {
 				if (my d_widget -> shell) {
 					my d_widget -> shell -> motiff.shell.lowAccelerators [modifiers] |= 1 << accelerator;
@@ -388,6 +399,8 @@ void structGuiMenuItem :: f_check (bool check) {
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (d_widget), check);
 		d_callbackBlocked = false;
 	#elif cocoa
+		GuiCocoaMenuItem *item = (GuiCocoaMenuItem*)d_widget;
+		[item   setState: check];
 	#elif motif
 		XmToggleButtonGadgetSetState (d_widget, check, False);
 	#endif

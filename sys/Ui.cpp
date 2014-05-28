@@ -385,6 +385,7 @@ void structUiForm :: v_destroy () {
 	for (int ifield = 1; ifield <= numberOfFields; ifield ++)
 		forget (field [ifield]);
 	if (d_dialogForm) {
+		trace ("invoking button title %ls", invokingButtonTitle);
 		GuiObject_destroy (d_dialogForm -> d_widget);   // BUG: make sure this destroys the shell
 	}
 	Melder_free (invokingButtonTitle);
@@ -492,8 +493,9 @@ static void UiForm_okOrApply (I, GuiButton button, int hide) {
 						UiHistory_write_expandQuotes (field -> strings [field -> integerValue]);
 						UiHistory_write (L"\"");
 					} break; case UI_COLOUR: {
-						UiHistory_write (L", ");
+						UiHistory_write (L", \"");
 						UiHistory_write (Graphics_Colour_name (field -> colourValue));
+						UiHistory_write (L"\"");
 					}
 				}
 			}

@@ -1,6 +1,6 @@
 /* GuiOptionMenu.cpp
  *
- * Copyright (C) 1993-2012 Paul Boersma, 2007 Stefan de Konink, 2013 Tom Naughton
+ * Copyright (C) 1993-2012,2013 Paul Boersma, 2007 Stefan de Konink, 2013 Tom Naughton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ Thing_implement (GuiOptionMenu, GuiControl, 0);
         
         forget (my d_options);
 		forget (me);   
-		Melder_casual ("deleting an option menu");
+		trace ("deleting an option menu");
 		[super dealloc];
 	}
 	- (GuiThing) userData {
@@ -91,7 +91,7 @@ void structGuiOptionMenu :: f_init (GuiForm parent, int left, int right, int top
 		GTK_WIDGET_UNSET_FLAGS (d_widget, GTK_CAN_DEFAULT);
 	#elif cocoa
     
-        GuiCocoaOptionMenu *optionMenu = [GuiCocoaOptionMenu alloc];
+        GuiCocoaOptionMenu *optionMenu = [[GuiCocoaOptionMenu alloc] init];
 
         d_widget = (GuiObject) optionMenu;
 		v_positionInForm (d_widget, left, right, top, bottom, parent);
