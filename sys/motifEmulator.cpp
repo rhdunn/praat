@@ -1,6 +1,6 @@
 /* motifEmulator.cpp
  *
- * Copyright (C) 1993-2011 Paul Boersma
+ * Copyright (C) 1993-2011,2012 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,12 +48,6 @@
  *              (Apple's special number for delayed menu attachment); needed for stand-alone Praat demo window
  * pb 2011/04/06 C++
  */
-#if defined (macintosh) && useCarbon || defined (_WIN32)
-
-/* The Motif emulator for Macintosh and Windows. */
-
-#define PRAAT_WINDOW_CLASS_NUMBER  1
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -63,6 +57,15 @@
 #include "melder.h"
 #include "GuiP.h"
 #include "machine.h"
+
+static void (*theOpenDocumentCallback) (MelderFile file);
+static int (*theQuitApplicationCallback) (void);
+
+#if defined (macintosh) && useCarbon || defined (_WIN32)
+
+/* The Motif emulator for Macintosh and Windows. */
+
+#define PRAAT_WINDOW_CLASS_NUMBER  1
 
 #if win
 	#define SCROLL32  1
@@ -207,8 +210,6 @@ void _Gui_callCallbacks (GuiObject w, XtCallbackList *callbacks, XtPointer call)
 	#define MAXIMUM_NUMBER_OF_MENUS  32767
 #endif
 static GuiObject theMenus [1+MAXIMUM_NUMBER_OF_MENUS];   /* We can freely use and reuse these menu ids */
-static void (*theOpenDocumentCallback) (MelderFile file);
-static int (*theQuitApplicationCallback) (void);
 #if win
 	static int theCommandShow = False;   /* Last argument of WinMain. */
 	static wchar_t theApplicationName [100], theWindowClassName [100], theDrawingAreaClassName [100], theApplicationClassName [100];
@@ -365,12 +366,12 @@ GuiObject _Gui_initializeWidget (int widgetClass, GuiObject parent, const wchar_
 	if (MEMBER (me, Shell)) {
 		my shell = me;
 	} else {
-		my shell = my parent -> shell;
+		my shell = parent ? parent -> shell : NULL;
 		#if mac
 			/*
 			 * I am in the same shell as my parent, so I'll inherit my parent's Macintosh WindowRef.
 			 */
-			my macWindow = parent -> macWindow;
+			my macWindow = parent ? parent -> macWindow : NULL;
 		#endif
 	}
 
@@ -469,8 +470,8 @@ GuiObject _Gui_initializeWidget (int widgetClass, GuiObject parent, const wchar_
 				my height = 10;
 			}
 		} break; default: {
-			my width = parent -> width;
-			my height = parent -> height;
+			my width = parent ? parent -> width : 0;
+			my height = parent ? parent -> height : 0;
 		}
 	}
 
@@ -496,7 +497,7 @@ GuiObject _Gui_initializeWidget (int widgetClass, GuiObject parent, const wchar_
 
 	#if mac
 		/* Determine enclosing rectangle in macwindow co-ordinates. */
-		if (! MEMBER (me, Shell) && ! MEMBER (my parent, Shell)) {
+		if (! MEMBER (me, Shell) && my parent && ! MEMBER (my parent, Shell)) {
 			my rect.left = parent -> rect.left + my x;
 			my rect.top = parent -> rect.top + my y;
 		}
@@ -766,7 +767,7 @@ static void NativeScrollBar_set (GuiObject me) {
 		#if SCROLL32
 			if (my maximum == my minimum + my sliderSize) {
 				scrollInfo. nMin = 0;
-				scrollInfo. nMax = 1;
+				scrollInfo. nMax = 0;
 				scrollInfo. nPage = 1;
 				scrollInfo. nPos = 0;
 			} else {
@@ -796,6 +797,7 @@ static void NativeMenuItem_delete (GuiObject me) {
 	#if win
 		RemoveMenu (my nat.entry.handle, my nat.entry.id, MF_BYCOMMAND);
 	#elif mac
+		trace ("begin");
 		GuiObject subview;
 		DeleteMenuItem (my nat.entry.handle, my nat.entry.item);
 		for (subview = my parent -> firstChild; subview; subview = subview -> nextSibling) {
@@ -876,6 +878,7 @@ static void NativeMenuItem_setSensitive (GuiObject me) {
 	#if win
 		if (! my managed) return;
 		EnableMenuItem (my nat.entry.handle, my nat.entry.id, MF_BYCOMMAND | ( my insensitive ? MF_GRAYED : MF_ENABLED ));
+		//DrawMenuBar (my shell -> window);
 	#elif mac
 		if (! my nat.entry.item) return;
 		if (my insensitive) DisableMenuItem (my nat.entry.handle, my nat.entry.item);
@@ -1041,7 +1044,8 @@ static void _GuiNativizeWidget (GuiObject me) {
 				 * All other menu bars are at the top of their own windows.
 				 * This is Motif style, and only works well for Macintoshes with large screens.
 				 */
-				if ((GuiObject) GetWRefCon (my macWindow) == theApplicationShell && theMenuBar == NULL) {
+				if (/*(GuiObject) GetWRefCon (my macWindow) == theApplicationShell && theMenuBar == NULL*/ my parent == NULL) {
+					//Melder_casual ("Creating the top menu bar.");
 					theMenuBar = me;
 				} else {
 					my widgetClass = xmRowColumnWidgetClass;   /* !!!!!!!!!!!!! */
@@ -1168,7 +1172,7 @@ static void _GuiNativizeWidget (GuiObject me) {
 				my window = CreateWindow (PROGRESS_CLASS, _GuiWin_expandAmpersands (my name), WS_CHILD | WS_CLIPSIBLINGS,
 					my x, my y, my width, my height, my parent -> window, (HMENU) 1, theGui.instance, NULL);
 				SetWindowLongPtr (my window, GWLP_USERDATA, (LONG_PTR) me);
-				SendMessage (my window, PBM_SETRANGE, (WPARAM) 0, (LPARAM) MAKELONG (0, 1000));
+				SendMessage (my window, PBM_SETRANGE, (WPARAM) 0, (LPARAM) MAKELONG (0, 10000));
 			#endif
 		} break;
 		case xmScrollBarWidgetClass: {
@@ -1663,11 +1667,6 @@ static void _motif_setValues (GuiObject me, va_list arg) {
 			 * We just hope now that X Motif does not look into the XmNscrollingPolicy resource after this...
 			 */
 		} break;
-		case XmNiconName:
-			Melder_assert (MEMBER (me, Shell));
-			text = va_arg (arg, char *);
-			/* Ignore. */
-			break;
 		case XmNincrement:
 			Melder_assert (MEMBER (me, ScrollBar));
 			my increment = va_arg (arg, int);
@@ -1802,9 +1801,6 @@ static void _motif_setValues (GuiObject me, va_list arg) {
 			break;
 		case XmNtopPosition: my topPosition = va_arg (arg, int);
 			attach = True;
-			break;
-		case XmNtraversalOn:
-			(void) va_arg (arg, int);
 			break;
 		case XmNuserData:
 			my userData = va_arg (arg, void *);
@@ -1988,7 +1984,7 @@ void _Gui_manageScrolledWindow (GuiObject me) {
 static void _motif_manage (GuiObject me) {
 	GuiObject child;
 	int x = 2, y = 2;
-	int width = 0, height = 0, dw, dh;
+	int width = 0, height = 0, dw = 0, dh = 0;
 	#if mac
 		GuiObject helpMenu = NULL;
 	#endif
@@ -2003,7 +1999,7 @@ static void _motif_manage (GuiObject me) {
 	 */
 
 	for (child = my firstChild; child; child = child -> nextSibling) {
-		if (child -> managed) {
+		if (child -> managed && ! MEMBER (child, Shell)) {
 			int dx = 0, dy = 0;   /* By default, the child does not move. */
 			if (MEMBER (me, RowColumn)) {
 				#if mac
@@ -2036,6 +2032,7 @@ static void _motif_manage (GuiObject me) {
 			if (MEMBER3 (me, Shell, Form, BulletinBoard)) {
 				/* These widgets grow with their children. */
 				dw = width - my width, dh = height - my height;
+				//dw = 0, dh = 0;   // ppgb 20121121
 				if (dw < 0) dw = 0;
 				if (dh < 0) dh = 0;
 			} else if (MEMBER (me, RowColumn)) {
@@ -2107,8 +2104,8 @@ static void _motif_manage (GuiObject me) {
 	/* If I have grown, I have to notify my parent. */
 
 	if (! MEMBER (me, Shell)) {
-		if (MEMBER4 (my parent, RowColumn, Form, BulletinBoard, Shell)) _motif_manage (my parent);
-		else if (MEMBER (my parent, ScrolledWindow)) _Gui_manageScrolledWindow (my parent);
+		//if (MEMBER4 (my parent, RowColumn, Form, BulletinBoard, Shell)) _motif_manage (my parent);
+		if (MEMBER (my parent, ScrolledWindow)) _Gui_manageScrolledWindow (my parent);
 	}
 }
 
@@ -2131,8 +2128,6 @@ void XtAddCallback (GuiObject me, int kind, XtCallbackProc proc, XtPointer closu
 		case XmNactivateCallback:
 			my activateCallback = proc; my activateClosure = closure;
 		break;
-		case XmNdecrementCallback:
-		break;
 		case XmNdestroyCallback:
 			my destroyCallback = proc; my destroyClosure = closure;
 		break;
@@ -2140,15 +2135,9 @@ void XtAddCallback (GuiObject me, int kind, XtCallbackProc proc, XtPointer closu
 			Melder_assert (my widgetClass == xmScrollBarWidgetClass);
 			xt_addCallback (& my motiff.scrollBar.dragCallbacks, proc, closure);
 		break;
-		case XmNincrementCallback:
-		break;
 		case XmNmoveCallback:
 			Melder_assert (my widgetClass == xmDrawingAreaWidgetClass);
 			xt_addCallback (& my motiff.drawingArea.moveCallbacks, proc, closure);
-		break;
-		case XmNpageIncrementCallback:
-		break;
-		case XmNpageDecrementCallback:
 		break;
 		case XmNvalueChangedCallback:
 			if (my widgetClass == xmScrollBarWidgetClass)
@@ -2271,11 +2260,9 @@ void XtDestroyWidget (GuiObject me) {
 		} break;
 		case xmScaleWidgetClass: {
 			#if win
-				DestroyWindow (my window);
+				_GuiWinScale_destroy (me);
 			#elif mac
-				_GuiMac_clipOnParent (me);
-				EraseRect (& my rect);
-				GuiMac_clipOff ();
+				_GuiMacScale_destroy (me);
 			#endif
 		} break;
 		case xmShellWidgetClass: {
@@ -2363,10 +2350,19 @@ void XtDestroyWidget (GuiObject me) {
 			}
 		} break;
 		case xmScrollBarWidgetClass: {
-			_GuiNativeControl_destroy (me);
+			#if win
+				_GuiWinScrollBar_destroy (me);
+			#elif mac
+				_GuiMacScrollBar_destroy (me);
+			#endif
 		} break;
 		case xmScrolledWindowWidgetClass: {
 			/* The scroll bars will be destroyed automatically because they are my children. */
+			#if win
+				_GuiWinScrolledWindow_destroy (me);
+			#elif mac
+				_GuiMacScrolledWindow_destroy (me);
+			#endif
 		} break;
 		case xmSeparatorWidgetClass: {
 			if (my inMenu) {
@@ -2427,7 +2423,7 @@ void XtMapWidget (GuiObject me) {
 	switch (my widgetClass) {
 		case xmShellWidgetClass:
 			#if win
-				ShowWindow (my window, me == theApplicationShell ? theCommandShow : theCommandShow);
+				ShowWindow (my window, theCommandShow);
 				//UpdateWindow (my window);
 			#elif mac
 				ShowWindow (my nat.window.ptr);
@@ -2442,6 +2438,7 @@ static void mapWidget (GuiObject me) {
 	GuiObject child;
 	Melder_assert (my widgetClass != xmPulldownMenuWidgetClass);
 	if (my inMenu) {
+		trace ("showing a menu item");
 		#if win
 			int position = NativeMenuItem_getPosition (me);
 			switch (my widgetClass) {
@@ -2492,8 +2489,10 @@ static void mapWidget (GuiObject me) {
 			 * Set text, sensitivity, submenu. BUGS: should also set toggle state and accelerator text.
 			 */
 			if (my widgetClass == xmSeparatorWidgetClass) {
+				trace ("inserting Carbon menu separator at position %d", item);
 				InsertMenuItem (my nat.entry.handle, (unsigned char *) "\001-", my nat.entry.item - 1);
 			} else {
+				trace ("inserting Carbon menu item \"%ls\" at position %d", my name, item);
 				InsertMenuItem (my nat.entry.handle, (unsigned char *) "\001 ", my nat.entry.item - 1);
 				SetMenuItemTextWithCFString (my nat.entry.handle, my nat.entry.item, (CFStringRef) Melder_peekWcsToCfstring (my name));
 				if (my insensitive) DisableMenuItem (my nat.entry.handle, my nat.entry.item);
@@ -2522,7 +2521,7 @@ static void mapWidget (GuiObject me) {
 		#endif
 		case xmShellWidgetClass: {
 			#if win
-				ShowWindow (my window, me == theApplicationShell ? theCommandShow : theCommandShow);
+				ShowWindow (my window, theCommandShow);
 			#elif mac
 				SelectWindow (my nat.window.ptr);
 				ShowWindow (my nat.window.ptr);
@@ -2662,13 +2661,19 @@ void XtSetSensitive (GuiObject me, Boolean value) {
 					if (value) {
 						#if mac
 							EnableMenuItem (my subMenuId -> nat.menu.handle, 0);
+						#elif win
+							NativeMenuItem_setSensitive (my subMenuId);
 						#endif
 					} else {
 						#if mac
 							DisableMenuItem (my subMenuId -> nat.menu.handle, 0);
+						#elif win
+							NativeMenuItem_setSensitive (my subMenuId);
 						#endif
 					}
-					#if mac
+					#if win
+						DrawMenuBar (my shell -> window);
+					#elif mac
 						DrawMenuBar ();
 					#endif
 				}
@@ -2821,7 +2826,7 @@ void XtUnmanageChildren (GuiObjectList children, Cardinal num_children) {
 			GetCurrentProcess (& psn);
 			SetFrontProcess (& psn);
 			AEGetParamPtr (theAppleEvent, 1, typeUnicodeText, NULL, NULL, 0, & actualSize);
-			buffer = (wchar *) malloc (actualSize);
+			buffer = (wchar_t *) malloc (actualSize);
 			AEGetParamPtr (theAppleEvent, 1, typeUnicodeText, NULL, & buffer [0], actualSize, NULL);
 			if (theUserMessageCallbackW)
 				theUserMessageCallbackW (buffer);
@@ -2834,7 +2839,7 @@ void XtUnmanageChildren (GuiObjectList children, Cardinal num_children) {
 	static LRESULT CALLBACK windowProc (HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 #endif
 
-GuiObject GuiInitialize (const char *name, unsigned int *argc, char **argv)
+void GuiInitialize (const char *name, unsigned int *argc, char **argv)
 {
 	(void) argc;
 	#if mac
@@ -2912,15 +2917,18 @@ GuiObject GuiInitialize (const char *name, unsigned int *argc, char **argv)
 		theCommandShow = atoi (argv [2]);
 	}
 	#endif
-	return theApplicationShell = XmCreateShell (NULL, name, NULL, 0);
 }
 
-GuiObject GuiAppInitialize (const char *name,
+void GuiAppInitialize (const char *name,
 	void *dum2, int dum3, unsigned int *argc, char **argv, void *dum4, void *dum5)
 {
 	(void) dum4;
 	(void) dum5;
-	return GuiInitialize (name, argc, argv);
+	GuiInitialize (name, argc, argv);
+}
+
+void GuiApp_setApplicationShell (GuiObject shell) {
+	theApplicationShell = shell;
 }
 
 GuiObject XtVaCreateManagedWidget (const char *name, int widgetClass, GuiObject parent, ...) {
@@ -2959,7 +2967,6 @@ void XtVaGetValues (GuiObject me, ...) {
 		case XmNheight: *va_arg (arg, int *) = my height; break;
 		case XmNuserData: *va_arg (arg, void **) = my userData; break;
 		case XmNtitle:
-		case XmNiconName:
 			Melder_assert (my widgetClass == xmShellWidgetClass);
 			#if mac
 				GetWTitle (my nat.window.ptr, ptext);
@@ -3406,7 +3413,9 @@ void XmUpdateDisplay (GuiObject displayDummy) {
 					QDFlushPortBuffer (GetWindowPort (shell -> nat.window.ptr), updateRegion);
 				#endif
 				DisposeRgn (updateRegion);
-				GuiWindow_drain (shell);
+				QDFlushPortBuffer (GetWindowPort (shell -> nat.window.ptr), NULL);
+				static Rect bounds = { -32768, -32768, 32767, 32767 };
+				QDAddRectToDirtyRegion (GetWindowPort (shell -> nat.window.ptr), & bounds);
 			}
 		#endif
 	}
@@ -3661,10 +3670,8 @@ static GuiObject _motif_findDrawingArea (GuiObject me) {
 }
 
 static int _motif_shell_processKeyboardEquivalent (GuiObject shell, unsigned char kar, int modifiers, EventRecord *event) {
-	WindowPtr macWindow;
+	WindowPtr macWindow = shell ? shell -> nat.window.ptr : NULL;
 	int imenu;
-	if (! shell) return 0;
-	macWindow = shell -> nat.window.ptr;
 	/*
 	 * If the user presses Command-?, i.e. the Command key plus the Shift key plus the "/?" key,
 	 * Macintosh sends us the "/" character instead of the "?" character. Fix this.
@@ -3682,6 +3689,7 @@ static int _motif_shell_processKeyboardEquivalent (GuiObject shell, unsigned cha
 	 * These bytes are above 128, except Option-Command-I and Option-Command-N, which give 94 and 126 instead,
 	 * but since these are shifted characters ("^" and "~"), there will be no confusion. So we fix it all.
 	 */
+	//Melder_casual ("Keyboard shortcut %d to shell %ld", (int) kar, shell);
 	if (modifiers == (_motif_COMMAND_MASK | _motif_OPTION_MASK)) {
 		if (modifiers & _motif_SHIFT_MASK) {
 			/* Ignore the triple modifiers! */
@@ -3724,7 +3732,8 @@ static void _motif_processKeyboardEquivalent (unsigned char kar, int modifiers, 
 	 * If that fails, try to send the key command to the application shell.
 	 */
 	if (! _motif_shell_processKeyboardEquivalent ((GuiObject) GetWRefCon (FrontWindow ()), kar, modifiers, event))
-		_motif_shell_processKeyboardEquivalent (theApplicationShell, kar, modifiers, event);
+		if (! _motif_shell_processKeyboardEquivalent (theApplicationShell, kar, modifiers, event))
+			_motif_shell_processKeyboardEquivalent (NULL, kar, modifiers, event);
 }
 
 static bool _motif_processKeyDownEvent (EventHandlerCallRef nextHandler, EventRef eventRef, EventRecord *event) {
@@ -3777,7 +3786,7 @@ static bool _motif_processKeyDownEvent (EventHandlerCallRef nextHandler, EventRe
 			/*
 			 * First test for keyboard shortcut.
 			 */
-			if (shell && (shell -> motiff.shell.lowAccelerators [modifiers] & 1 << GuiMenu_ESCAPE)) {
+			if (shell && (shell -> motiff.shell.lowAccelerators [modifiers] & 1 << GuiMenu_ESCAPE) || (theGuiTopLowAccelerators [modifiers] & 1 << GuiMenu_ESCAPE)) {
 				_motif_processKeyboardEquivalent (GuiMenu_ESCAPE, modifiers, event);
 				return true;
 			}
@@ -3801,7 +3810,7 @@ static bool _motif_processKeyDownEvent (EventHandlerCallRef nextHandler, EventRe
 			/*
 			 * First test for keyboard shortcut.
 			 */
-			if (shell && (shell -> motiff.shell.lowAccelerators [modifiers] & 1 << GuiMenu_TAB)) {
+			if (shell && (shell -> motiff.shell.lowAccelerators [modifiers] & 1 << GuiMenu_TAB) || (theGuiTopLowAccelerators [modifiers] & 1 << GuiMenu_TAB)) {
 				_motif_processKeyboardEquivalent (GuiMenu_TAB, modifiers, event);
 				return true;
 			}
@@ -3812,7 +3821,7 @@ static bool _motif_processKeyDownEvent (EventHandlerCallRef nextHandler, EventRe
 				GuiObject nextTextWidget = _motif_getNextTextWidget (shell, text, modifiers & _motif_SHIFT_MASK);
 				if (nextTextWidget != NULL) {
 					_GuiText_setTheTextFocus (nextTextWidget);
-					GuiText_setSelection (nextTextWidget, 0, 10000000);
+					((GuiText) nextTextWidget -> userData) -> f_setSelection (0, 10000000);
 					return true;
 				}
 			}
@@ -4462,7 +4471,7 @@ modifiers & _motif_SHIFT_MASK ? " shift" : "", message -> message == WM_KEYDOWN 
 				GuiObject nextTextWidget = _motif_getNextTextWidget (my shell, me, GetKeyState (VK_SHIFT) < 0);
 				if (nextTextWidget != NULL) {
 					_GuiText_setTheTextFocus (nextTextWidget);
-					GuiText_setSelection (nextTextWidget, 0, 10000000);
+					((GuiText) nextTextWidget -> userData) -> f_setSelection (0, 10000000);
 					return;
 				}
 			}
@@ -4807,11 +4816,13 @@ void GuiMainLoop () {
 		theUserMessageCallbackW = userMessageCallback;
 	}
 #endif
+#endif
+
 void Gui_setOpenDocumentCallback (void (*openDocumentCallback) (MelderFile file)) {
 	theOpenDocumentCallback = openDocumentCallback;
 }
 void Gui_setQuitApplicationCallback (int (*quitApplicationCallback) (void)) {
 	theQuitApplicationCallback = quitApplicationCallback;
 }
-#endif
+
 /* End of file motifEmulator.cpp */

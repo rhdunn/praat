@@ -1,6 +1,6 @@
 /* Thing.cpp
  *
- * Copyright (C) 1992-2011 Paul Boersma
+ * Copyright (C) 1992-2012 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,10 +25,10 @@ static long theTotalNumberOfThings;
 
 void structThing :: v_info ()
 {
-	MelderInfo_writeLine2 (L"Object type: ", Thing_className (this));
-	MelderInfo_writeLine2 (L"Object name: ", this -> name ? this -> name : L"<no name>");
+	MelderInfo_writeLine (L"Object type: ", Thing_className (this));
+	MelderInfo_writeLine (L"Object name: ", this -> name ? this -> name : L"<no name>");
 	time_t today = time (NULL);
-	MelderInfo_writeLine2 (L"Date: ", Melder_peekUtf8ToWcs (ctime (& today)));   /* Includes a newline. */
+	MelderInfo_writeLine (L"Date: ", Melder_peekUtf8ToWcs (ctime (& today)));   /* Includes a newline. */
 }
 
 /*
@@ -45,10 +45,11 @@ struct structClassInfo theClassInfo_Thing = {
 };
 ClassInfo classThing = & theClassInfo_Thing;
 
-const wchar * Thing_className (Thing me) { return my classInfo -> className; }
+const wchar_t * Thing_className (Thing me) { return my classInfo -> className; }
 
 Any _Thing_new (ClassInfo classInfo_) {
 	Thing me = (Thing) classInfo_ -> _new ();
+	trace ("created %ls", classInfo_ -> className);
 	theTotalNumberOfThings += 1;
 	my classInfo = classInfo_;
 	Melder_assert (my name == NULL);   // check that _new called calloc
@@ -81,7 +82,7 @@ long Thing_listReadableClasses (void) {
 	MelderInfo_open ();
 	for (long iclass = 1; iclass <= theNumberOfReadableClasses; iclass ++) {
 		ClassInfo klas = theReadableClasses [iclass];
-		MelderInfo_writeLine3 (Melder_integer (klas -> sequentialUniqueIdOfReadableClass), L"\t", klas -> className);
+		MelderInfo_writeLine (Melder_integer (klas -> sequentialUniqueIdOfReadableClass), L"\t", klas -> className);
 	}
 	MelderInfo_close ();
 	return theNumberOfReadableClasses;
@@ -93,16 +94,16 @@ static struct {
 	const wchar_t *otherName;
 } theAliases [1 + 100];
 
-void Thing_recognizeClassByOtherName (ClassInfo readableClass, const wchar *otherName) {
+void Thing_recognizeClassByOtherName (ClassInfo readableClass, const wchar_t *otherName) {
 	theAliases [++ theNumberOfAliases]. readableClass = readableClass;
 	theAliases [theNumberOfAliases]. otherName = otherName;
 }
 
 long Thing_version;   // global variable!
 ClassInfo Thing_classFromClassName (const wchar_t *klas) {
-	static wchar buffer [1+100];
+	static wchar_t buffer [1+100];
 	wcsncpy (buffer, klas ? klas : L"", 100);
-	wchar *space = wcschr (buffer, ' ');
+	wchar_t *space = wcschr (buffer, ' ');
 	if (space) {
 		*space = '\0';   // strip version number
 		Thing_version = wcstol (space + 1, NULL, 10);
@@ -142,7 +143,7 @@ Any Thing_newFromClassNameA (const char *className) {
 	}
 }
 
-Any Thing_newFromClassName (const wchar *className) {
+Any Thing_newFromClassName (const wchar_t *className) {
 	try {
 		ClassInfo classInfo = Thing_classFromClassName (className);
 		return _Thing_new (classInfo);
@@ -170,6 +171,7 @@ void _Thing_forget (Thing me) {
 	if (! me) return;
 	if (Melder_debug == 40) Melder_casual ("destroying %ls", my classInfo -> className);
 	my v_destroy ();
+	trace ("destroying %ls", my classInfo -> className);
 	//Melder_free (me);
 	delete me;
 	theTotalNumberOfThings -= 1;
@@ -199,7 +201,7 @@ void * _Thing_check (Thing me, ClassInfo klas, const char *fileName, int line) {
 void Thing_infoWithId (Thing me, unsigned long id) {
 	Melder_clearInfo ();
 	MelderInfo_open ();
-	if (id != 0) MelderInfo_writeLine2 (L"Object id: ", Melder_integer (id));
+	if (id != 0) MelderInfo_writeLine (L"Object id: ", Melder_integer (id));
 	my v_info ();
 	MelderInfo_close ();
 }
@@ -208,9 +210,9 @@ void Thing_info (Thing me) {
 	Thing_infoWithId (me, 0);
 }
 
-wchar * Thing_getName (Thing me) { return my name; }
+wchar_t * Thing_getName (Thing me) { return my name; }
 
-wchar * Thing_messageName (Thing me) {
+wchar_t * Thing_messageName (Thing me) {
 	static MelderString buffers [11];
 	static int ibuffer = 0;
 	if (++ ibuffer == 11) ibuffer = 0;
@@ -223,7 +225,7 @@ wchar * Thing_messageName (Thing me) {
 	return buffers [ibuffer]. string;
 }
 
-void Thing_setName (Thing me, const wchar *name) {
+void Thing_setName (Thing me, const wchar_t *name) {
 	/*
 	 * First check without change.
 	 */

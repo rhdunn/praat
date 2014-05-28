@@ -23,9 +23,46 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (L"What's new?", L"ppgb", 20120807)
+MAN_BEGIN (L"What's new?", L"ppgb", 20121208)
 INTRO (L"Latest changes in Praat.")
 /*LIST_ITEM (L"\\bu Manual page about @@drawing a vowel triangle@.")*/
+NORMAL (L"##5.3.35# (8 December 2012)")
+LIST_ITEM (L"\\bu SpeechSynthesizer: made it possible to have more than one at a time.")
+LIST_ITEM (L"\\bu Linux: corrected a bug that caused incorrect alignment of the buttons in the Objects window.")
+NORMAL (L"##5.3.34# (21 November 2012)")
+LIST_ITEM (L"\\bu Windows: corrected a bug that caused incorrect alignment of the buttons in the Objects window.")
+LIST_ITEM (L"\\bu The new ##Sound: Combine to stereo# can now work with Sounds of different durations, as the old could.")
+LIST_ITEM (L"\\bu Corrected a bug that caused Praat to crash when creating a SpeechSynthesizer.")
+NORMAL (L"##5.3.33# (20 November 2012)")
+LIST_ITEM (L"\\bu ##Sound: Combine to stereo# can now combine any number of Sounds into a new Sound whose number of channels "
+	"is the sum of the numbers of channels of the original Sounds.")
+LIST_ITEM (L"\\bu ERP: Down to Sound.")
+NORMAL (L"##5.3.32# (17 October 2012)")
+LIST_ITEM (L"\\bu Sound window: corrected the working of the \"by window\" scaling option.")
+NORMAL (L"##5.3.31# (10 October 2012)")
+LIST_ITEM (L"\\bu ERP: Down to Table...")
+LIST_ITEM (L"\\bu Linux: corrected a bug that could cause Praat to crash after closing a file selector window for saving.")
+NORMAL (L"##5.3.30# (6 October 2012)")
+LIST_ITEM (L"\\bu Circumvented a rare Windows bug that could cause Praat to start to write 1.5 as 1,5 in some countries "
+	"after opening a strange directory.")
+LIST_ITEM (L"\\bu Windows: corrected a bug introduced in 5.3.24 that could cause Praat to crash when quitting.")
+LIST_ITEM (L"\\bu Windows: corrected a bug introduced in 5.3.24 that could cause the Objects window to look weird after resizing.")
+NORMAL (L"##5.3.29# (30 September 2012)")
+LIST_ITEM (L"\\bu @EEG: Draw scalp..., including gray legend.")
+LIST_ITEM (L"\\bu Made the new Sound scaling options available for LongSounds.")
+NORMAL (L"##5.3.28# (28 September 2012)")
+LIST_ITEM (L"\\bu Corrected a bug introduced in 5.3.24 that made Praat crash on OSX 10.5.")
+NORMAL (L"##5.3.27# (27 September 2012)")
+LIST_ITEM (L"\\bu Corrected a couple of small bugs.")
+NORMAL (L"##5.3.26# (26 September 2012)")
+LIST_ITEM (L"\\bu Corrected a bug introduced in 5.3.24 that prevented Praat from running in batch mode.")
+NORMAL (L"##5.3.25# (26 September 2012)")
+LIST_ITEM (L"\\bu EEG: view of scalp distribution takes scaling options into account.")
+LIST_ITEM (L"\\bu Linux: swipable Sound window and manual.")
+LIST_ITEM (L"\\bu Linux: corrected a bug introduced in 5.3.24 whereby TextGrids could not be edited.")
+NORMAL (L"##5.3.24# (24 September 2012)")
+LIST_ITEM (L"\\bu More kinds of vertical scaling in e.g. Sound and EEG windows.")
+LIST_ITEM (L"\\bu Rewritten user interface (may contain some bugs).")
 NORMAL (L"##5.3.23# (7 August 2012)")
 LIST_ITEM (L"\\bu Mac: removed a bug introduced in September 2011 that could cause incorrect behaviour of regular expressions since July 2012.")
 NORMAL (L"##5.3.22# (21 July 2012)")
@@ -3258,6 +3295,10 @@ MAN_END
 MAN_BEGIN (L"Spectrogram settings...", L"ppgb", 20030316)
 INTRO (L"A command in the Spectrogram menu of the @SoundEditor and @TextGridEditor windows. "
 	"See @@Intro 3.2. Configuring the spectrogram@.")
+MAN_END
+
+MAN_BEGIN (L"Technical", L"ppgb", 20120915)
+INTRO (L"The title of a submenu of the @@Praat menu@.")
 MAN_END
 
 MAN_BEGIN (L"Types of objects", L"ppgb", 20101230)

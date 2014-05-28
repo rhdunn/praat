@@ -47,8 +47,10 @@
  djmw 20100318 Cross-correlation, convolution and autocorrelation
  djmw 20100325 -Cross-correlation, convolution and autocorrelation
  djmw 20111227 Sound_trimSilencesAtStartAndEnd and Sound_getStartAndEndTimesOfSounding
+ djmw 20120616 Change 0.8 to 1.25 in Sound_Point_Pitch_Duration_to_Sound
 */
 
+#include <ctype.h>
 #include "Formula.h"
 #include "Intensity_extensions.h"
 #include "Sound_extensions.h"
@@ -63,6 +65,7 @@
 #include "Polygon_extensions.h"
 #include "TextGrid_extensions.h"
 #include "DurationTier.h"
+#include "Ltas.h"
 #include "Manipulation.h"
 #include "NUM2.h"
 
@@ -360,7 +363,6 @@ Sound Sound_readFromRawFile (MelderFile file, const char *format, int nBitsCodin
 	}
 }
 
-#if 0
 void Sound_writeToRawFile (Sound me, MelderFile file, const char *format, int littleEndian, int nBitsCoding, int unSigned) {
 	try {
 		long nClip = 0;
@@ -403,7 +405,6 @@ void Sound_writeToRawFile (Sound me, MelderFile file, const char *format, int li
 		Melder_throw (me, ": saving as raw file not performed.");
 	}
 }
-#endif
 
 struct dialogic_adpcm {
 	char code;
@@ -1376,7 +1377,9 @@ Sound Sound_and_IntervalTier_cutPartsMatchingLabel (Sound me, IntervalTier thee,
                 numberOfSamples += Sampled_getWindowSamples (me, ti -> xmin, ti -> xmax, &ixmin, &ixmax);
                 // if two contiguous intervals have to be copied then the last sample of previous interval
                 // and first sample of current interval might sometimes be equal
-                numberOfSamples = ixmin == previous_ixmax ? --numberOfSamples : numberOfSamples;
+				if (ixmin == previous_ixmax) {
+					 --numberOfSamples;
+				}
 				previous_ixmax = ixmax;
 			} else { // matches label
 				if (iint == 1) { // Start time of output sound is end time of first interval
@@ -1522,8 +1525,7 @@ static Pitch Pitch_scaleTime_old (Pitch me, double scaleFactor) {
 	}
 }
 
-Sound Sound_and_Pitch_changeGender_old (Sound me, Pitch him, double formantRatio,
-                                        double new_pitch, double pitchRangeFactor, double durationFactor) {
+Sound Sound_and_Pitch_changeGender_old (Sound me, Pitch him, double formantRatio, double new_pitch, double pitchRangeFactor, double durationFactor) {
 	try {
 		double samplingFrequency_old = 1 / my dx;
 
@@ -1655,7 +1657,9 @@ void Sound_fade (Sound me, int channel, double t, double fadeTime, int inout, in
 	long numberOfSamples = fabs (fadeTime) / my dx;
 	double t1 = t, t2 = t1 + fadeTime;
 	const wchar_t *fade_inout = inout > 0 ? L"out" : L"in";
-
+	if (channel < 0 || channel > my ny) {
+		Melder_throw ("Invalid channel number.");
+	}
 	if (t > my xmax) {
 		t = my xmax;
 		if (inout <= 0) { // fade in
@@ -1681,10 +1685,8 @@ void Sound_fade (Sound me, int channel, double t, double fadeTime, int inout, in
 	long i0 = 0, iystart, iyend;
 	if (channel == 0) { // all
 		iystart = 1; iyend = my ny;
-	} else if (channel == 2) { // right
-		iystart = iyend = my ny < 2 ? 1 : 2;
-	} else { // left and other cases
-		iystart = iyend = 1; // default channel 1
+	} else {
+		iystart = iyend = channel;
 	}
 
 	long istart = Sampled_xToNearestIndex (me, t1);
@@ -2141,4 +2143,133 @@ void Sounds_paintEnclosed (Sound me, Sound thee, Graphics g, Graphics_Colour col
 	}
 }
 
-/* End of file Sound_extensions.cpp 2099*/
+Sound Sound_copyChannelRanges (Sound me, const wchar_t *ranges) {
+	try {
+		long numberOfChannels;
+		autoNUMvector <long> channels (NUMstring_getElementsOfRanges (ranges, my ny, & numberOfChannels, NULL, L"channel", true), 1);
+		autoSound thee = Sound_create (numberOfChannels, my xmin, my xmax, my nx, my dx, my x1);
+		for (long i = 1; i <= numberOfChannels; i++) {
+			double *from = my z[channels[i]], *to = thy z[i];
+			NUMvector_copyElements<double> (from, to, 1, my nx);
+		}
+		return thee.transfer();
+	} catch (MelderError) {
+		Melder_throw (me, ": could not extract channels.");
+	}
+}
+
+/* After a script by Ton Wempe */
+Sound Sound_removeNoiseBySpectralSubtraction_mono (Sound me, Sound noise, double windowLength) {
+	try {
+		if (my dx != noise -> dx) {
+			Melder_throw ("The sound and the noise must have the same sampling frequency.");
+		}
+		if (noise -> ny != 1 || noise -> ny != 1) {
+			Melder_throw ("The number of channels in the noise and the sound should equal 1.");
+		}
+		double samplingFrequency = 1.0 / my dx;
+		autoSound denoised = Sound_create (1, my xmin, my xmax, my nx, my dx, my x1);
+		autoSound analysisWindow = Sound_createSimple (1, windowLength, samplingFrequency);
+		long windowSamples = analysisWindow -> nx;
+		autoSound noise_copy = (Sound) Data_copy (noise);
+		Sound_multiplyByWindow (noise_copy.peek(), kSound_windowShape_HANNING);
+		double bandwidth = samplingFrequency / windowSamples;
+		autoLtas noiseLtas = Sound_to_Ltas (noise_copy.peek(), bandwidth);
+		autoNUMvector<double> noiseAmplitudes (1, noiseLtas -> nx);
+		for (long i = 1; i <= noiseLtas -> nx; i++) {
+			noiseAmplitudes[i] = pow (10.0, (noiseLtas -> z[1][i] - 94) / 20);
+		}
+		long stepSizeSamples = windowSamples / 4;
+		long numberOfSteps = my nx / stepSizeSamples;
+		for (long istep = 1; istep <= numberOfSteps; istep++) {
+			long istart = (istep - 1) * stepSizeSamples + 1;
+
+			if (istart >= my nx) {
+				break; // finished
+			}
+			long nsamples = istart + windowSamples - 1 > my nx ? my nx - istart + 1 : windowSamples;
+			for (long j = 1; j <= nsamples; j++) {
+				analysisWindow -> z[1][j] = my z[1][istart - 1 + j];
+			}
+			for (long j = nsamples + 1; j <= windowSamples; j++) {
+				analysisWindow -> z[1][j] = 0;
+			}
+			autoSpectrum analysisSpectrum = Sound_to_Spectrum (analysisWindow.peek(), 0);
+
+			// Suppress noise in the analysisSpectrum by subtracting the noise spectrum
+
+			double *x = analysisSpectrum -> z[1], *y = analysisSpectrum -> z[2];
+			for (long i = 1; i <= analysisSpectrum -> nx; i++) {
+				double amp = sqrt (x[i] * x[i] + y[i] * y[i]);
+				double factor = 1 - 1.5 * noiseAmplitudes[i] / amp;
+				factor = factor < 1e-6 ? 1e-6 : factor;
+				x[i] *= factor; y[i] *= factor;
+			}
+			autoSound suppressed = Spectrum_to_Sound (analysisSpectrum.peek());
+			Sound_multiplyByWindow (suppressed.peek(), kSound_windowShape_HANNING);
+			for (long j = 1; j <= nsamples; j++) {
+				denoised -> z[1][istart - 1 + j] += 0.5 * suppressed -> z[1][j]; // 0.5 because of 2-fold oversampling
+			}
+		}
+		return denoised.transfer();
+	} catch (MelderError) {
+		Melder_throw (me, ": noise not subtracted.");
+	}
+}
+
+static void Sound_findNoise (Sound me, double minimumNoiseDuration, double *noiseStart, double *noiseEnd) {
+	try {
+		*noiseStart = NUMundefined; *noiseEnd = NUMundefined;
+		autoIntensity intensity = Sound_to_Intensity (me, 20, 0.005, 1);
+		double tmin = Vector_getXOfMinimum (intensity.peek(), intensity -> xmin, intensity ->  xmax, 1) - minimumNoiseDuration / 2;
+		double tmax = tmin + minimumNoiseDuration;
+		if (tmin < my xmin) {
+			tmin = my xmin; tmax = tmin + minimumNoiseDuration;
+		}
+		if (tmax > my xmax) {
+			tmax = my xmax; tmin = tmax - minimumNoiseDuration;
+		}
+		if (tmin < my xmin) {
+			Melder_throw ("Sound too short, or window length too long.");
+		}
+		*noiseStart = tmin; *noiseEnd = tmax;
+	} catch (MelderError) {
+		Melder_throw (me, ": noise not found.");
+	}
+}
+
+Sound Sound_removeNoise (Sound me, double noiseStart, double noiseEnd, double windowLength, double minBandFilterFrequency, double maxBandFilterFrequency, double smoothing, int method) {
+	try {
+		autoSound filtered = Sound_filter_passHannBand (me, minBandFilterFrequency, maxBandFilterFrequency, smoothing);
+		autoSound denoised = Sound_create (my ny, my xmin, my xmax, my nx, my dx, my x1);
+		bool findNoise = noiseEnd <= noiseStart;
+		double minimumNoiseDuration = 2 * windowLength;
+		for (long ichannel = 1; ichannel <= my ny; ichannel++) {
+			autoSound denoisedi, channeli = Sound_extractChannel (filtered.peek(), ichannel);
+			if (findNoise) {
+				Sound_findNoise (channeli.peek(), minimumNoiseDuration, &noiseStart, &noiseEnd);
+			}
+			autoSound noise = Sound_extractPart (channeli.peek(), noiseStart, noiseEnd, kSound_windowShape_RECTANGULAR, 1.0, false);
+			if (method == 1) { // spectral subtraction
+				denoisedi.reset (Sound_removeNoiseBySpectralSubtraction_mono (filtered.peek(), noise.peek(), windowLength));
+			}
+			NUMvector_copyElements<double> (denoisedi -> z[1], denoised -> z[ichannel], 1, my nx);
+		}
+		return denoised.transfer();
+	} catch (MelderError) {
+		Melder_throw (me, ": not denoised.");
+	}
+}
+
+void Sound_playAsFrequencyShifted (Sound me, double shiftBy, double newSamplingFrequency, long precision) {
+	try {
+		autoSpectrum spectrum = Sound_to_Spectrum (me, 1);
+		autoSpectrum shifted = Spectrum_shiftFrequencies (spectrum.peek(), shiftBy, newSamplingFrequency / 2, precision);
+		autoSound thee = Spectrum_to_Sound (shifted.peek());
+		Sound_playPart (thee.peek(), my xmin, my xmax, NULL, NULL);
+	} catch (MelderError) {
+		Melder_throw (me, " not played with frequencies shifted.");
+	}
+}
+
+/* End of file Sound_extensions.cpp */

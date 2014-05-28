@@ -1,6 +1,6 @@
 /* Spectrum_extensions.cpp
  *
- * Copyright (C) 1993-2011 David Weenink
+ * Copyright (C) 1993-2012 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
  djmw 20080411 Removed define NUM2pi
 */
 
+#include "Ltas.h"
 #include "Spectrum_extensions.h"
 #include "Sound_and_Spectrum.h"
 #include "NUM2.h"
@@ -320,5 +321,108 @@ void Spectrum_conjugate (Spectrum me) {
 	}
 }
 
+Spectrum Spectrum_resample (Spectrum me, long numberOfFrequencies) {
+	try {
+		double newSamplingFrequency = (1 / my dx) * numberOfFrequencies / my nx;
+		// resample real and imaginary part !
+		autoSound thee = Sound_resample ((Sound) me, newSamplingFrequency, 50);
+		autoSpectrum him = Spectrum_create (my xmax, numberOfFrequencies);
+		NUMmatrix_copyElements<double> (thy z, his z, 1, 2, 1, numberOfFrequencies);
+		return him.transfer();
+	} catch (MelderError) {
+		Melder_throw (me, ": not resampled.");
+	}
+}
+
+Spectrum Spectrum_shiftFrequencies2 (Spectrum me, double shiftBy, bool changeMaximumFrequency) {
+	try {
+		double xmax = my xmax;
+		long numberOfFrequencies = my nx, interpolationDepth = 50;
+		if (changeMaximumFrequency) {
+			xmax += shiftBy;
+			numberOfFrequencies += (xmax - my xmax) / my dx;
+		}
+		autoSpectrum thee = Spectrum_create (xmax, numberOfFrequencies);
+		// shiftBy >= 0
+		for (long i = 1; i <= thy nx; i++) {
+			double thyf = thy x1 + (i - 1) * thy dx;
+			double myf = thyf - shiftBy;
+			if (myf >= my xmin && myf <= my xmax) {
+				double index = Sampled_xToIndex (me, myf);
+				thy z[1][i] = NUM_interpolate_sinc (my z[1], my nx, index, interpolationDepth);
+				thy z[2][i] = NUM_interpolate_sinc (my z[2], my nx, index, interpolationDepth);
+			}
+		}
+		return thee.transfer();
+	} catch (MelderError) {
+		Melder_throw (me, ": not shifted.");
+	}
+}
+
+Spectrum Spectrum_shiftFrequencies (Spectrum me, double shiftBy, double newMaximumFrequency, long interpolationDepth) {
+	try {
+		double xmax = my xmax;
+		long numberOfFrequencies = my nx;
+		if (newMaximumFrequency != 0) {
+			numberOfFrequencies = newMaximumFrequency / my dx + 1;
+			xmax = newMaximumFrequency;
+		}
+		autoSpectrum thee = Spectrum_create (xmax, numberOfFrequencies);
+		// shiftBy >= 0
+		for (long i = 1; i <= thy nx; i++) {
+			double thyf = thy x1 + (i - 1) * thy dx;
+			double myf = thyf - shiftBy;
+			if (myf >= my xmin && myf <= my xmax) {
+				double index = Sampled_xToIndex (me, myf);
+				thy z[1][i] = NUM_interpolate_sinc (my z[1], my nx, index, interpolationDepth);
+				thy z[2][i] = NUM_interpolate_sinc (my z[2], my nx, index, interpolationDepth);
+			}
+		}
+		// Make imaginary part of first and last sample zero
+		// so Spectrum_to_Sound uses FFT if numberOfSamples was power of 2!
+		double amp = sqrt (thy z[1][1] * thy z[1][1] + thy z[2][1] * thy z[2][1]);
+		thy z[1][1] = amp; thy z[2][1] = 0;
+		amp = sqrt (thy z[1][thy nx] * thy z[1][thy nx] + thy z[2][thy nx] * thy z[2][thy nx]);
+		thy z[1][thy nx] = amp; thy z[2][thy nx] = 0;
+		return thee.transfer();
+	} catch (MelderError) {
+		Melder_throw (me, ": not shifted.");
+	}
+}
+
+Spectrum Spectrum_compressFrequencyDomain (Spectrum me, double fmax, long interpolationDepth, int freqscale, int method) {
+	try {
+		double fdomain = my xmax - my xmin, factor = fdomain / fmax ;
+		//long numberOfFrequencies = 1.0 + fmax / my dx; // keep dx the same, otherwise the "duration" changes
+		double xmax = my xmax / factor;
+		long numberOfFrequencies = my nx / factor; // keep dx the same, otherwise the "duration" changes
+		autoSpectrum thee = Spectrum_create (xmax, numberOfFrequencies);
+		thy z[1][1] = my z[1][1]; thy z[2][1] = my z[2][1];
+		double df = freqscale == 1 ? factor * my dx : log10 (fdomain) / (numberOfFrequencies - 1);
+		for (long i = 2; i <= numberOfFrequencies; i++) {
+			double f = my xmin + (freqscale == 1 ? (i - 1) * df : pow (10.0, (i - 1) * df));
+			double x, y, index = (f - my x1) / my dx + 1;
+			if (index > my nx) {
+				break;
+			}
+			if (method == 1) {
+				x = NUM_interpolate_sinc (my z[1], my nx, index, interpolationDepth);
+				y = NUM_interpolate_sinc (my z[2], my nx, index, interpolationDepth);
+			} else {
+			}
+			thy z[1][i] = x; thy z[2][i] = y;
+		}
+		return thee.transfer();
+	} catch (MelderError) {
+		Melder_throw (me, ": not compressed.");
+	}
+}
+
+void Spectrum_fitTiltLine (Spectrum me, double fmin, double fmax, bool logf, double bandwidth, double *a, double *intercept, int method) {
+	try {
+	} catch (MelderError) {
+		Melder_throw ("Tilt line not fitted.");
+	}
+}
 
 /* End of file Spectrum_extensions.cpp */

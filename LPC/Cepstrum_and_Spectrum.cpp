@@ -22,13 +22,15 @@
  djmw 20041124 Changed call to Sound_to_Spectrum.
  djmw 20070103 Sound interface changes
  djmw 20080122 float -> double
+ djmw 20121015
 */
 
 #include "Cepstrum_and_Spectrum.h"
+#include "NUM2.h"
 #include "Spectrum_extensions.h"
 #include "Sound_and_Spectrum.h"
 
-Cepstrum Spectrum_to_Cepstrum (Spectrum me) {
+Cepstrum Spectrum_to_Cepstrum_cmplx (Spectrum me) {
 	try {
 		autoMatrix unwrap = Spectrum_unwrap (me);
 		autoSpectrum sx = Data_copy (me);
@@ -52,18 +54,53 @@ Cepstrum Spectrum_to_Cepstrum (Spectrum me) {
 	}
 }
 
+Cepstrum Spectrum_to_Cepstrum (Spectrum me) {
+	try {
+		autoNUMfft_Table fftTable;
+		// originalNumberOfSamplesProbablyOdd irrelevant
+		if (my x1 != 0.0) {
+			Melder_throw ("A Fourier-transformable Spectrum must have a first frequency of 0 Hz, not ", my x1, L" Hz.");
+		}
+		long numberOfSamples = 2 * my nx - 2;
+		autoCepstrum thee = Cepstrum_create (0, 0.5 / my dx, my nx);
+		NUMfft_Table_init (&fftTable, numberOfSamples);
+		autoNUMvector<double> amp (1, numberOfSamples);
+		double *x = my z[1], *y = my z[2];
+		amp[1] = my v_getValueAtSample (1, 0, 2);
+		for (long i = 2; i < my nx; i ++) {
+			double logpow = my v_getValueAtSample (i, 0, 2);
+			amp [i + i - 2] = logpow;
+			amp [i + i - 1] = 0;
+		}
+		amp [numberOfSamples] = my v_getValueAtSample (my nx, 0, 2);
+		NUMfft_backward (&fftTable, amp.peek());
+		for (long i = 1; i <= my nx; i++) {
+			thy z[1][i] = amp[i] / numberOfSamples; // scaling 1/n because ifft(fft(1))= n;
+		}
+		return thee.transfer();
+	} catch (MelderError) {
+		Melder_throw (me, ": not converted to Sound.");
+	}
+}
+
 Spectrum Cepstrum_to_Spectrum (Cepstrum me) {
 	try {
-		autoSound x = Sound_create (1, my xmin, my xmax, my nx, my dx, my x1);
-		NUMvector_copyElements	(my z[1], x -> z[1], 1, my nx);
-		autoSpectrum thee = Sound_to_Spectrum (x.peek(), TRUE);
+		autoSound tmp = Sound_create (1, my xmin, my xmax, my nx, my dx, my x1);
+		NUMvector_copyElements	(my z[1], tmp -> z[1], 1, my nx);
+		autoSpectrum thee = Sound_to_Spectrum (tmp.peek(), TRUE);
 
+		double *x = thy z[1], *y = thy z[2];
+		double scaling = tmp -> dx, forwardbackwardfactor = sqrt (my nx) * (2e-5 / sqrt (4 * thy dx)); // my nx because of ifft
 		for (long i = 1; i <= thy nx; i++) {
-			double ar = exp (thy z[1][i]);
-			double ai = thy z[2][i];
-
-			thy z[1][i] = ar * cos (ai);
-			thy z[2][i] = ar * sin (ai);
+			x[i] = sqrt (x[i] * x[i] + y [i] * y[i]) / scaling;
+			y[i] = 0;
+			// 10*log10(2*p*dx/r) = X; sqrt(x^2), r = 4e-10
+			// p = 10^(X/10)  * r/ (2*dx) * numberOfSamples
+			// amp= sqrt (10^(X/10) * sqrt (r / (2 *dx)) = 10 ^(X/20) * 2e-5 / sqrt (2 * dx)
+			double logval = x[i] / 20;
+			double amp = pow (10, logval) * forwardbackwardfactor;
+			x[i] = amp;
+			y[i] = 0;
 		}
 		return thee.transfer();
 	} catch (MelderError) {

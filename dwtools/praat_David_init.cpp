@@ -61,7 +61,7 @@
  djmw 20091230 Covariance_and_TableOfReal_mahalanobis
  djmw 20100212 Standardize on Window length
  djmw 20100511 Categories_getNumberOfCategories
- djmw 20111224 Latest modification.
+ djmw 20120813 Latest modification.
 */
 
 #include "praat.h"
@@ -96,6 +96,7 @@
 #include "LongSound_extensions.h"
 #include "KlattGridEditors.h"
 #include "KlattTable.h"
+#include "Ltas_extensions.h"
 #include "Minimizers.h"
 #include "Pattern.h"
 #include "PCA.h"
@@ -237,7 +238,7 @@ DIRECT (Categories_edit)
 	} else {
 		LOOP {
 			iam (Categories);
-			praat_installEditor (CategoriesEditor_create (theCurrentPraatApplication -> topShell,
+			praat_installEditor (CategoriesEditor_create (
 				my name, me), IOBJECT);
 		}
 	}
@@ -544,7 +545,7 @@ FORM (CCA_and_TableOfReal_scores, L"CCA & TableOfReal: To TableOfReal (scores)",
 DO
 	CCA cca = FIRST (CCA);
 	TableOfReal tr = FIRST (TableOfReal);
-	praat_new2 (CCA_and_TableOfReal_scores (cca, tr, GET_INTEGER (L"Number of canonical correlations")),
+	praat_new (CCA_and_TableOfReal_scores (cca, tr, GET_INTEGER (L"Number of canonical correlations")),
 		Thing_getName (cca), L"_scores");
 END
 
@@ -964,14 +965,14 @@ DO
 	int equalCovariances = GET_INTEGER (L"Covariances are equal");
 	MelderInfo_open ();
 	difference = Covariances_getMultivariateCentroidDifference (c1, c2, equalCovariances, &prob, &fisher, &df1, &df2);
-	MelderInfo_writeLine3 (L"Under the assumption that the two covariances are", (equalCovariances ? L" " : L" not "), L"equal:");
-	MelderInfo_writeLine2 (L"Difference between multivariate means = ", Melder_double (difference));
-	MelderInfo_writeLine2 (L"Fisher's F = ", Melder_double (fisher));
-	MelderInfo_writeLine2 (L"Significance from zero = ", Melder_double (prob));
-	MelderInfo_writeLine4 (L"Degrees of freedom = ", Melder_double (df1), L", ", Melder_double (df2));
-	MelderInfo_writeLine4 (L"(Number of observations = ", Melder_integer (c1->numberOfObservations), L", ",
-						Melder_integer (c2->numberOfObservations));
-	MelderInfo_writeLine3 (L"Dimension of covariance matrices = ", Melder_integer (c1-> numberOfRows), L")");
+	MelderInfo_writeLine (L"Under the assumption that the two covariances are", (equalCovariances ? L" " : L" not "), L"equal:");
+	MelderInfo_writeLine (L"Difference between multivariate means = ", Melder_double (difference));
+	MelderInfo_writeLine (L"Fisher's F = ", Melder_double (fisher));
+	MelderInfo_writeLine (L"Significance from zero = ", Melder_double (prob));
+	MelderInfo_writeLine (L"Degrees of freedom = ", Melder_double (df1), L", ", Melder_double (df2));
+	MelderInfo_writeLine (L"(Number of observations = ", Melder_integer (c1->numberOfObservations), L", ",
+		Melder_integer (c2->numberOfObservations));
+	MelderInfo_writeLine (L"Dimension of covariance matrices = ", Melder_integer (c1-> numberOfRows), L")");
 	MelderInfo_close ();
 END
 
@@ -991,14 +992,14 @@ DIRECT (Covariances_reportEquality)
 	{
 		double chisq, p, df;
 		Covariances_equality (set.peek(), 1, &p, &chisq, &df);
-		MelderInfo_writeLine1 (L"Difference between covariance matrices:");
-		MelderInfo_writeLine2 (L"Significance of difference (bartlett) = ", Melder_double (p));
-		MelderInfo_writeLine2 (L"Chi-squared = ", Melder_double (chisq));
-		MelderInfo_writeLine2 (L"Degrees of freedom = ", Melder_double (df));
+		MelderInfo_writeLine (L"Difference between covariance matrices:");
+		MelderInfo_writeLine (L"Significance of difference (bartlett) = ", Melder_double (p));
+		MelderInfo_writeLine (L"Chi-squared = ", Melder_double (chisq));
+		MelderInfo_writeLine (L"Degrees of freedom = ", Melder_double (df));
 		Covariances_equality (set.peek(), 2, &p, &chisq, &df);
-		MelderInfo_writeLine2 (L"Significance of difference (wald) = ", Melder_double (p));
-		MelderInfo_writeLine2 (L"Chi-squared = ", Melder_double (chisq));
-		MelderInfo_writeLine2 (L"Degrees of freedom = ", Melder_double (df));
+		MelderInfo_writeLine (L"Significance of difference (wald) = ", Melder_double (p));
+		MelderInfo_writeLine (L"Chi-squared = ", Melder_double (chisq));
+		MelderInfo_writeLine (L"Degrees of freedom = ", Melder_double (df));
 	}
 	MelderInfo_close ();
 END
@@ -1145,11 +1146,11 @@ DIRECT (Discriminant_reportEqualityOfCovariances_wald)
 		iam (Discriminant);
 		double chisq, prob, df;
 		Covariances_equality ( (Collection) my groups, 2, &prob, &chisq, &df);
-		MelderInfo_writeLine1 (L"Wald test for equality of covariance matrices:");
-		MelderInfo_writeLine2 (L"Chi squared: ", Melder_double (chisq));
-		MelderInfo_writeLine2 (L"Significance: ", Melder_double (prob));
-		MelderInfo_writeLine2 (L"Degrees of freedom: ", Melder_double (df));
-		MelderInfo_writeLine2 (L"Number of matrices: ", Melder_integer (my groups -> size));
+		MelderInfo_writeLine (L"Wald test for equality of covariance matrices:");
+		MelderInfo_writeLine (L"Chi squared: ", Melder_double (chisq));
+		MelderInfo_writeLine (L"Significance: ", Melder_double (prob));
+		MelderInfo_writeLine (L"Degrees of freedom: ", Melder_double (df));
+		MelderInfo_writeLine (L"Number of matrices: ", Melder_integer (my groups -> size));
 	}
 	MelderInfo_close ();
 END
@@ -2152,17 +2153,17 @@ DIRECT (EditCostsTable_to_TableOfReal)
 	}
 END
 
-FORM (EditCostsTable_createEmpty, L"Create empty EditCostsTable", 0)
+FORM (EditCostsTable_createEmpty, L"Create empty EditCostsTable", L"Create empty EditCostsTable...")
 	SENTENCE (L"Name", L"editCosts")
-	INTEGER (L"Target alphabet size", L"0")
-	INTEGER (L"Source alphabet size", L"0")
+	INTEGER (L"Number of target symbols", L"0")
+	INTEGER (L"Number of source symbols", L"0")
 	OK
 DO
-	long targetAlphabetSize = GET_INTEGER (L"Target alphabet size");
-	targetAlphabetSize = targetAlphabetSize < 0 ? 0 : targetAlphabetSize;
-	long sourceAlphabetSize = GET_INTEGER (L"Source alphabet size");
-	sourceAlphabetSize = sourceAlphabetSize < 0 ? 0 : sourceAlphabetSize;
-	praat_new (EditCostsTable_create (targetAlphabetSize, sourceAlphabetSize), GET_STRING (L"Name"));
+	long numberOfTargetSymbols = GET_INTEGER (L"Number of target symbols");
+	numberOfTargetSymbols = numberOfTargetSymbols < 0 ? 0 : numberOfTargetSymbols;
+	long numberOfSourceSymbols = GET_INTEGER (L"Number of source symbols");
+	numberOfSourceSymbols = numberOfSourceSymbols < 0 ? 0 : numberOfSourceSymbols;
+	praat_new (EditCostsTable_create (numberOfTargetSymbols, numberOfSourceSymbols), GET_STRING (L"Name"));
 END
 
 /******************** Eigen ********************************************/
@@ -3241,6 +3242,134 @@ DO
 	}
 END
 
+static void print_means (Table me);
+static void print_means (Table me) {
+	wchar_t s[200];
+	Table_numericize_Assert (me, 2);
+	Table_numericize_Assert (me, 3);
+	if (my numberOfColumns < 3) {
+		MelderInfo_writeLine (L"Table has not the right format.");
+		return;
+	}
+	swprintf (s, 199, L"%15ls\t%15ls\t%15ls", my columnHeaders[1].label, my columnHeaders[2].label, my columnHeaders[3].label);
+	MelderInfo_writeLine (s);
+	for (long irow = 1; irow <= my rows -> size; irow++) {
+		TableRow row = (TableRow) my rows -> item [irow];
+		swprintf (s, 199, L"%15ls\t%15g\t%15g", row -> cells[1].string, row -> cells[2].number, row -> cells[3].number);
+		MelderInfo_writeLine (s);
+	}
+}
+
+FORM (Table_reportOneWayAnova, L"Table: Report one-way anova",  L"Table: Report one-way anova...")
+	SENTENCE (L"Column with data", L"F0")
+	SENTENCE (L"Factor", L"Vowel")
+	BOOLEAN (L"Table with means", 0);
+	BOOLEAN (L"Table with differences between means", 0)
+	BOOLEAN (L"Table with Tukey's post-hoc HSD test", 0)
+	OK
+DO
+	wchar_t *factor = GET_STRING (L"Factor");
+	wchar_t *dataLabel = GET_STRING (L"Column with data");
+	bool getMeans = GET_INTEGER (L"Table with means");
+	bool getMeansDiff = GET_INTEGER (L"Table with differences between means");
+	bool getMeansDiffProbabilities = GET_INTEGER (L"Table with Tukey's post-hoc HSD test");
+	LOOP {
+		iam (Table);
+		long factorColumn = Table_getColumnIndexFromColumnLabel (me, factor);
+		long dataColumn = Table_getColumnIndexFromColumnLabel (me, dataLabel);
+		Table tmeans = 0, tmeansDiff = 0, tmeansDiffProbabilities = 0;
+		autoTable anova = Table_getOneWayAnalysisOfVarianceF (me, dataColumn, factorColumn, &tmeans,
+			&tmeansDiff, & tmeansDiffProbabilities);
+		autoTable means = tmeans, meansDiff = tmeansDiff, meansDiffProbabilities = tmeansDiffProbabilities;
+		MelderInfo_open ();
+		MelderInfo_writeLine (L"One-way analysis of \"", dataLabel, L"\" by \"", factor, L"\".\n");
+		Table_printAsAnovaTable (anova.peek());
+		MelderInfo_writeLine (L"\nMeans:\n");
+		print_means (means.peek());
+		MelderInfo_close ();
+		if (getMeans) {
+			praat_new (means.transfer(), my name, L"_groupMeans");
+		}
+		if (getMeansDiff) {
+			praat_new (meansDiff.transfer(), my name, L"_meansDiff");
+		}
+		if (getMeansDiffProbabilities) {
+			praat_new (meansDiffProbabilities.transfer(), my name, L"_meansDiffP");
+		}
+	}
+END
+
+FORM (Table_reportTwoWayAnova, L"Table: Report two-way anova", L"Table: Report two-way anova...")
+	SENTENCE (L"Column with data", L"Data")
+	SENTENCE (L"First factor", L"A")
+	SENTENCE (L"Second factor", L"B")
+	BOOLEAN (L"Table with means", 0);
+	OK
+DO
+	wchar_t *factorA = GET_STRING (L"First factor");
+	wchar_t *factorB = GET_STRING (L"Second factor");
+	wchar_t *dataLabel = GET_STRING (L"Column with data");
+	bool getMeans = GET_INTEGER (L"Table with means");
+	LOOP {
+		iam (Table);
+		long factorColumnA = Table_getColumnIndexFromColumnLabel (me, factorA);
+		long factorColumnB = Table_getColumnIndexFromColumnLabel (me, factorB);
+		long dataColumn = Table_getColumnIndexFromColumnLabel (me, dataLabel);
+		Table tmeans = 0, tsizes = 0;
+		autoTable anova = Table_getTwoWayAnalysisOfVarianceF (me, dataColumn, factorColumnA, factorColumnB, &tmeans, &tsizes);
+		autoTable means = tmeans, sizes = tsizes;
+		MelderInfo_open ();
+		MelderInfo_writeLine (L"Two-way analysis of \"", dataLabel, L"\" by \"", factorA, L"\" and \"", factorB, L".\n");
+		Table_printAsAnovaTable (anova.peek());
+		MelderInfo_writeLine (L"\nMeans:\n");
+		Table_printAsMeansTable (means.peek());
+		MelderInfo_writeLine (L"\nCell sizes:\n");
+		Table_printAsMeansTable (sizes.peek());
+		MelderInfo_close ();
+		if (getMeans) {
+			praat_new (means.transfer(), my name, L"_groupMeans");
+		}
+	}
+END
+
+FORM (Table_reportOneWayKruskalWallis, L"Table: Report one-way Kruskal-Wallis", L"Table: Report one-way Kruskal-Wallis...")
+	SENTENCE (L"Column with data", L"Data")
+	SENTENCE (L"Factor", L"Group")
+	OK
+DO
+	wchar_t *factor = GET_STRING (L"Factor");
+	wchar_t *dataLabel = GET_STRING (L"Column with data");
+	LOOP {
+		iam (Table);
+		long factorColumn = Table_getColumnIndexFromColumnLabel (me, factor);
+		long dataColumn = Table_getColumnIndexFromColumnLabel (me, dataLabel);
+		double degreesOfFreedom, kruskalWallis, probability;
+		autoTable thee = Table_getOneWayKruskalWallis (me, dataColumn, factorColumn, &degreesOfFreedom, &kruskalWallis, &probability);
+		MelderInfo_open ();
+		MelderInfo_writeLine (L"One-way Kruskal-Wallis of \"", dataLabel, L"\" by \"", factor, L"\".\n");
+		MelderInfo_writeLine (L"Chi squared: ", Melder_double (kruskalWallis));
+		MelderInfo_writeLine (L"Degrees of freedom: ", Melder_double (degreesOfFreedom));
+		MelderInfo_writeLine (L"Probability: ", Melder_double (probability));
+		MelderInfo_writeLine (L"\nMeans:\n");
+		print_means (thee.peek());
+		MelderInfo_close ();
+		//praat_new (thee.transfer(), my name, L"_groupMeans");
+	}
+END
+
+FORM (Table_to_StringsIndex_column, L"Table: To StringsIndex (column)", 0)
+	SENTENCE (L"Column label", L"")
+	OK
+DO
+	wchar *columnLabel = GET_STRING (L"Column label");
+	LOOP {
+		iam (Table);
+		long icol = Table_getColumnIndexFromColumnLabel (me, columnLabel);
+		autoStringsIndex thee = Table_to_StringsIndex_column (me, icol);
+		praat_new (thee.transfer(), my name, L"_", columnLabel);
+	}
+END
+
 /******************* LegendreSeries *********************************/
 
 FORM (LegendreSeries_create, L"Create LegendreSeries", L"Create LegendreSeries...")
@@ -3380,6 +3509,32 @@ DO
 			GET_REAL (L"Minimum value"), GET_REAL (L"Maximum value"), GET_INTEGER (L"Number of bins"),
 			GET_REAL (L"Minimum"), GET_REAL (L"Maximum"), 1, GET_INTEGER (L"Garnish"));
 	}
+END
+
+FORM (Matrix_getMean, L"Matrix: Get mean", 0)
+	REAL (L"left Horizontal range", L"0.0")
+	REAL (L"right Horizontal range", L"0.0")
+	REAL (L"left Vertical range", L"0.0")
+	REAL (L"right Vertical range", L"0.0")
+	OK
+DO
+	Matrix me = FIRST_ANY (Matrix);
+	double mean = Matrix_getMean (me, GET_REAL (L"left Horizontal range"), GET_REAL (L"right Horizontal range"),
+		GET_REAL (L"left Vertical range"), GET_REAL (L"right Vertical range"));
+	Melder_informationReal (mean, NULL);
+END
+
+FORM (Matrix_getStandardDeviation, L"Matrix: Get standard deviation", 0)
+	REAL (L"left Horizontal range", L"0.0")
+	REAL (L"right Horizontal range", L"0.0")
+	REAL (L"left Vertical range", L"0.0")
+	REAL (L"right Vertical range", L"0.0")
+	OK
+DO
+	Matrix me = FIRST_ANY (Matrix);
+	double stdev = Matrix_getStandardDeviation (me, GET_REAL (L"left Horizontal range"), GET_REAL (L"right Horizontal range"),
+		GET_REAL (L"left Vertical range"), GET_REAL (L"right Vertical range"));
+	Melder_informationReal (stdev, NULL);
 END
 
 FORM (Matrix_scale, L"Matrix: Scale", 0)
@@ -3631,6 +3786,32 @@ DO
 		praat_new (MelFilter_to_MFCC (me, GET_INTEGER (L"Number of coefficients")), my name);
 	}
 END
+
+/**************** Ltas *******************************************/
+
+FORM (Ltas_reportSpectralTilt, L"Ltas: Report spectral tilt", 0)
+	POSITIVE (L"left Frequency range (Hz)", L"100.0")
+	POSITIVE (L"right Frequency range (Hz)", L"5000.0")
+	BOOLEAN (L"Logarithmic frequecy scale", 0)
+	OPTIONMENU (L"Fit method", 2)
+	OPTION (L"Least squares")
+	OPTION (L"Robust")
+	OK
+DO
+	bool logScale = GET_INTEGER (L"Logarithmic frequecy scale");
+	LOOP {
+		iam (Ltas);
+		double a, b;
+		Ltas_fitTiltLine (me, GET_REAL (L"left Frequency range"), GET_REAL (L"right Frequency range"),
+			logScale, GET_INTEGER (L"Fit method"), &a, &b);
+		MelderInfo_open ();
+		MelderInfo_writeLine (L"Spectral background decay model: ", (logScale ? L"a * ln (frequency) + b." : L"a * frequency + b."));
+		MelderInfo_writeLine (Melder_double (a), L" (=a: decay rate)");
+		MelderInfo_writeLine (Melder_double (b), L" (=b: offset at zero frequency)");
+		MelderInfo_close ();
+	}
+END
+
 
 /**************** MFCC *******************************************/
 
@@ -4625,19 +4806,45 @@ DIRECT (Praat_ReportFloatingPointProperties)
 		NUMmachar ();
 	}
 	MelderInfo_open ();
-	MelderInfo_writeLine1 (L"Double precision floating point properties of this machine,");
-	MelderInfo_writeLine1 (L"as calculated by algorithms from the Binary Linear Algebra System (BLAS)");
-	MelderInfo_writeLine2 (L"Radix: ", Melder_double (NUMfpp -> base));
-	MelderInfo_writeLine2 (L"Number of digits in mantissa: ", Melder_double (NUMfpp -> t));
-	MelderInfo_writeLine2 (L"Smallest exponent before (gradual) underflow (expmin): ", Melder_integer (NUMfpp -> emin));
-	MelderInfo_writeLine2 (L"Largest exponent before overflow (expmax): ", Melder_integer (NUMfpp -> emax));
-	MelderInfo_writeLine2 (L"Does rounding occur in addition: ", (NUMfpp -> rnd == 1 ? L"yes" : L"no"));
-	MelderInfo_writeLine2 (L"Quantization step (d): ", Melder_double (NUMfpp -> prec));
-	MelderInfo_writeLine2 (L"Quantization error (eps = d/2): ", Melder_double (NUMfpp -> eps));
-	MelderInfo_writeLine2 (L"Underflow threshold (= radix ^ (expmin - 1)): ", Melder_double (NUMfpp -> rmin));
-	MelderInfo_writeLine2 (L"Safe minimum (such that its inverse does not overflow): ", Melder_double (NUMfpp -> sfmin));
-	MelderInfo_writeLine2 (L"Overflow threshold (= (1 - eps) * radix ^ expmax): ", Melder_double (NUMfpp -> rmax));
+	MelderInfo_writeLine (L"Double precision floating point properties of this machine,");
+	MelderInfo_writeLine (L"as calculated by algorithms from the Binary Linear Algebra System (BLAS)");
+	MelderInfo_writeLine (L"Radix: ", Melder_double (NUMfpp -> base));
+	MelderInfo_writeLine (L"Number of digits in mantissa: ", Melder_double (NUMfpp -> t));
+	MelderInfo_writeLine (L"Smallest exponent before (gradual) underflow (expmin): ", Melder_integer (NUMfpp -> emin));
+	MelderInfo_writeLine (L"Largest exponent before overflow (expmax): ", Melder_integer (NUMfpp -> emax));
+	MelderInfo_writeLine (L"Does rounding occur in addition: ", (NUMfpp -> rnd == 1 ? L"yes" : L"no"));
+	MelderInfo_writeLine (L"Quantization step (d): ", Melder_double (NUMfpp -> prec));
+	MelderInfo_writeLine (L"Quantization error (eps = d/2): ", Melder_double (NUMfpp -> eps));
+	MelderInfo_writeLine (L"Underflow threshold (= radix ^ (expmin - 1)): ", Melder_double (NUMfpp -> rmin));
+	MelderInfo_writeLine (L"Safe minimum (such that its inverse does not overflow): ", Melder_double (NUMfpp -> sfmin));
+	MelderInfo_writeLine (L"Overflow threshold (= (1 - eps) * radix ^ expmax): ", Melder_double (NUMfpp -> rmax));
 	MelderInfo_close ();
+END
+
+FORM (Praat_getTukeyQ, L"Get TukeyQ", 0)
+	REAL (L"Critical value", L"2.0")
+	NATURAL (L"Number of means", L"3")
+	POSITIVE (L"Degrees of freedom", L"10.0")
+	NATURAL (L"Number of rows", L"1")
+	OK
+DO
+	double q = GET_REAL (L"Critical value");
+	REQUIRE (q > 0 , L"Critical value must be > 0.")
+	double val = NUMtukeyQ (q, GET_INTEGER (L"Number of means"), GET_REAL (L"Degrees of freedom"), GET_INTEGER (L"Number of rows") );
+	Melder_informationReal (val, NULL);
+END
+
+FORM (Praat_getInvTukeyQ, L"Get invTukeyQ", 0)
+	REAL (L"Probability", L"0.05")
+	NATURAL (L"Number of means", L"3")
+	POSITIVE (L"Degrees of freedom", L"10.0")
+	NATURAL (L"Number of rows", L"1")
+	OK
+DO
+	double p = GET_REAL (L"Probability");
+	REQUIRE (p >= 0 && p <= 1, L"Probability must be in (0,1).")
+	double val = NUMinvTukeyQ (p, GET_INTEGER (L"Number of means"), GET_REAL (L"Degrees of freedom"), GET_INTEGER (L"Number of rows"));
+	Melder_informationReal (val, NULL);
 END
 
 /******************** Sound ****************************************/
@@ -4842,6 +5049,21 @@ DO
     }
 END
 
+FORM (Sound_playAsFrequencyShifted, L"Sound: Play as frequency shifted", L"Sound: Play as frequency shifted...")
+	REAL (L"Shift by (Hz)", L"1000.0")
+	POSITIVE (L"New sampling frequency (Hz)", L"44100.0")
+	NATURAL (L"Precision (samples)", L"50")
+	OK
+DO
+	double shiftBy = GET_REAL (L"Shift by");
+	double newSamplingFrequency = GET_REAL (L"New sampling frequency");
+	long precision = GET_INTEGER (L"Precision");
+	LOOP {
+		iam (Sound);
+		Sound_playAsFrequencyShifted (me, shiftBy, newSamplingFrequency, precision);
+	}
+END
+
 FORM (Sounds_to_DTW, L"Sounds: To DTW", 0)
     POSITIVE (L"Window length (s)", L"0.015")
     POSITIVE (L"Time step (s)", L"0.005")
@@ -4885,6 +5107,19 @@ DO
 		GET_REAL (L"Silence threshold"), GET_REAL (L"Minimum silent interval duration"),
 		GET_REAL (L"Minimum sounding interval duration"), GET_STRING (L"Silent interval label"),
 		GET_STRING (L"Sounding interval label")), my name);
+	}
+END
+
+FORM (Sound_copyChannelRanges, L"Sound: Copy channel ranges", 0)
+	LABEL (L"", L"Create a new Sound from the following channels:")
+	TEXTFIELD (L"Ranges", L"1:64")
+	LABEL (L"", L"To supply rising or falling ranges, use e.g. 2:6 or 5:3.")
+	OK
+DO
+	LOOP {
+		iam (Sound);
+		autoSound thee = Sound_copyChannelRanges (me, GET_STRING (L"Ranges"));
+		praat_new (thee.transfer(), my name, L"_channels");
 	}
 END
 
@@ -5014,16 +5249,13 @@ DO
 END
 
 FORM (Sound_fadeIn, L"Sound: Fade in", L"Sound: Fade in...")
-	CHANNEL (L"Channel (number, Left, or Right)", L"1")
-	OPTION (L"All")
-	OPTION (L"Left")
-	OPTION (L"Right")
+	CHANNEL (L"Channel (number, 0 = (all))", L"1")
 	REAL (L"Time (s)", L"-10000.0")
 	REAL (L"Fade time (s)", L"0.005")
 	BOOLEAN (L"Silent from start", 0)
 	OK
 DO
-	long channel = GET_INTEGER (L"Channel") - 1;
+	long channel = GET_INTEGER (L"Channel");
 	LOOP {
 		iam (Sound);
 		Sound_fade (me, channel, GET_REAL (L"Time"), GET_REAL (L"Fade time"), -1, GET_INTEGER (L"Silent from start"));
@@ -5032,16 +5264,13 @@ DO
 END
 
 FORM (Sound_fadeOut, L"Sound: Fade out", L"Sound: Fade out...")
-	CHANNEL (L"Channel (number, Left, or Right)", L"1")
-	OPTION (L"All")
-	OPTION (L"Left")
-	OPTION (L"Right")
+	CHANNEL (L"Channel (number, 0 = (all))", L"1")
 	REAL (L"Time (s)", L"10000.0")
 	REAL (L"Fade time (s)", L"-0.005")
 	BOOLEAN (L"Silent to end", 0)
 	OK
 DO
-	long channel = GET_INTEGER (L"Channel") - 1;
+	long channel = GET_INTEGER (L"Channel");
 	LOOP {
 		iam (Sound);
 		Sound_fade (me, channel, GET_REAL (L"Time"), GET_REAL (L"Fade time"), 1, GET_INTEGER (L"Silent to end"));
@@ -5147,6 +5376,27 @@ DO
 	LOOP {
 		iam (Sound);
 		praat_new (Sound_filterByGammaToneFilter4 (me, GET_REAL (L"Centre frequency"), GET_REAL (L"Bandwidth")), my name, L"_filtered");
+	}
+END
+
+FORM (Sound_removeNoise, L"Sound: Remove noise", L"Sound: Remove noise...")
+	REAL (L"left Noise time range (s)", L"0.0")
+	REAL (L"right Noise time range (s)", L"0.0")
+	POSITIVE (L"Window length (s)", L"0.025")
+	LABEL (L"", L"Filter")
+	REAL (L"left Filter frequency range (Hz)", L"80.0")
+	REAL (L"right Filter frequency range (Hz)", L"10000.0")
+	POSITIVE (L"Smoothing (Hz)", L"40.0")
+	OPTIONMENU (L"Noise reduction method", 1)
+	OPTION (L"Spectral subtraction")
+	OK
+DO
+	LOOP {
+		iam (Sound);
+		autoSound thee = Sound_removeNoise (me, GET_REAL (L"left Noise time range"), GET_REAL (L"right Noise time range"),
+			GET_REAL (L"Window length"), GET_REAL (L"left Filter frequency range"),
+			GET_REAL (L"right Filter frequency range"), GET_REAL (L"Smoothing"), GET_INTEGER (L"Noise reduction method"));
+		praat_new (thee.transfer(), my name, L"_denoised");
 	}
 END
 
@@ -5303,6 +5553,22 @@ DIRECT (Spectrum_conjugate)
 	}
 END
 
+FORM (Spectrum_shiftFrequencies, L"Spectrum: Shift frequencies", L"Spectrum: Shift frequencies...")
+	REAL (L"Shift by (Hz)", L"1000.0")
+	POSITIVE (L"New maximum frequency (Hz)", L"22050")
+	NATURAL (L"Precision", L"50")
+	OK
+DO
+	double shiftBy = GET_REAL (L"Shift by");
+	double newMaximumFrequency = GET_REAL (L"New maximum frequency");
+	long precision = GET_INTEGER (L"Precision");
+	LOOP {
+		iam (Spectrum);
+		autoSpectrum thee = Spectrum_shiftFrequencies (me, shiftBy, newMaximumFrequency, precision);
+		praat_new (thee.transfer(), my name, (shiftBy < 0 ? L"_m" : L"_"), Melder_integer (shiftBy));
+	}
+END
+
 DIRECT (Spectra_multiply)
 	Spectrum s1 = 0, s2 = 0;
 	LOOP {
@@ -5311,6 +5577,36 @@ DIRECT (Spectra_multiply)
 	}
 	Melder_assert (s1 && s2);
 	praat_new (Spectra_multiply (s1, s2), Thing_getName (s1), L"_x_", Thing_getName (s2));
+END
+
+FORM (Spectrum_resample, L"Spectrum: Resample", 0)
+	NATURAL (L"New number of frequencies", L"256")
+	OK
+DO
+	long numberOfFrequencies = GET_INTEGER (L"New number of frequencies");
+	LOOP {
+		iam (Spectrum);
+		autoSpectrum thee = Spectrum_resample (me, numberOfFrequencies);
+		praat_new (thee.transfer(), my name, L"_", Melder_integer (numberOfFrequencies));
+	}
+END
+
+FORM (Spectrum_compressFrequencyDomain, L"Spectrum: Compress frequency domain", 0)
+	POSITIVE (L"Maximum frequency (Hz)", L"5000.0")
+	INTEGER (L"Interpolation depth", L"50")
+	RADIO (L"Interpolation scale", 1)
+	RADIOBUTTON (L"Linear")
+	RADIOBUTTON (L"Logarithmic")
+	OK
+DO
+	double maximumFrequency = GET_REAL (L"Maximum frequency");
+	long interpolationDepth = GET_INTEGER (L"Interpolation depth");
+	int freqScale = GET_INTEGER (L"Interpolation scale");
+	LOOP {
+		iam (Spectrum);
+		autoSpectrum thee = Spectrum_compressFrequencyDomain (me, maximumFrequency, interpolationDepth, freqScale, 1);
+		praat_new (thee.transfer(), my name, L"_", Melder_integer (maximumFrequency));
+	}
 END
 
 DIRECT (Spectrum_unwrap)
@@ -5340,14 +5636,14 @@ FORM (SpeechSynthesizer_create, L"Create SpeechSynthesizer", L"Create SpeechSynt
 	}
 	LIST (L"Language", espeakdata_voices_names -> numberOfStrings, (const wchar_t **) espeakdata_voices_names -> strings, prefVoice)
 	long prefVariant = Strings_findString (espeakdata_variants_names, L"default");
-	LABEL (L"", L"The voice variants will only work in a future version o Praat")
 	LIST (L"Voice variant", espeakdata_variants_names -> numberOfStrings,
 		(const wchar_t **) espeakdata_variants_names -> strings, prefVariant)
 	OK
 DO
 	long voiceIndex = GET_INTEGER (L"Language");
 	long variantIndex = GET_INTEGER (L"Voice variant"); // default is not in the list!
-	autoSpeechSynthesizer me = SpeechSynthesizer_create (voiceIndex, variantIndex);
+	autoSpeechSynthesizer me = SpeechSynthesizer_create (espeakdata_voices_names -> strings[voiceIndex],
+		espeakdata_variants_names -> strings[variantIndex]);
     praat_new (me.transfer(),  espeakdata_voices_names -> strings[voiceIndex], L"_",
         espeakdata_variants_names -> strings[variantIndex]);
 END
@@ -5388,14 +5684,14 @@ END
 DIRECT (SpeechSynthesizer_getVoiceName)
 	LOOP {
 		iam (SpeechSynthesizer);
-		Melder_information (espeakdata_voices_names -> strings [my d_voice]);
+		Melder_information (my d_voiceLanguageName);
 	}
 END
 
 DIRECT (SpeechSynthesizer_getVoiceVariant)
 	LOOP {
 		iam (SpeechSynthesizer);
-		Melder_information (espeakdata_variants_names -> strings[my d_voiceVariant]);
+		Melder_information (my d_voiceVariantName);
 	}
 END
 
@@ -5422,7 +5718,7 @@ FORM (SpeechSynthesizer_setSpeechOutputSettings, L"SpeechSynthesizer: Set speech
 	INTEGER (L"Pitch adjustment (0-99)", L"50")
 	INTEGER (L"Pitch range (0-99)", L"50");
 	NATURAL (L"Words per minute (80-450)", L"175");
-	BOOLEAN (L"Estimate words per minute from data", 1);
+	BOOLEAN (L"Estimate rate from data", 1);
 	OPTIONMENU (L"Output phoneme codes are", 2)
 	OPTION (L"Kirshenbaum_espeak")
 	OPTION (L"IPA")
@@ -5438,7 +5734,7 @@ DO
 	if (pitchRange < 0) pitchRange = 0;
 	if (pitchRange > 99) pitchRange = 99;
 	double wordsPerMinute = GET_INTEGER (L"Words per minute");
-	bool estimateWordsPerMinute = GET_INTEGER (L"Estimate words per minute from data");
+	bool estimateWordsPerMinute = GET_INTEGER (L"Estimate rate from data");
 	int outputPhonemeCodes = GET_INTEGER (L"Output phoneme codes are");
 
 	LOOP {
@@ -5763,18 +6059,6 @@ DIRECT (Strings_to_Categories)
 	}
 END
 
-FORM (Strings_setString, L"Strings: Set string", L"Strings: Set string...")
-	NATURAL (L"Index", L"1")
-	SENTENCE (L"String", L"")
-	OK
-DO
-	LOOP {
-		iam (Strings);
-		Strings_setString (me, GET_STRING (L"String"), GET_INTEGER (L"Index"));
-		praat_dataChanged (me);
-	}
-END
-
 FORM (Strings_change, L"Strings: Change", L"Strings: Change")
 	SENTENCE (L"Search", L"a")
 	SENTENCE (L"Replace", L"a")
@@ -5876,7 +6160,101 @@ DIRECT (Table_createFromWeeninkData)
 	praat_new (Table_createFromWeeninkData (), L"m10w10c10");
 END
 
-FORM (Table_drawScatterPlotWithConfidenceIntervals, L"Table: Scatter plot (confidence intervals)", L"")
+FORM (Table_boxPlots, L"Table: Box plots", 0)
+	WORD (L"Data column", L"")
+	WORD (L"Factor column", L"")
+	REAL (L"left Vertical range", L"0.0")
+	REAL (L"right Vertical range", L"0.0")
+	BOOLEAN (L"Garnish", 1);
+	OK
+DO
+	autoPraatPicture picture;
+	double ymin = GET_REAL (L"left Vertical range");
+	double ymax = GET_REAL (L"right Vertical range");
+	int garnish = GET_INTEGER (L"Garnish");
+	LOOP {
+		iam (Table);
+		long dataColumn = Table_getColumnIndexFromColumnLabel (me, GET_STRING (L"Data column"));
+		long factorColumn = Table_getColumnIndexFromColumnLabel (me, GET_STRING (L"Factor column"));
+		Table_boxPlots (me, GRAPHICS, dataColumn, factorColumn, ymin, ymax, garnish);
+	}
+END
+
+FORM (Table_normalProbabilityPlot, L"Table: Normal probability plot", L"Table: Normal probability plot...")
+	WORD (L"Column", L"")
+	NATURAL (L"Number of quantiles", L"100")
+	REAL (L"Number of sigmas", L"0.0")
+	NATURAL (L"Label size", L"12")
+	WORD (L"Label", L"+")
+	BOOLEAN (L"Garnish", 1);
+	OK
+DO
+	autoPraatPicture picture;
+	LOOP {
+		iam (Table);
+		long column = Table_getColumnIndexFromColumnLabel (me, GET_STRING (L"Column"));
+		Table_normalProbabilityPlot (me, GRAPHICS, column,
+			GET_INTEGER (L"Number of quantiles"), GET_REAL (L"Number of sigmas"),
+			GET_INTEGER (L"Label size"), GET_STRING (L"Label"), GET_INTEGER (L"Garnish"));
+	}
+END
+
+FORM (Table_quantileQuantilePlot, L"Table: Quantile-quantile plot", L"Table: Quantile-quantile plot...")
+	WORD (L"Horizontal axis column", L"")
+	WORD (L"Vertical axis column", L"")
+	NATURAL (L"Number of quantiles", L"100")
+	REAL (L"left Horizontal range", L"0.0")
+	REAL (L"right Horizontal range", L"0.0")
+	REAL (L"left Vertical range", L"0.0")
+	REAL (L"right Vertical range", L"0.0")
+	NATURAL (L"Label size", L"12")
+	WORD (L"Label", L"+")
+	BOOLEAN (L"Garnish", 1);
+	OK
+DO
+	autoPraatPicture picture;
+	LOOP {
+		iam (Table);
+		long xcolumn = Table_getColumnIndexFromColumnLabel (me, GET_STRING (L"Horizontal axis column"));
+		long ycolumn = Table_getColumnIndexFromColumnLabel (me, GET_STRING (L"Vertical axis column"));
+		Table_quantileQuantilePlot (me, GRAPHICS, xcolumn, ycolumn, GET_INTEGER (L"Number of quantiles"),
+		GET_REAL (L"left Horizontal range"), GET_REAL (L"right Horizontal range"),
+		GET_REAL (L"left Vertical range"), GET_REAL (L"right Vertical range"),
+		GET_INTEGER (L"Label size"), GET_STRING (L"Label"), GET_INTEGER (L"Garnish"));
+	}
+END
+
+FORM (Table_quantileQuantilePlot_betweenLevels, L"Table: Quantile-quantile plot (between levels)", L"Table: Quantile-quantile plot...")
+	WORD (L"Data column", L"")
+	WORD (L"Factor column", L"")
+	WORD (L"Horizontal factor level", L"")
+	WORD (L"Vertical factor level", L"")
+	NATURAL (L"Number of quantiles", L"100")
+	REAL (L"left Horizontal range", L"0.0")
+	REAL (L"right Horizontal range", L"0.0")
+	REAL (L"left Vertical range", L"0.0")
+	REAL (L"right Vertical range", L"0.0")
+	NATURAL (L"Label size", L"12")
+	WORD (L"Label", L"+")
+	BOOLEAN (L"Garnish", 1);
+	OK
+DO
+	autoPraatPicture picture;
+	LOOP {
+		iam (Table);
+		long dataColumn = Table_getColumnIndexFromColumnLabel (me, GET_STRING (L"Data column"));
+		long factorColumn = Table_getColumnIndexFromColumnLabel (me, GET_STRING (L"Factor column"));
+		wchar_t *xLevel = GET_STRING (L"Horizontal factor level");
+		wchar_t *yLevel = GET_STRING (L"Vertical factor level");
+		Table_quantileQuantilePlot_betweenLevels (me, GRAPHICS, dataColumn, factorColumn, xLevel, yLevel,
+			GET_INTEGER (L"Number of quantiles"), GET_REAL (L"left Horizontal range"),
+			GET_REAL (L"right Horizontal range"), GET_REAL (L"left Vertical range"),
+			GET_REAL (L"right Vertical range"), GET_INTEGER (L"Label size"), GET_STRING (L"Label"),
+			GET_INTEGER (L"Garnish"));
+	}
+END
+
+FORM (Table_scatterPlotWithConfidenceIntervals, L"Table: Scatter plot (confidence intervals)", L"")
 	NATURAL (L"Horizontal axis column", L"1")
 	REAL (L"left Horizontal range", L"0.0")
 	REAL (L"right Horizontal range", L"0.0")
@@ -5894,7 +6272,7 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Table);
-		Table_drawScatterPlotWithConfidenceIntervals (me, GRAPHICS,
+		Table_scatterPlotWithConfidenceIntervals (me, GRAPHICS,
 		GET_INTEGER (L"Horizontal axis column"), GET_INTEGER (L"Vertical axis column"),
 		GET_REAL (L"left Horizontal range"), GET_REAL (L"right Horizontal range"),
 		GET_REAL (L"left Vertical range"), GET_REAL (L"right Vertical range"),
@@ -5921,14 +6299,14 @@ DO
 		double tnb, lnmu, lnvar;
 		double prob = TableOfReal_normalityTest_BHEP (me, &h, &tnb, &lnmu, &lnvar);
 		MelderInfo_open ();
-		MelderInfo_writeLine1 (L"Baringhaus–Henze–Epps–Pulley normality test:");
-		MelderInfo_writeLine2 (L"Significance of normality: ", Melder_double (prob));
-		MelderInfo_writeLine2 (L"BHEP statistic: ", Melder_double (tnb));
-		MelderInfo_writeLine2 (L"Lognormal mean: ", Melder_double (lnmu));
-		MelderInfo_writeLine2 (L"Lognormal variance: ", Melder_double (lnvar));
-		MelderInfo_writeLine2 (L"Smoothing: ", Melder_double (h));
-		MelderInfo_writeLine2 (L"Sample size: ", Melder_integer (my numberOfRows));
-		MelderInfo_writeLine2 (L"Number of variables: ", Melder_integer (my numberOfColumns));
+		MelderInfo_writeLine (L"Baringhaus–Henze–Epps–Pulley normality test:");
+		MelderInfo_writeLine (L"Significance of normality: ", Melder_double (prob));
+		MelderInfo_writeLine (L"BHEP statistic: ", Melder_double (tnb));
+		MelderInfo_writeLine (L"Lognormal mean: ", Melder_double (lnmu));
+		MelderInfo_writeLine (L"Lognormal variance: ", Melder_double (lnvar));
+		MelderInfo_writeLine (L"Smoothing: ", Melder_double (h));
+		MelderInfo_writeLine (L"Sample size: ", Melder_integer (my numberOfRows));
+		MelderInfo_writeLine (L"Number of variables: ", Melder_integer (my numberOfColumns));
 	}
 	MelderInfo_close ();
 END
@@ -5963,7 +6341,7 @@ FORM (TableOfReal_createFromVanNieropData_25females, L"Create TableOfReal (Van N
 	BOOLEAN (L"Include formant levels", 0)
 	OK
 DO
-	praat_new1 (TableOfReal_createFromVanNieropData_25females (GET_INTEGER (L"Include formant levels")), L"vannierop_25females");
+	praat_new (TableOfReal_createFromVanNieropData_25females (GET_INTEGER (L"Include formant levels")), L"vannierop_25females");
 END
 
 FORM (TableOfReal_createFromWeeninkData, L"Create TableOfReal (Weenink 1985)...", L"Create TableOfReal (Weenink 1985)...")
@@ -6496,7 +6874,7 @@ DIRECT (VowelEditor_create)
 	if (theCurrentPraatApplication -> batch) {
 		Melder_throw ("Cannot edit from batch.");
 	}
-	autoVowelEditor vowelEditor = VowelEditor_create (theCurrentPraatApplication -> topShell, L"VowelEditor", NULL);
+	autoVowelEditor vowelEditor = VowelEditor_create (L"VowelEditor", NULL);
 	vowelEditor.transfer(); // user becomes the owner
 END
 
@@ -6710,8 +7088,10 @@ void praat_uvafon_David_init () {
 
 	espeakdata_praat_init ();
 
-	praat_addMenuCommand (L"Objects", L"Goodies", L"Report floating point properties", 0, 0, DO_Praat_ReportFloatingPointProperties);
-	praat_addMenuCommand (L"Objects", L"New", L"Create Strings from espeak voices", L"Create Strings as directory list...", 1 + praat_HIDDEN, DO_Strings_createFromEspeakVoices);
+	praat_addMenuCommand (L"Objects", L"Technical", L"Report floating point properties", L"Report integer properties", 0, DO_Praat_ReportFloatingPointProperties);
+	praat_addMenuCommand (L"Objects", L"Goodies", L"Get TukeyQ...", 0, praat_HIDDEN, DO_Praat_getTukeyQ);
+	praat_addMenuCommand (L"Objects", L"Goodies", L"Get invTukeyQ...", 0, praat_HIDDEN, DO_Praat_getInvTukeyQ);
+	praat_addMenuCommand (L"Objects", L"New", L"Create Strings from espeak voices", L"Create Strings as directory list...", praat_DEPTH_1 + praat_HIDDEN, DO_Strings_createFromEspeakVoices);
 	praat_addMenuCommand (L"Objects", L"New", L"Create iris data set", L"Create TableOfReal...", 1, DO_New_CreateIrisDataset);
 	praat_addMenuCommand (L"Objects", L"New", L"Create Permutation...", 0, 0, DO_Permutation_create);
 	praat_addMenuCommand (L"Objects", L"New", L"Polynomial", 0, 0, 0);
@@ -7063,6 +7443,7 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classFormantFilter, 0, L"Draw filter functions...", L"Draw filters...", 1, DO_FormantFilter_drawFilterFunctions);
 	praat_addAction1 (classFormantGrid, 0, L"Draw...", L"Edit", 1, DO_FormantGrid_draw);
 
+
 	praat_addAction1 (classIntensity, 0, L"To TextGrid (silences)...", L"To IntensityTier (valleys)", 0, DO_Intensity_to_TextGrid_detectSilences);
 
 	praat_addAction1 (classISpline, 0, L"ISpline help", 0, 0, DO_ISpline_help);
@@ -7092,10 +7473,14 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classLongSound, 2, L"Save as stereo NIST file...", L"Save as stereo NeXt/Sun file...", 1, DO_LongSounds_writeToStereoNistFile);
 	praat_addAction1 (classLongSound, 2, L"Write to stereo NIST file...", L"Write to stereo NeXt/Sun file...", praat_HIDDEN + praat_DEPTH_1, DO_LongSounds_writeToStereoNistFile);
 
+	praat_addAction1 (classLtas, 0, L"Report spectral tilt...", L"Get slope...", 1, DO_Ltas_reportSpectralTilt);
+
 	praat_addAction1 (classMatrix, 0, L"Scatter plot...", L"Paint cells...", 1, DO_Matrix_scatterPlot);
 	praat_addAction1 (classMatrix, 0, L"Draw as squares...", L"Scatter plot...", 1, DO_Matrix_drawAsSquares);
 	praat_addAction1 (classMatrix, 0, L"Draw distribution...", L"Draw as squares...", 1, DO_Matrix_drawDistribution);
 	praat_addAction1 (classMatrix, 0, L"Draw cumulative distribution...", L"Draw distribution...", 1, DO_Matrix_drawCumulativeDistribution);
+	praat_addAction1 (classMatrix, 0, L"Get mean...", L"Get sum", 1, DO_Matrix_getMean);
+	praat_addAction1 (classMatrix, 0, L"Get standard deviation...", L"Get mean...", 1, DO_Matrix_getStandardDeviation);
 	praat_addAction1 (classMatrix, 0, L"Transpose", L"Synthesize", 0, DO_Matrix_transpose);
 	praat_addAction1 (classMatrix, 0, L"Solve equation...", L"Analyse", 0, DO_Matrix_solveEquation);
 	praat_addAction1 (classMatrix, 0, L"To Pattern...", L"To VocalTract", 1, DO_Matrix_to_Pattern);
@@ -7235,6 +7620,7 @@ void praat_uvafon_David_init () {
 
 	praat_addAction1 (classSound, 0, L"To TextGrid (silences)...", L"To IntervalTier", 1, DO_Sound_to_TextGrid_detectSilences);
     praat_addAction1 (classSound, 0, L"Play one channel...", L"Play", praat_HIDDEN, DO_Sound_playOneChannel);
+    praat_addAction1 (classSound, 0, L"Play as frequency shifted...", L"Play", praat_HIDDEN, DO_Sound_playAsFrequencyShifted);
 	praat_addAction1 (classSound, 0, L"Draw where...", L"Draw...", 1, DO_Sound_drawWhere);
 	//	praat_addAction1 (classSound, 0, L"Paint where...", L"Draw where...", praat_DEPTH_1 | praat_HIDDEN, DO_Sound_paintWhere);
 	praat_addAction1 (classSound, 0, L"Paint where...", L"Draw where...", 1, DO_Sound_paintWhere);
@@ -7256,11 +7642,13 @@ void praat_uvafon_David_init () {
     praat_addAction1 (classSound, 2, L"To Polygon (enclosed)...", L"Cross-correlate...", praat_DEPTH_1 | praat_HIDDEN, DO_Sounds_to_Polygon_enclosed);
     praat_addAction1 (classSound, 2, L"To DTW...", L"Cross-correlate...", praat_DEPTH_1, DO_Sounds_to_DTW);
 
-	praat_addAction1 (classSound, 0, L"Filter (gammatone)...", L"Filter (formula)...", 1, DO_Sound_filterByGammaToneFilter4);
+	praat_addAction1 (classSound, 1, L"Filter (gammatone)...", L"Filter (de-emphasis)...", 1, DO_Sound_filterByGammaToneFilter4);
+	praat_addAction1 (classSound, 0, L"Remove noise...", L"Filter (formula)...", 1, DO_Sound_removeNoise);
 
 	praat_addAction1 (classSound, 0, L"Change gender...", L"Deepen band modulation...", 1, DO_Sound_changeGender);
 
 	praat_addAction1 (classSound, 0, L"Change speaker...", L"Deepen band modulation...", praat_DEPTH_1 | praat_HIDDEN, DO_Sound_changeSpeaker);
+	praat_addAction1 (classSound, 0, L"Copy channel ranges...", L"Extract all channels", praat_DEPTH_1 | praat_HIDDEN, DO_Sound_copyChannelRanges);
 	praat_addAction1 (classSound, 0, L"Trim silences...", L"Resample...", praat_DEPTH_1 | praat_HIDDEN, DO_Sound_trimSilences);
 	praat_addAction1 (classSound, 0, L"To KlattGrid (simple)...", L"To Manipulation...", 1, DO_Sound_to_KlattGrid_simple);
 	praat_addAction2 (classSound, 1, classPitch, 1, L"To FormantFilter...", 0, 0, DO_Sound_and_Pitch_to_FormantFilter);
@@ -7269,11 +7657,13 @@ void praat_uvafon_David_init () {
 	praat_addAction2 (classSound, 1, classPitch, 1, L"Change speaker...", 0, praat_HIDDEN, DO_Sound_and_Pitch_changeSpeaker);
 	praat_addAction2 (classSound, 1, classIntervalTier, 1, L"Cut parts matching label...", 0, 0, DO_Sound_and_IntervalTier_cutPartsMatchingLabel);
 	praat_addAction1 (classSpectrogram, 2, L"To DTW...", L"To Spectrum (slice)...", 0, DO_Spectrograms_to_DTW);
-
-	praat_addAction1 (classSpectrum, 0, L"Draw phases...", L"Draw (log freq)...", 1, DO_Spectrum_drawPhases);
+	praat_addAction1 (classSpectrum, 0, L"Draw phases...", L"Draw (log freq)...", praat_DEPTH_1 | praat_HIDDEN, DO_Spectrum_drawPhases);
 	praat_addAction1 (classSpectrum, 0, L"Conjugate", L"Formula...", praat_HIDDEN | praat_DEPTH_1, DO_Spectrum_conjugate);
 	praat_addAction1 (classSpectrum, 2, L"Multiply", L"To Sound (fft)", praat_HIDDEN, DO_Spectra_multiply);
-	praat_addAction1 (classSpectrum, 0, L"To Matrix (unwrap)", L"To Matrix", 0, DO_Spectrum_unwrap);
+	praat_addAction1 (classSpectrum, 0, L"To Matrix (unwrap)", L"To Matrix", praat_HIDDEN, DO_Spectrum_unwrap);
+	praat_addAction1 (classSpectrum, 0, L"Shift frequencies...", L"To Matrix", praat_HIDDEN, DO_Spectrum_shiftFrequencies);
+	praat_addAction1 (classSpectrum, 0, L"Compress frequency domain...", L"Shift frequencies...", praat_HIDDEN, DO_Spectrum_compressFrequencyDomain);
+	praat_addAction1 (classSpectrum, 0, L"Resample...", L"Compress frequency domain...", praat_HIDDEN, DO_Spectrum_resample);
 	praat_addAction1 (classSpectrum, 0, L"To Cepstrum", L"To Spectrogram", 0, DO_Spectrum_to_Cepstrum);
 
 	praat_addAction1 (classSpeechSynthesizer, 0, L"SpeechSynthesizer help", 0, 0, DO_SpeechSynthesizer_help);
@@ -7308,9 +7698,8 @@ void praat_uvafon_David_init () {
 
 	praat_addAction1 (classStrings, 0, L"To Categories", 0, 0, DO_Strings_to_Categories);
 	praat_addAction1 (classStrings, 0, L"Append", 0, 0, DO_Strings_append);
-	praat_addAction1 (classStrings, 1, L"Set string...", L"Genericize", 0, DO_Strings_setString);
-	praat_addAction1 (classStrings, 0, L"Change...", L"Set string...", 0, DO_Strings_change);
-	praat_addAction1 (classStrings, 0, L"Extract part...", L"Change...", 0, DO_Strings_extractPart);
+	praat_addAction1 (classStrings, 0, L"Change...", L"Replace all...", praat_HIDDEN, DO_Strings_change);
+	praat_addAction1 (classStrings, 0, L"Extract part...", L"Replace all...", 0, DO_Strings_extractPart);
 	praat_addAction1 (classStrings, 0, L"To Permutation...", L"To Distributions", 0, DO_Strings_to_Permutation);
 	praat_addAction1 (classStrings, 2, L"To EditDistanceTable", L"To Distributions", 0, DO_Strings_to_EditDistanceTable);
 
@@ -7319,12 +7708,21 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classSVD, 0, L"Extract right singular vectors", 0, 0, DO_SVD_extractRightSingularVectors);
 	praat_addAction1 (classSVD, 0, L"Extract singular values", 0, 0, DO_SVD_extractSingularValues);
 
-	praat_addAction1 (classTable, 0, L"Scatter plot (ci)...", 0, praat_DEPTH_1 | praat_HIDDEN, DO_Table_drawScatterPlotWithConfidenceIntervals);
+	praat_addAction1 (classTable, 0, L"Box plots...", L"Draw ellipse (standard deviation)...", praat_DEPTH_1 | praat_HIDDEN, DO_Table_boxPlots);
+	praat_addAction1 (classTable, 0, L"Normal probability plot...", L"Box plots...", praat_DEPTH_1 | praat_HIDDEN, DO_Table_normalProbabilityPlot);
+	praat_addAction1 (classTable, 0, L"Quantile-quantile plot...", L"Normal probability plot...", praat_DEPTH_1 | praat_HIDDEN, DO_Table_quantileQuantilePlot);
+	praat_addAction1 (classTable, 0, L"Quantile-quantile plot (between levels)...", L"Quantile-quantile plot...", praat_DEPTH_1 | praat_HIDDEN, DO_Table_quantileQuantilePlot_betweenLevels);
+	praat_addAction1 (classTable, 0, L"Scatter plot (ci)...", 0, praat_DEPTH_1 | praat_HIDDEN, DO_Table_scatterPlotWithConfidenceIntervals);
+	praat_addAction1 (classTable, 1, L"Report one-way anova...", L"Report group difference (Wilcoxon rank sum)...", praat_DEPTH_1 | praat_HIDDEN, DO_Table_reportOneWayAnova);
+	praat_addAction1 (classTable, 1, L"Report one-way Kruskal-Wallis...", L"Report one-way anova...", praat_DEPTH_1 | praat_HIDDEN, DO_Table_reportOneWayKruskalWallis);
+	praat_addAction1 (classTable, 1, L"Report two-way anova...", L"Report one-way Kruskal-Wallis...", praat_DEPTH_1 | praat_HIDDEN, DO_Table_reportTwoWayAnova);
+
 	praat_addAction1 (classTable, 0, L"To KlattTable", 0, praat_HIDDEN, DO_Table_to_KlattTable);
 	praat_addAction1 (classTable, 1, L"Get median absolute deviation...", L"Get standard deviation...", 1, DO_Table_getMedianAbsoluteDeviation);
+	praat_addAction1 (classTable, 0, L"To StringsIndex (column)...", 0, praat_HIDDEN, DO_Table_to_StringsIndex_column);
 
 	praat_addAction1 (classTableOfReal, 1, L"Report multivariate normality...", L"Get column stdev (label)...",
-	                  praat_DEPTH_1 | praat_HIDDEN, DO_TableOfReal_reportMultivariateNormality);
+		praat_DEPTH_1 | praat_HIDDEN, DO_TableOfReal_reportMultivariateNormality);
 	praat_addAction1 (classTableOfReal, 0, L"Append columns", L"Append", 1, DO_TableOfReal_appendColumns);
 	praat_addAction1 (classTableOfReal, 0, L"Multivariate statistics -", 0, 0, 0);
 	praat_addAction1 (classTableOfReal, 0, L"To Discriminant", 0, 1, DO_TableOfReal_to_Discriminant);

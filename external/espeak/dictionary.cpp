@@ -33,6 +33,7 @@
 #include "synthesize.h"
 #include "translate.h"
 
+
 int dictionary_skipwords;
 char dictionary_name[40];
 
@@ -400,8 +401,8 @@ int HashDictionary(const char *string)
 
 
 
-char *EncodePhonemes(char *p, char *outptr, unsigned char *bad_phoneme)
-/*********************************************************************/
+const char *EncodePhonemes(const char *p, char *outptr, unsigned char *bad_phoneme)
+/***************************************************************************/
 /* Translate a phoneme string from ascii mnemonics to internal phoneme numbers,
    from 'p' up to next blank .
    Returns advanced 'p'
@@ -417,7 +418,8 @@ char *EncodePhonemes(char *p, char *outptr, unsigned char *bad_phoneme)
 	int  consumed;
 	unsigned int  mnemonic_word;
 
-	bad_phoneme[0] = 0;
+	if(bad_phoneme != NULL)
+		bad_phoneme[0] = 0;
 
 	// skip initial blanks
 	while(isspace(*p))
@@ -477,8 +479,11 @@ char *EncodePhonemes(char *p, char *outptr, unsigned char *bad_phoneme)
 			if(max_ph == 0)
 			{
 				// not recognised, report and ignore
-				bad_phoneme[0] = *p;
-				bad_phoneme[1] = 0;
+				if(bad_phoneme != NULL)
+				{
+					bad_phoneme[0] = *p;
+					bad_phoneme[1] = 0;
+				}
 				*outptr++ = 0;
 				return(p+1);
 			}
@@ -570,7 +575,7 @@ sprintf(outptr,"* ");
 unsigned short ipa1[96] = {
 0x20,0x21,0x22,0x2b0,0x24,0x25,0x0e6,0x2c8,0x28,0x27e,0x2a,0x2b,0x2cc,0x2d,0x2e,0x2f,
 0x252,0x31,0x32,0x25c,0x34,0x35,0x36,0x37,0x275,0x39,0x2d0,0x2b2,0x3c,0x3d,0x3e,0x294,
-0x259,0x251,0x3b2,0xe7,0xf0,0x25b,0x46,0x262,0x127,0x26a,0x25f,0x4b,0x4c,0x271,0x14b,0x254,
+0x259,0x251,0x3b2,0xe7,0xf0,0x25b,0x46,0x262,0x127,0x26a,0x25f,0x4b,0x29f,0x271,0x14b,0x254,
 0x3a6,0x263,0x280,0x283,0x3b8,0x28a,0x28c,0x153,0x3c7,0xf8,0x292,0x32a,0x5c,0x5d,0x5e,0x5f,
 0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x261,0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
 0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x303,0x7f
@@ -614,7 +619,7 @@ char *WritePhMnemonic(char *phon_out, PHONEME_TAB *ph, PHONEME_LIST *plist, int 
 		}
 		else
 		{
-			InterpretPhoneme(NULL, 0, plist, &phdata);
+			InterpretPhoneme(NULL, 0, plist, &phdata, NULL);
 		}
 
 		len = strlen(phdata.ipa_string);
@@ -1324,12 +1329,12 @@ void SetWordStress(Translator *tr, char *output, unsigned int *dictionary_flags,
 							mnem = phoneme_tab[final_ph]->mnemonic;
 							mnem2 = phoneme_tab[final_ph2]->mnemonic;
 
-							if((mnem == 's') && (mnem2 == 'n'))
+							if((mnem == 's') && (phoneme_tab[final_ph2]->type == phNASAL))
 							{
 								// -ns  stress remains on penultimate syllable
 							}
 							else
-							if(((mnem != 'n') && (mnem != 's')) || (phoneme_tab[final_ph2]->type != phVOWEL))
+							if(((phoneme_tab[final_ph]->type != phNASAL) && (mnem != 's')) || (phoneme_tab[final_ph2]->type != phVOWEL))
 							{
 								stressed_syllable = vowel_count - 1;
 							}
@@ -3621,6 +3626,5 @@ int RemoveEnding(Translator *tr, char *word, int end_type, char *word_copy)
 
 	return(end_flags);
 }   /* end of RemoveEnding */
-
 
 

@@ -175,7 +175,7 @@ DIRECT (LongSound_view)
 	if (theCurrentPraatApplication -> batch) Melder_throw ("Cannot view or edit a LongSound from batch.");
 	LOOP {
 		iam (LongSound);
-		autoSoundEditor editor = SoundEditor_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME, me);
+		autoSoundEditor editor = SoundEditor_create (ID_AND_FULL_NAME, me);
 		praat_installEditor (editor.transfer(), IOBJECT);
 	}
 END
@@ -368,14 +368,10 @@ DO
 END
 
 DIRECT (Sounds_combineToStereo)
-	Sound s1 = NULL, s2 = NULL;
-	LOOP {
-		iam (Sound);
-		( s1 ? s2 : s1 ) = me;
-	}
-	Melder_assert (s1 != NULL && s2 != NULL);
-	autoSound thee = Sounds_combineToStereo (s1, s2);
-	praat_new (thee.transfer(), s1 -> name, L"_", s2 -> name);
+	autoCollection set = praat_getSelectedObjects ();
+	autoSound result = Sounds_combineToStereo (set.peek());
+	long numberOfChannels = result -> ny;   // dereference before transferring
+	praat_new (result.transfer(), L"combined_", Melder_integer (numberOfChannels));
 END
 
 DIRECT (Sounds_concatenate)
@@ -444,7 +440,7 @@ DIRECT (Sound_convertToStereo)
 	LOOP {
 		iam (Sound);
 		autoSound thee = Sound_convertToStereo (me);
-		praat_new2 (thee.transfer(), my name, L"_stereo");
+		praat_new (thee.transfer(), my name, L"_stereo");
 	}
 END
 
@@ -694,7 +690,7 @@ static void cb_SoundEditor_publication (Editor editor, void *closure, Data publi
 			int IOBJECT;
 			LOOP {
 				iam (Spectrum);
-				autoSpectrumEditor editor2 = SpectrumEditor_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME, me);
+				autoSpectrumEditor editor2 = SpectrumEditor_create (ID_AND_FULL_NAME, me);
 				praat_installEditor (editor2.transfer(), IOBJECT);
 			}
 		}
@@ -706,7 +702,7 @@ DIRECT (Sound_edit)
 	if (theCurrentPraatApplication -> batch) Melder_throw ("Cannot view or edit a Sound from batch.");
 	LOOP {
 		iam (Sound);
-		autoSoundEditor editor = SoundEditor_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME, me);
+		autoSoundEditor editor = SoundEditor_create (ID_AND_FULL_NAME, me);
 		editor -> setPublicationCallback (cb_SoundEditor_publication, NULL);
 		praat_installEditor (editor.transfer(), IOBJECT);
 	}
@@ -1332,9 +1328,9 @@ END
 
 FORM_READ (Sound_readSeparateChannelsFromSoundFile, L"Read separate channels from sound file", 0, true)
 	autoSound sound = Sound_readFromSoundFile (file);
-	wchar name [300];
+	wchar_t name [300];
 	wcscpy (name, MelderFile_name (file));
-	wchar *lastPeriod = wcsrchr (name, '.');
+	wchar_t *lastPeriod = wcsrchr (name, '.');
 	if (lastPeriod != NULL) {
 		*lastPeriod = '\0';
 	}
@@ -1360,7 +1356,7 @@ static void cb_SoundRecorder_publication (Editor editor, void *closure, Data pub
 	(void) editor;
 	(void) closure;
 	try {
-		praat_new1 (publication, NULL);
+		praat_new (publication, NULL);
 	} catch (MelderError) {
 		Melder_flushError (NULL);
 	}
@@ -1377,7 +1373,7 @@ static void do_Sound_record (int numberOfChannels) {
 		}
 	}
 	if (! theSoundRecorder) {
-		theSoundRecorder = SoundRecorder_create (theCurrentPraatApplication -> topShell, numberOfChannels);
+		theSoundRecorder = SoundRecorder_create (numberOfChannels);
 		theSoundRecorder -> setDestructionCallback (cb_SoundRecorder_destruction, NULL);
 		theSoundRecorder -> setPublicationCallback (cb_SoundRecorder_publication, NULL);
 	}
@@ -2113,68 +2109,38 @@ FORM_WRITE (Sound_writeToSesamFile, L"Save as Sesam file", 0, L"sdf")
 END
 
 FORM_WRITE (Sound_writeToStereoAifcFile, L"Save as stereo AIFC file", 0, L"aifc")
-	Sound s1 = NULL, s2 = NULL;
-	LOOP {
-		iam (Sound);
-		( s1 ? s2 : s1 ) = me;
-	}
-	Melder_assert (s1 && s2);
-	autoSound stereo = Sounds_combineToStereo (s1, s2);
+	autoCollection set = praat_getSelectedObjects ();
+	autoSound stereo = Sounds_combineToStereo (set.peek());
 	Sound_writeToAudioFile (stereo.peek(), file, Melder_AIFC, 16);
 END
 
 FORM_WRITE (Sound_writeToStereoAiffFile, L"Save as stereo AIFF file", 0, L"aiff")
-	Sound s1 = NULL, s2 = NULL;
-	LOOP {
-		iam (Sound);
-		( s1 ? s2 : s1 ) = me;
-	}
-	Melder_assert (s1 && s2);
-	autoSound stereo = Sounds_combineToStereo (s1, s2);
+	autoCollection set = praat_getSelectedObjects ();
+	autoSound stereo = Sounds_combineToStereo (set.peek());
 	Sound_writeToAudioFile (stereo.peek(), file, Melder_AIFF, 16);
 END
 
 FORM_WRITE (Sound_writeToStereoNextSunFile, L"Save as stereo NeXT/Sun file", 0, L"au")
-	Sound s1 = NULL, s2 = NULL;
-	LOOP {
-		iam (Sound);
-		( s1 ? s2 : s1 ) = me;
-	}
-	Melder_assert (s1 && s2);
-	autoSound stereo = Sounds_combineToStereo (s1, s2);
+	autoCollection set = praat_getSelectedObjects ();
+	autoSound stereo = Sounds_combineToStereo (set.peek());
 	Sound_writeToAudioFile (stereo.peek(), file, Melder_NEXT_SUN, 16);
 END
 
 FORM_WRITE (Sound_writeToStereoNistFile, L"Save as stereo NIST file", 0, L"nist")
-	Sound s1 = NULL, s2 = NULL;
-	LOOP {
-		iam (Sound);
-		( s1 ? s2 : s1 ) = me;
-	}
-	Melder_assert (s1 && s2);
-	autoSound stereo = Sounds_combineToStereo (s1, s2);
+	autoCollection set = praat_getSelectedObjects ();
+	autoSound stereo = Sounds_combineToStereo (set.peek());
 	Sound_writeToAudioFile (stereo.peek(), file, Melder_NIST, 16);
 END
 
 FORM_WRITE (Sound_writeToStereoFlacFile, L"Save as stereo FLAC file", 0, L"flac")
-	Sound s1 = NULL, s2 = NULL;
-	LOOP {
-		iam (Sound);
-		( s1 ? s2 : s1 ) = me;
-	}
-	Melder_assert (s1 && s2);
-	autoSound stereo = Sounds_combineToStereo (s1, s2);
+	autoCollection set = praat_getSelectedObjects ();
+	autoSound stereo = Sounds_combineToStereo (set.peek());
 	Sound_writeToAudioFile (stereo.peek(), file, Melder_FLAC, 16);
 END
 
 FORM_WRITE (Sound_writeToStereoWavFile, L"Save as stereo WAV file", 0, L"wav")
-	Sound s1 = NULL, s2 = NULL;
-	LOOP {
-		iam (Sound);
-		( s1 ? s2 : s1 ) = me;
-	}
-	Melder_assert (s1 && s2);
-	autoSound stereo = Sounds_combineToStereo (s1, s2);
+	autoCollection set = praat_getSelectedObjects ();
+	autoSound stereo = Sounds_combineToStereo (set.peek());
 	Sound_writeToAudioFile (stereo.peek(), file, Melder_WAV, 16);
 END
 
@@ -2223,7 +2189,7 @@ static Any soundFileRecognizer (int nread, const char *header, MelderFile file) 
 }
 
 static Any movieFileRecognizer (int nread, const char *header, MelderFile file) {
-	const wchar *fileName = MelderFile_name (file);
+	const wchar_t *fileName = MelderFile_name (file);
 	(void) header;
 	/*Melder_casual ("%d %d %d %d %d %d %d %d %d %d", header [0],
 		header [1], header [2], header [3],
@@ -2236,7 +2202,7 @@ static Any movieFileRecognizer (int nread, const char *header, MelderFile file) 
 }
 
 static Any sesamFileRecognizer (int nread, const char *header, MelderFile file) {
-	const wchar *fileName = MelderFile_name (file);
+	const wchar_t *fileName = MelderFile_name (file);
 	(void) header;
 	if (nread < 512 || (! wcsstr (fileName, L".sdf") && ! wcsstr (fileName, L".SDF"))) return NULL;
 	return Sound_readFromSesamFile (file);
@@ -2302,11 +2268,11 @@ void praat_uvafon_Sound_init (void) {
 	Data_recognizeFileType (bellLabsFileRecognizer);
 	Data_recognizeFileType (kayFileRecognizer);
 
-	SoundRecorder_prefs ();
-	FunctionEditor_prefs ();
-	LongSound_prefs ();
-	TimeSoundEditor_prefs ();
-	TimeSoundAnalysisEditor_prefs ();
+	SoundRecorder_preferences ();
+	structFunctionEditor          :: f_preferences ();
+	LongSound_preferences ();
+	structTimeSoundEditor         :: f_preferences ();
+	structTimeSoundAnalysisEditor :: f_preferences ();
 
 	Melder_setRecordProc (recordProc);
 	Melder_setRecordFromFileProc (recordFromFileProc);
@@ -2512,20 +2478,22 @@ void praat_uvafon_Sound_init (void) {
 		praat_addAction1 (classSound, 0, L"To TextGrid...", 0, 1, DO_Sound_to_TextGrid);
 		praat_addAction1 (classSound, 0, L"To TextTier", 0, praat_HIDDEN + praat_DEPTH_1, DO_Sound_to_TextTier);
 		praat_addAction1 (classSound, 0, L"To IntervalTier", 0, praat_HIDDEN + praat_DEPTH_1, DO_Sound_to_IntervalTier);
-	praat_addAction1 (classSound, 0, L"Analyse", 0, 0, 0);
-	praat_addAction1 (classSound, 0, L"Periodicity -", 0, 0, 0);
+	praat_addAction1 (classSound, 0, L"Analyse periodicity -", 0, 0, 0);
 		praat_addAction1 (classSound, 0, L"To Pitch...", 0, 1, DO_Sound_to_Pitch);
 		praat_addAction1 (classSound, 0, L"To Pitch (ac)...", 0, 1, DO_Sound_to_Pitch_ac);
 		praat_addAction1 (classSound, 0, L"To Pitch (cc)...", 0, 1, DO_Sound_to_Pitch_cc);
 		praat_addAction1 (classSound, 0, L"To PointProcess (periodic, cc)...", 0, 1, DO_Sound_to_PointProcess_periodic_cc);
 		praat_addAction1 (classSound, 0, L"To PointProcess (periodic, peaks)...", 0, 1, DO_Sound_to_PointProcess_periodic_peaks);
+		praat_addAction1 (classSound, 0, L"-- points --", 0, 1, 0);
+		praat_addAction1 (classSound, 0, L"To PointProcess (extrema)...", 0, 1, DO_Sound_to_PointProcess_extrema);
+		praat_addAction1 (classSound, 0, L"To PointProcess (zeroes)...", 0, 1, DO_Sound_to_PointProcess_zeroes);
 		praat_addAction1 (classSound, 0, L"-- hnr --", 0, 1, 0);
 		praat_addAction1 (classSound, 0, L"To Harmonicity (cc)...", 0, 1, DO_Sound_to_Harmonicity_cc);
 		praat_addAction1 (classSound, 0, L"To Harmonicity (ac)...", 0, 1, DO_Sound_to_Harmonicity_ac);
 		praat_addAction1 (classSound, 0, L"To Harmonicity (gne)...", 0, 1, DO_Sound_to_Harmonicity_gne);
 		praat_addAction1 (classSound, 0, L"-- autocorrelation --", 0, 1, 0);
 		praat_addAction1 (classSound, 0, L"Autocorrelate...", 0, 1, DO_Sound_autoCorrelate);
-	praat_addAction1 (classSound, 0, L"Spectrum -", 0, 0, 0);
+	praat_addAction1 (classSound, 0, L"Analyse spectrum -", 0, 0, 0);
 		praat_addAction1 (classSound, 0, L"To Spectrum...", 0, 1, DO_Sound_to_Spectrum);
 							praat_addAction1 (classSound, 0, L"To Spectrum (fft)", 0, praat_DEPTH_1 + praat_HIDDEN, DO_Sound_to_Spectrum_fft);
 							praat_addAction1 (classSound, 0, L"To Spectrum", 0, praat_DEPTH_1 + praat_HIDDEN, DO_Sound_to_Spectrum_fft);
@@ -2536,19 +2504,15 @@ void praat_uvafon_Sound_init (void) {
 		praat_addAction1 (classSound, 0, L"To Spectrogram...", 0, 1, DO_Sound_to_Spectrogram);
 		praat_addAction1 (classSound, 0, L"To Cochleagram...", 0, 1, DO_Sound_to_Cochleagram);
 		praat_addAction1 (classSound, 0, L"To Cochleagram (edb)...", 0, praat_DEPTH_1 + praat_HIDDEN, DO_Sound_to_Cochleagram_edb);
-	praat_addAction1 (classSound, 0, L"Formants & LPC -", 0, 0, 0);
+		praat_addAction1 (classSound, 0, L"-- formants --", 0, 1, 0);
 		praat_addAction1 (classSound, 0, L"To Formant (burg)...", 0, 1, DO_Sound_to_Formant_burg);
 		praat_addAction1 (classSound, 0, L"To Formant (hack)", 0, 1, 0);
 		praat_addAction1 (classSound, 0, L"To Formant (keep all)...", 0, 2, DO_Sound_to_Formant_keepAll);
 		praat_addAction1 (classSound, 0, L"To Formant (sl)...", 0, 2, DO_Sound_to_Formant_willems);
-	praat_addAction1 (classSound, 0, L"Points -", 0, 0, 0);
-		praat_addAction1 (classSound, 0, L"To PointProcess (extrema)...", 0, 1, DO_Sound_to_PointProcess_extrema);
-		praat_addAction1 (classSound, 0, L"To PointProcess (zeroes)...", 0, 1, DO_Sound_to_PointProcess_zeroes);
 	praat_addAction1 (classSound, 0, L"To Intensity...", 0, 0, DO_Sound_to_Intensity);
 	praat_addAction1 (classSound, 0, L"To IntensityTier...", 0, praat_HIDDEN, DO_Sound_to_IntensityTier);
-	praat_addAction1 (classSound, 0, L"Manipulate", 0, 0, 0);
-	praat_addAction1 (classSound, 0, L"To Manipulation...", 0, 0, DO_Sound_to_Manipulation);
-	praat_addAction1 (classSound, 0, L"Synthesize", 0, 0, 0);
+	praat_addAction1 (classSound, 0, L"Manipulate -", 0, 0, 0);
+	praat_addAction1 (classSound, 0, L"To Manipulation...", 0, 1, DO_Sound_to_Manipulation);
 	praat_addAction1 (classSound, 0, L"Convert -", 0, 0, 0);
 		praat_addAction1 (classSound, 0, L"Convert to mono", 0, 1, DO_Sound_convertToMono);
 		praat_addAction1 (classSound, 0, L"Convert to stereo", 0, 1, DO_Sound_convertToStereo);
@@ -2575,7 +2539,7 @@ void praat_uvafon_Sound_init (void) {
 		praat_addAction1 (classSound, 0, L"Filter (pre-emphasis)...", 0, 1, DO_Sound_filter_preemphasis);
 		praat_addAction1 (classSound, 0, L"Filter (de-emphasis)...", 0, 1, DO_Sound_filter_deemphasis);
 	praat_addAction1 (classSound, 0, L"Combine -", 0, 0, 0);
-		praat_addAction1 (classSound, 2, L"Combine to stereo", 0, 1, DO_Sounds_combineToStereo);
+		praat_addAction1 (classSound, 0, L"Combine to stereo", 0, 1, DO_Sounds_combineToStereo);
 		praat_addAction1 (classSound, 0, L"Concatenate", 0, 1, DO_Sounds_concatenate);
 		praat_addAction1 (classSound, 0, L"Concatenate recoverably", 0, 1, DO_Sounds_concatenateRecoverably);
 		praat_addAction1 (classSound, 0, L"Concatenate with overlap...", 0, 1, DO_Sounds_concatenateWithOverlap);

@@ -101,7 +101,7 @@ INTRO (L"Detemines the @@Covariance|covariances@ between the channels of a selec
 NORMAL (L"The covariance of a sound is determined by calculating the @@CrossCorrelationTable@ of a multichannel sound for a lag time equal to zero.")
 MAN_END
 
-MAN_BEGIN (L"Sound: To Sound (blind source separation)...", L"djmw", 20120428)
+MAN_BEGIN (L"Sound: To Sound (blind source separation)...", L"djmw", 20121121)
 INTRO (L"Analyze the selected multi-channel sound into its independent components by an iterative method.")
 NORMAL (L"The @@blind source separation@ method to find the independent components tries to simultaneously diagonalize a number of "
 	"@@CrossCorrelationTable@s that are calculated from the multi-channel sound at different lag times.")
@@ -205,7 +205,7 @@ SCRIPT (6, 6, L" "
     "Select inner viewport... 1 6 2.1 3.9\n"
     "Draw... 0 0 0 0 n Curve\n"
     "Draw inner box\n"
-    "unmixed = To Sound (blind source separation)... 0.1 1 20 0.00021 100 0.001 ffdiag\n"
+    "unmixed = To Sound (bss)... 0.1 1 20 0.00021 100 0.001 ffdiag\n"
     "Select inner viewport... 1 6 4.1 5.9\n"
     "Draw... 0 0 0 0 n Curve\n"
     "Draw inner box\n"
@@ -237,7 +237,7 @@ NORMAL (L"The resulting sound samples of the whitened sound, %w__%ij_, are then 
     "original sound, %s__%kj_, as %w__%ij_ = \\Si__%k_ W__%ik_ %s__%kj_, where 1 \\<_ %i \\<_%p, 1 \\<_ %j \\<_ numberOfSamples and 1 \\<_ %k \\<_ %n.")
 MAN_END
 
-MAN_BEGIN (L"blind source separation", L"djmw", 20120223)
+MAN_BEGIN (L"blind source separation", L"djmw", 20120907)
 INTRO (L"Blind source separation (BSS) is a technique for estimating individual source components from their mixtures "
 	"at multiple sensors. It is called %blind because we don't use any other information besides the mixtures. ")
 NORMAL (L"For example, imagine a room with a number of persons present and a number of microphones for recording. "
@@ -245,8 +245,8 @@ NORMAL (L"For example, imagine a room with a number of persons present and a num
 	"In general, this is a difficult problem because of several complicating factors. ")
 LIST_ITEM (L"\\bu Different locations of speakers and microphones in the room: the individual speaker's audio signals do not reach all microphones at the same time. ")
 LIST_ITEM (L"\\bu Room acoustics: the signal that reaches a microphone is composed of the signal that %directly travels to the microphone and parts that come from room reverberations and echos. ")
-LIST_ITEM (L"\\bu Varying distances to microphones: one ore more speakers might be moving. This makes the mixing time dependent.")
-NORMAL (L"If the number of sources is %larger than the number of sensors we speak of an %overdetermined problem. If the number of sensors and the number of sources are %equal we speak of a %determined problem. The more difficult problem is the %underdetermined one where the number of sensors is %less than the number of sources. ")
+LIST_ITEM (L"\\bu Varying distances to microphones: one or more speakers might be moving. This makes the mixing time dependent.")
+NORMAL (L"If the number of sensors is %larger than the number of sources we speak of an %overdetermined problem. If the number of sensors and the number of sources are %equal we speak of a %determined problem. The more difficult problem is the %underdetermined one where the number of sensors is %less than the number of sources.")
 ENTRY (L"Typology of mixtures")
 NORMAL (L"In general two different types of mixtures are considered in the literature: %%instantaneous "
 	"mixtures% and %%convolutive mixtures%. ")

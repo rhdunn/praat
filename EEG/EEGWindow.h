@@ -2,7 +2,7 @@
 #define _EEGWindow_h_
 /* EEGWindow.h
  *
- * Copyright (C) 2011,2012 Paul Boersma
+ * Copyright (C) 2011-2012 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,28 +22,33 @@
 #include "TextGridEditor.h"
 #include "EEG.h"
 
-Thing_define (EEGWindow, TextGridEditor) {
+Thing_define (EEGWindow, TextGridEditor) { public:
 	// new data:
-		public:
-			EEG d_eeg;
-			GuiObject d_extractSelectedEEGPreserveTimesButton, d_extractSelectedEEGTimeFromZeroButton;
+		EEG d_eeg;
+		GuiMenuItem d_extractSelectedEEGPreserveTimesButton, d_extractSelectedEEGTimeFromZeroButton;
 	// functions:
-		public:
-			void f_init (GuiObject parent, const wchar *title, EEG eeg);
+		void f_init (const wchar_t *title, EEG eeg);
 	// overridden methods:
-			static bool s_showSelectionViewer;
-			virtual bool * vs_showSelectionViewer () { return & s_showSelectionViewer; }
-			virtual bool v_hasAnalysis () { return false; }
-			virtual void v_createMenus ();
-			virtual void v_createHelpMenuItems (EditorMenu menu);
-			virtual const wchar * v_getChannelName (long channelNumber);
-			virtual void v_createMenuItems_file_extract (EditorMenu menu);
-			virtual void v_updateMenuItems_file ();
+		virtual bool v_hasPitch     () { return false; }
+		virtual bool v_hasIntensity () { return false; }
+		virtual bool v_hasFormants  () { return false; }
+		virtual bool v_hasPulses    () { return false; }
+		virtual void v_createMenus ();
+		virtual void v_createHelpMenuItems (EditorMenu menu);
+		virtual const wchar_t * v_getChannelName (long channelNumber);
+		virtual void v_createMenuItems_file_extract (EditorMenu menu);
+		virtual void v_updateMenuItems_file ();
+	// overridden preferences:
+		static void f_preferences ();
+		static bool s_showSelectionViewer; virtual bool & pref_showSelectionViewer () { return s_showSelectionViewer; }
+		static kTimeSoundEditor_scalingStrategy s_sound_scalingStrategy; virtual kTimeSoundEditor_scalingStrategy & pref_sound_scalingStrategy () { return s_sound_scalingStrategy; }
+		declare_preference (double, sound_scaling_height)
+		declare_preference (double, sound_scaling_minimum)
+		declare_preference (double, sound_scaling_maximum)
+		static FunctionEditor_spectrogram s_spectrogram; virtual FunctionEditor_spectrogram & pref_spectrogram () { return s_spectrogram; }
 };
 
-EEGWindow EEGWindow_create (GuiObject parent, const wchar *title, EEG eeg);
-
-void EEGWindow_preferences (void);
+EEGWindow EEGWindow_create (const wchar_t *title, EEG eeg);
 
 /* End of file EEGWindow.h */
 #endif

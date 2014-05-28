@@ -94,7 +94,7 @@ Sound Sound_createSimple (long numberOfChannels, double duration, double samplin
 Sound Sound_convertToMono (Sound me);
 Sound Sound_convertToStereo (Sound me);
 Sound Sound_extractChannel (Sound me, long ichannel);
-Sound Sounds_combineToStereo (Sound me, Sound thee);
+Sound Sounds_combineToStereo (Collection me);
 
 /* Levels for Sampled_getValueAtSample (me, index, level, unit) */
 #define Sound_LEVEL_MONO  0
@@ -180,7 +180,7 @@ Sound Sound_filter_deemphasis (Sound me, double frequency);
 void Sound_reverse (Sound me, double tmin, double tmax);
 
 void Sound_draw (Sound me, Graphics g,
-	double tmin, double tmax, double minimum, double maximum, bool garnish, const wchar *method);
+	double tmin, double tmax, double minimum, double maximum, bool garnish, const wchar_t *method);
 /* For method, see Vector_draw. */
 
 Matrix Sound_to_Matrix (Sound me);

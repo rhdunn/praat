@@ -1,6 +1,6 @@
 /* melder_debug.cpp
  *
- * Copyright (C) 2000-2011 Paul Boersma
+ * Copyright (C) 2000-2012 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2011/06/16
- */
-
-#include "melder.h"
+#include <time.h>
+#include "GuiP.h"
+#include "praat_version.h"
 
 int Melder_debug = 0;
 
@@ -72,10 +70,81 @@ the behaviour of that program changes in the following way:
 43: trace class table initialization
 44: trace Collection
 45: tracing structMatrix :: read ()
+46: trace GTK parent sizes in _GuiObject_position ()
 1264: Mac: Sound_recordFixedTime uses microphone "FW Solo (1264)"
 
 (negative values are for David)
 
 */
+
+static bool theTracing = false;
+static structMelderFile theTracingFile = { 0 };
+
+#if gtk
+static void theGtkLogHandler (const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data) {
+	Melder_trace_ (NULL, 0, "GTK", "%s", message);
+}
+static void theGlibLogHandler (const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data) {
+	Melder_trace_ (NULL, 0, "GLib", "%s", message);
+}
+static void theGlibGobjectLogHandler (const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data) {
+	Melder_trace_ (NULL, 0, "GLib-GObject", "%s", message);
+}
+#endif
+
+void Melder_setTracing (bool tracing) {
+	time_t today = time (NULL);	
+	#define xstr(s) str(s)
+	#define str(s) #s
+	if (! tracing)
+		trace ("switch tracing off in Praat version %s at %s", xstr (PRAAT_VERSION_STR), ctime (& today));
+	theTracing = tracing;
+	#if gtk
+		static guint handler_id1, handler_id2, handler_id3;
+		if (tracing) {
+			handler_id1 = g_log_set_handler ("Gtk",          (GLogLevelFlags) (G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION), theGtkLogHandler,         NULL);
+			handler_id2 = g_log_set_handler ("GLib",         (GLogLevelFlags) (G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION), theGlibLogHandler,        NULL);
+			handler_id3 = g_log_set_handler ("GLib-GObject", (GLogLevelFlags) (G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION), theGlibGobjectLogHandler, NULL);
+		} else {
+			if (handler_id1) g_log_remove_handler ("Gtk",          handler_id1);
+			if (handler_id2) g_log_remove_handler ("GLib",         handler_id2);
+			if (handler_id3) g_log_remove_handler ("GLib-GObject", handler_id3);
+			handler_id1 = handler_id2 = handler_id3 = 0;
+		}
+	#endif
+	if (tracing)
+		trace ("switch tracing on in Praat version %s at %s", xstr (PRAAT_VERSION_STR), ctime (& today));
+}
+
+bool Melder_getTracing () {
+	return theTracing;
+}
+
+void Melder_tracingToFile (MelderFile file) {
+	MelderFile_copy (file, & theTracingFile);
+	MelderFile_delete (& theTracingFile);
+}
+
+void Melder_trace_ (const char *fileName, int lineNumber, const char *functionName, const char *format, ...) {
+	if (! theTracing || MelderFile_isNull (& theTracingFile)) return;
+	try {
+		FILE *f = Melder_fopen (& theTracingFile, "a");
+		if (fileName) {
+			const char *slashPosition = strrchr (fileName, Melder_DIRECTORY_SEPARATOR);
+			fprintf (f, "%s (%s:%d): ", functionName, slashPosition ? slashPosition + 1 : fileName, lineNumber);
+		} else {
+			fprintf (f, "%s: ", functionName);
+		}
+		va_list arg;
+		va_start (arg, format);
+		vfprintf (f, format, arg);
+		va_end (arg);
+		char lastCharacter = format [0] == '\0' ? '\0' : format [strlen (format) - 1];
+		fprintf (f, strchr (".!?,;", lastCharacter) ? "\n" : ".\n");
+		Melder_fclose (& theTracingFile, f);
+	} catch (MelderError) {
+		// ignore
+	}
+}
 
 /* End of file melder_debug.cpp */

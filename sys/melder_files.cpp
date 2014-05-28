@@ -1,6 +1,6 @@
 /* melder_files.cpp
  *
- * Copyright (C) 1992-2011 Paul Boersma
+ * Copyright (C) 1992-2012 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@
  * pb 2008/11/01 warn after finding final tabs (not just spaces) in file names
  * pb 2010/12/14 more high Unicode compatibility
  * pb 2011/04/05 C++
+ * pb 2012/10/07 
  */
 
 #include <cstdio>
@@ -202,11 +203,11 @@ wchar_t * MelderDir_name (MelderDir dir) {
 	#endif
 }
 
-void Melder_pathToDir (const wchar *path, MelderDir dir) {
+void Melder_pathToDir (const wchar_t *path, MelderDir dir) {
 	wcscpy (dir -> path, path);
 }
 
-void Melder_pathToFile (const wchar *path, MelderFile file) {
+void Melder_pathToFile (const wchar_t *path, MelderFile file) {
 	/*
 	 * This handles complete path names only.
 	 * Unlike Melder_relativePathToFile, this handles Windows file names with slashes in them.
@@ -217,7 +218,7 @@ void Melder_pathToFile (const wchar *path, MelderFile file) {
 	wcscpy (file -> path, path);
 }
 
-void Melder_relativePathToFile (const wchar *path, MelderFile file) {
+void Melder_relativePathToFile (const wchar_t *path, MelderFile file) {
 	/*
 	 * This handles complete and partial path names,
 	 * and translates slashes to native directory separators (unlike Melder_pathToFile).
@@ -279,11 +280,11 @@ void Melder_relativePathToFile (const wchar *path, MelderFile file) {
 	#endif
 }
 
-wchar * Melder_dirToPath (MelderDir dir) {
+wchar_t * Melder_dirToPath (MelderDir dir) {
 	return & dir -> path [0];
 }
 
-wchar * Melder_fileToPath (MelderFile file) {
+wchar_t * Melder_fileToPath (MelderFile file) {
 	return & file -> path [0];
 }
 
@@ -472,7 +473,7 @@ bool MelderDir_isDesktop (MelderDir dir) {
 	return dir -> path [0] == '\0';
 }
 
-void MelderDir_getSubdir (MelderDir parent, const wchar *subdirName, MelderDir subdir) {
+void MelderDir_getSubdir (MelderDir parent, const wchar_t *subdirName, MelderDir subdir) {
 	#if defined (UNIX)
 		if (parent -> path [0] == '/' && parent -> path [1] == '\0') {
 			swprintf (subdir -> path, kMelder_MAXPATH+1, L"/%ls", subdirName);
@@ -578,6 +579,8 @@ static size_t read_URL_data_from_file (void *buffer, size_t size, size_t nmemb, 
 #endif
 
 FILE * Melder_fopen (MelderFile file, const char *type) {
+	if (! Melder_getTracing())
+		Melder_assert (wcsequ (Melder_double (1.5), L"1.5"));   // check locale settings; because of the required file portability Praat cannot stand "1,5"
 	/*
 	 * On the Unix-like systems (including MacOS), the path has to be converted to 8-bit characters in UTF-8 encoding.
 	 * On MacOS, the characters also have to be decomposed.
@@ -779,10 +782,10 @@ void MelderFile_delete (MelderFile file) {
 	#endif
 }
 
-wchar * Melder_peekExpandBackslashes (const wchar *message) {
-	static wchar names [11] [kMelder_MAXPATH+1];
+wchar_t * Melder_peekExpandBackslashes (const wchar_t *message) {
+	static wchar_t names [11] [kMelder_MAXPATH+1];
 	static int index = 0;
-	const wchar *from;
+	const wchar_t *from;
 	wchar_t *to;
 	if (++ index == 11) index = 0;
 	for (from = & message [0], to = & names [index] [0]; *from != '\0'; from ++, to ++) {
@@ -793,7 +796,7 @@ wchar * Melder_peekExpandBackslashes (const wchar *message) {
 	return & names [index] [0];
 }
 
-const wchar * MelderFile_messageName (MelderFile file) {
+const wchar_t * MelderFile_messageName (MelderFile file) {
 	return Melder_wcscat (L_LEFT_DOUBLE_QUOTE, file -> path, L_RIGHT_DOUBLE_QUOTE);
 }
 

@@ -81,7 +81,7 @@ FORM (EEG_extractChannel, L"EEG: Extract channel", 0)
 DO
 	LOOP {
 		iam (EEG);
-		const wchar *channelName = GET_STRING (L"Channel name");
+		const wchar_t *channelName = GET_STRING (L"Channel name");
 		autoEEG thee = my f_extractChannel (channelName);
 		praat_new (thee.transfer(), my name, L"_", channelName);
 	}
@@ -231,7 +231,7 @@ static void cb_EEGWindow_publication (Editor editor, void *closure, Data publica
 			int IOBJECT;
 			LOOP {
 				iam (Spectrum);
-				autoSpectrumEditor editor2 = SpectrumEditor_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME, me);
+				autoSpectrumEditor editor2 = SpectrumEditor_create (ID_AND_FULL_NAME, me);
 				praat_installEditor (editor2.transfer(), IOBJECT);
 			}
 		}
@@ -243,7 +243,7 @@ DIRECT (EEG_viewAndEdit)
 	if (theCurrentPraatApplication -> batch) Melder_throw ("Cannot view or edit an EEG from batch.");
 	LOOP {
 		iam (EEG);
-		autoEEGWindow editor = EEGWindow_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME, me);
+		autoEEGWindow editor = EEGWindow_create (ID_AND_FULL_NAME, me);
 		editor -> setPublicationCallback (cb_EEGWindow_publication, NULL);
 		praat_installEditor (editor.transfer(), IOBJECT);
 	}
@@ -259,6 +259,32 @@ END
 
 #pragma mark ERP
 
+DIRECT (ERP_downto_Sound)
+	LOOP {
+		iam (ERP);
+		autoSound thee = my f_downToSound ();
+		praat_new (thee.transfer(), NULL);
+	}
+END
+
+FORM (ERP_downto_Table, L"ERP: Down to Table", 0)
+	BOOLEAN (L"Include sample number", false)
+	BOOLEAN (L"Include time", true)
+	NATURAL (L"Time decimals", L"6")
+	NATURAL (L"Voltage decimals", L"12")
+	RADIO (L"Voltage units", 1)
+		OPTION (L"volt")
+		OPTION (L"microvolt")
+	OK
+DO
+	LOOP {
+		iam (ERP);
+		autoTable thee = my f_tabulate (GET_INTEGER (L"Include sample number"),
+			GET_INTEGER (L"Include time"), GET_INTEGER (L"Time decimals"), GET_INTEGER (L"Voltage decimals"), GET_INTEGER (L"Voltage units"));
+		praat_new (thee.transfer(), my name);
+	}
+END
+
 FORM (ERP_draw, L"ERP: Draw", 0)
 	SENTENCE (L"Channel name", L"Cz")
 	REAL (L"left Time range (s)", L"0.0")
@@ -273,6 +299,36 @@ DO
 		iam (ERP);
 		me -> f_draw (GRAPHICS, GET_STRING (L"Channel name"), GET_REAL (L"left Time range"), GET_REAL (L"right Time range"),
 			GET_REAL (L"left Voltage range"), GET_REAL (L"right Voltage range"), GET_INTEGER (L"Garnish"));
+	}
+END
+
+FORM (ERP_drawScalp, L"ERP: Draw scalp", 0)
+	REAL (L"left Time range (s)", L"0.1")
+	REAL (L"right Time range", L"0.2")
+	REAL (L"left Voltage range (V)", L"10e-6")
+	REAL (L"right Voltage range", L"-10e-6")
+	BOOLEAN (L"Garnish", 1)
+	OK
+DO
+	autoPraatPicture picture;
+	LOOP {
+		iam (ERP);
+		me -> f_drawScalp (GRAPHICS, GET_REAL (L"left Time range"), GET_REAL (L"right Time range"),
+			GET_REAL (L"left Voltage range"), GET_REAL (L"right Voltage range"), GET_INTEGER (L"Garnish"));
+	}
+END
+
+FORM (ERP_extractOneChannelAsSound, L"ERP: Extract one channel as Sound", 0)
+	WORD (L"Channel name", L"Cz")
+	OK
+DO
+	LOOP {
+		iam (ERP);
+		const wchar_t *channelName = GET_STRING (L"Channel name");
+		long channelNumber = my f_getChannelNumber (channelName);
+		if (channelNumber == 0) Melder_throw (me, ": no channel named \"", channelName, "\".");
+		autoSound thee = Sound_extractChannel (me, channelNumber);
+		praat_new (thee.transfer(), my name, L"_", channelName);
 	}
 END
 
@@ -358,7 +414,7 @@ FORM (ERP_getMaximum, L"ERP: Get maximum", L"Sound: Get maximum...")
 DO
 	LOOP {
 		iam (ERP);
-		const wchar *channelName = GET_STRING (L"Channel name");
+		const wchar_t *channelName = GET_STRING (L"Channel name");
 		long channelNumber = my f_getChannelNumber (channelName);
 		if (channelNumber == 0) Melder_throw (me, ": no channel named \"", channelName, "\".");
 		double maximum;
@@ -375,7 +431,7 @@ FORM (ERP_getMean, L"ERP: Get mean", L"ERP: Get mean...")
 DO
 	LOOP {
 		iam (ERP);
-		const wchar *channelName = GET_STRING (L"Channel name");
+		const wchar_t *channelName = GET_STRING (L"Channel name");
 		long channelNumber = my f_getChannelNumber (channelName);
 		if (channelNumber == 0) Melder_throw (me, ": no channel named \"", channelName, "\".");
 		double mean = Vector_getMean (me, GET_REAL (L"left Time range"), GET_REAL (L"right Time range"), channelNumber);
@@ -397,7 +453,7 @@ FORM (ERP_getMinimum, L"ERP: Get minimum", L"Sound: Get minimum...")
 DO
 	LOOP {
 		iam (ERP);
-		const wchar *channelName = GET_STRING (L"Channel name");
+		const wchar_t *channelName = GET_STRING (L"Channel name");
 		long channelNumber = my f_getChannelNumber (channelName);
 		if (channelNumber == 0) Melder_throw (me, ": no channel named \"", channelName, "\".");
 		double minimum;
@@ -420,7 +476,7 @@ FORM (ERP_getTimeOfMaximum, L"ERP: Get time of maximum", L"Sound: Get time of ma
 DO
 	LOOP {
 		iam (ERP);
-		const wchar *channelName = GET_STRING (L"Channel name");
+		const wchar_t *channelName = GET_STRING (L"Channel name");
 		long channelNumber = my f_getChannelNumber (channelName);
 		if (channelNumber == 0) Melder_throw (me, ": no channel named \"", channelName, "\".");
 		double timeOfMaximum;
@@ -443,7 +499,7 @@ FORM (ERP_getTimeOfMinimum, L"ERP: Get time of minimum", L"Sound: Get time of mi
 DO
 	LOOP {
 		iam (ERP);
-		const wchar *channelName = GET_STRING (L"Channel name");
+		const wchar_t *channelName = GET_STRING (L"Channel name");
 		long channelNumber = my f_getChannelNumber (channelName);
 		if (channelNumber == 0) Melder_throw (me, ": no channel named \"", channelName, "\".");
 		double timeOfMinimum;
@@ -465,7 +521,7 @@ static void cb_ERPWindow_publication (Editor editor, void *closure, Data publica
 			int IOBJECT;
 			LOOP {
 				iam (Spectrum);
-				autoSpectrumEditor editor2 = SpectrumEditor_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME, me);
+				autoSpectrumEditor editor2 = SpectrumEditor_create (ID_AND_FULL_NAME, me);
 				praat_installEditor (editor2.transfer(), IOBJECT);
 			}
 		}
@@ -477,7 +533,7 @@ DIRECT (ERP_viewAndEdit)
 	if (theCurrentPraatApplication -> batch) Melder_throw ("Cannot view or edit an ERP from batch.");
 	LOOP {
 		iam (ERP);
-		autoERPWindow editor = ERPWindow_create (theCurrentPraatApplication -> topShell, ID_AND_FULL_NAME, me);
+		autoERPWindow editor = ERPWindow_create (ID_AND_FULL_NAME, me);
 		editor -> setPublicationCallback (cb_ERPWindow_publication, NULL);
 		praat_installEditor (editor.transfer(), IOBJECT);
 	}
@@ -612,7 +668,7 @@ DIRECT (ERPTier_help) Melder_help (L"ERPTier"); END
 /***** file recognizers *****/
 
 static Any bdfFileRecognizer (int nread, const char *header, MelderFile file) {
-	const wchar *fileName = MelderFile_name (file);
+	const wchar_t *fileName = MelderFile_name (file);
 	bool isBdfFile = wcsstr (fileName, L".bdf") != NULL || wcsstr (fileName, L".BDF") != NULL;
 	bool isEdfFile = wcsstr (fileName, L".edf") != NULL || wcsstr (fileName, L".EDF") != NULL;
 	if (nread < 512 || (! isBdfFile && ! isEdfFile)) return NULL;
@@ -655,7 +711,11 @@ void praat_EEG_init (void) {
 		praat_addAction1 (classEEG, 0, L"Extract marks as TextGrid", 0, 1, DO_EEG_extractTextGrid);
 
 	praat_addAction1 (classERP, 1, L"View & Edit", 0, praat_ATTRACTIVE, DO_ERP_viewAndEdit);
-	praat_addAction1 (classERP, 0, L"Draw...", 0, 0, DO_ERP_draw);
+	praat_addAction1 (classERP, 0, L"Draw -", 0, 0, 0);
+		praat_addAction1 (classERP, 0, L"Draw...", 0, 1, DO_ERP_draw);
+		praat_addAction1 (classERP, 0, L"Draw scalp...", 0, 1, DO_ERP_drawScalp);
+	praat_addAction1 (classERP, 0, L"Tabulate -", 0, 0, 0);
+		praat_addAction1 (classERP, 0, L"Down to Table...", 0, 1, DO_ERP_downto_Table);
 	praat_addAction1 (classERP, 0, L"Query -", 0, 0, 0);
 		praat_addAction1 (classERP, 0, L"Get channel name...", 0, 1, DO_ERP_getChannelName);
 		praat_addAction1 (classERP, 0, L"Get channel number...", 0, 1, DO_ERP_getChannelNumber);
@@ -672,6 +732,9 @@ void praat_EEG_init (void) {
 	// praat_addAction1 (classERP, 0, L"Analyse -", 0, 0, 0);
 		// praat_addAction1 (classERP, 0, L"To ERP (difference)", 0, 1, DO_ERP_to_ERP_difference);
 		// praat_addAction1 (classERP, 0, L"To ERP (mean)", 0, 1, DO_ERP_to_ERP_mean);
+	praat_addAction1 (classERP, 0, L"Hack -", 0, 0, 0);
+		praat_addAction1 (classERP, 0, L"Down to Sound", 0, 1, DO_ERP_downto_Sound);
+		praat_addAction1 (classERP, 0, L"Extract one channel as Sound...", 0, 1, DO_ERP_extractOneChannelAsSound);
 
 	praat_addAction1 (classERPTier, 0, L"ERPTier help", 0, 0, DO_ERPTier_help);
 	// praat_addAction1 (classERPTier, 1, L"View & Edit", 0, praat_ATTRACTIVE, DO_ERPTier_viewAndEdit);
@@ -696,8 +759,8 @@ void praat_EEG_init (void) {
 	praat_addAction2 (classERPTier, 1, classTable, 1, L"Extract events where column (number)...", 0, 1, DO_ERPTier_Table_extractEventsWhereColumn_number);
 	praat_addAction2 (classERPTier, 1, classTable, 1, L"Extract events where column (text)...", 0, 1, DO_ERPTier_Table_extractEventsWhereColumn_text);
 
-	EEGWindow_preferences ();
-	ERPWindow_preferences ();
+	structEEGWindow :: f_preferences ();
+	structERPWindow :: f_preferences ();
 }
 
 /* End of file praat_EEG.cpp */

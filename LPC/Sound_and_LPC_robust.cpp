@@ -229,13 +229,13 @@ LPC LPC_and_Sound_to_LPC_robust (LPC thee, Sound me, double analysisWidth, doubl
 
 			if ( (i % 10) == 1) {
 				Melder_progress ( (double) i / nFrames, L"LPC analysis of frame ",
-				                   Melder_integer (i), L" out of ", Melder_integer (nFrames), L".");
+				                   Melder_integer (i), L" out of ", Melder_integer (nFrames), L"."); therror
 			}
 		}
 
 		if (frameErrorCount) Melder_warning (L"Results of ", Melder_integer (frameErrorCount),
 			L" frame(s) out of ", Melder_integer (nFrames), L" could not be optimised.");
-		MelderInfo_writeLine4 (L"Number of iterations: ", Melder_integer (iter),
+		MelderInfo_writeLine (L"Number of iterations: ", Melder_integer (iter),
 			L"\n   Average per frame: ", Melder_double (((double) iter) / nFrames));
 		huber_struct_destroy (&struct_huber);
 		return him.transfer();

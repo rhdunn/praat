@@ -25,7 +25,7 @@
 #include "ICA.h"
 #include "Interpreter.h"
 #include "NUM2.h"
-#include "PCA.h"
+#include "Sound_and_PCA.h"
 #include "SVD.h"
 
 // matrix multiply R = V*C*V', V is nrv x ncv, C is ncv x ncv, R is nrv x nrv
@@ -193,76 +193,75 @@ static void Diagonalizer_and_CrossCorrelationTables_ffdiag (Diagonalizer me, Cro
 			w[i][i] = 1;
 		}
 
-		MelderInfo_open ();
+		autoMelderProgress progress (L"Simultaneous diagonalization of many CrossCorrelationTables...");
 		double dm_new = CrossCorrelationTables_getDiagonalityMeasure (ccts.peek(), NULL, 0, 0);
-		MelderInfo_writeLine5 (L"\nIteration ", Melder_integer (iter), L":  ", Melder_double (dm_new),
-		                       L" (= diagonality measurement)");
-
-		double dm_old, theta = 1 ;
-		do {
-			dm_old = dm_new;
-			for (long i = 1; i <= dimension; i++) {
-				for (long j = i + 1; j <= dimension; j++) {
-					double zii = 0, zij = 0, zjj = 0, yij = 0, yji = 0; // zij = zji
-					for (long k = 1; k <= ccts -> size; k++) {
-						CrossCorrelationTable ct = (CrossCorrelationTable) ccts -> item [k];
-						zii += ct -> data[i][i] * ct -> data[i][i];
-						zij += ct -> data[i][i] * ct -> data[j][j];
-						zjj += ct -> data[j][j] * ct -> data[j][j];
-						yij += ct -> data[j][j] * ct -> data[i][j];
-						yji += ct -> data[i][i] * ct -> data[i][j];
-					}
-					double denom = zjj * zii - zij * zij;
-					if (denom != 0) {
-						w[i][j] = (zij * yji - zii * yij) / denom;
-						w[j][i] = (zij * yij - zjj * yji) / denom;
-					}
-				}
-			}
-			double norma = 0;
-			for (long i = 1; i <= dimension; i++) {
-				double normai = 0;
-				for (long j = 1; j <= dimension; j++) {
-					if (i != j) {
-						normai += fabs (w[i][j]);
-					}
-				}
-				if (normai > norma) {
-					norma = normai;
-				}
-			}
-			// evaluate the norm
-			if (norma > theta) {
-				double normf = 0;
-				for (long i = 1; i <= dimension; i++)
-					for (long j = 1; j <= dimension; j++)
-						if (i != j) {
-							normf += w[i][j] * w[i][j];
-						}
-				double scalef = theta / sqrt (normf);
+		try {
+			double dm_old, theta = 1, dm_start = dm_new;
+			do {
+				dm_old = dm_new;
 				for (long i = 1; i <= dimension; i++) {
+					for (long j = i + 1; j <= dimension; j++) {
+						double zii = 0, zij = 0, zjj = 0, yij = 0, yji = 0; // zij = zji
+						for (long k = 1; k <= ccts -> size; k++) {
+							CrossCorrelationTable ct = (CrossCorrelationTable) ccts -> item [k];
+							zii += ct -> data[i][i] * ct -> data[i][i];
+							zij += ct -> data[i][i] * ct -> data[j][j];
+							zjj += ct -> data[j][j] * ct -> data[j][j];
+							yij += ct -> data[j][j] * ct -> data[i][j];
+							yji += ct -> data[i][i] * ct -> data[i][j];
+						}
+						double denom = zjj * zii - zij * zij;
+						if (denom != 0) {
+							w[i][j] = (zij * yji - zii * yij) / denom;
+							w[j][i] = (zij * yij - zjj * yji) / denom;
+						}
+					}
+				}
+				double norma = 0;
+				for (long i = 1; i <= dimension; i++) {
+					double normai = 0;
 					for (long j = 1; j <= dimension; j++) {
 						if (i != j) {
-							w[i][j] *= scalef;
+							normai += fabs (w[i][j]);
+						}
+					}
+					if (normai > norma) {
+						norma = normai;
+					}
+				}
+				// evaluate the norm
+				if (norma > theta) {
+					double normf = 0;
+					for (long i = 1; i <= dimension; i++)
+						for (long j = 1; j <= dimension; j++)
+							if (i != j) {
+								normf += w[i][j] * w[i][j];
+							}
+					double scalef = theta / sqrt (normf);
+					for (long i = 1; i <= dimension; i++) {
+						for (long j = 1; j <= dimension; j++) {
+							if (i != j) {
+								w[i][j] *= scalef;
+							}
 						}
 					}
 				}
-			}
-			// update V
-			NUMmatrix_copyElements (v, vnew.peek(), 1, dimension, 1, dimension);
-			NUMdmatrices_multiply_VC (v, w.peek(), dimension, dimension, vnew.peek(), dimension);
-			for (long k = 1; k <= ccts -> size; k++) {
-				CrossCorrelationTable ct = (CrossCorrelationTable) ccts -> item[k];
-				NUMmatrix_copyElements (ct -> data, cc.peek(), 1, dimension, 1, dimension);
-				NUMdmatrices_multiply_VCVp (ct -> data, w.peek(), dimension, dimension, cc.peek(), 1);
-			}
-			dm_new = CrossCorrelationTables_getDiagonalityMeasure (ccts.peek(), 0, 0, 0);
-			iter++;
-			MelderInfo_writeLine5 (L"\nIteration ", Melder_integer (iter), L":  ", Melder_double (dm_new), L" (= diagonality measurement)");
-		} while (fabs ( (dm_old - dm_new) / dm_new) > delta && iter < maxNumberOfIterations);
-		MelderInfo_close ();
+				// update V
+				NUMmatrix_copyElements (v, vnew.peek(), 1, dimension, 1, dimension);
+				NUMdmatrices_multiply_VC (v, w.peek(), dimension, dimension, vnew.peek(), dimension);
+				for (long k = 1; k <= ccts -> size; k++) {
+					CrossCorrelationTable ct = (CrossCorrelationTable) ccts -> item[k];
+					NUMmatrix_copyElements (ct -> data, cc.peek(), 1, dimension, 1, dimension);
+					NUMdmatrices_multiply_VCVp (ct -> data, w.peek(), dimension, dimension, cc.peek(), 1);
+				}
+				dm_new = CrossCorrelationTables_getDiagonalityMeasure (ccts.peek(), 0, 0, 0);
+				iter++;
+				Melder_progress ((double) iter / (double) maxNumberOfIterations, L"Iteration: ", Melder_integer (iter), L", measure: ", Melder_double (dm_new), L"\n fractional measure: ", Melder_double (dm_new / dm_start));
+			} while (fabs ((dm_old - dm_new) / dm_new) > delta && iter < maxNumberOfIterations);
+		} catch (MelderError) {
+			Melder_clearError ();
+		}
 	} catch (MelderError) {
-		MelderInfo_close ();
 		Melder_throw (me, " & ", thee, ": no joint diagonalization (ffdiag).");
 	}
 }
@@ -272,7 +271,6 @@ static void Diagonalizer_and_CrossCorrelationTables_ffdiag (Diagonalizer me, Cro
 	R. Vollgraf and K. Obermayer, Quadratic Optimization for Simultaneous
 	Matrix Diagonalization, IEEE Transaction on Signal Processing, 2006,
 */
-
 static void update_one_column (CrossCorrelationTables me, double **d, double *wp, double *wvec, double scalef, double *work) {
 	long dimension = ( (CrossCorrelationTable) (my item[1])) -> numberOfColumns;
 
@@ -330,7 +328,7 @@ static void Diagonalizer_and_CrossCorrelationTable_qdiag (Diagonalizer me, Cross
 		Eigen_initFromSymmetricMatrix (eigen.peek(), c0 -> data, dimension);
 		for (long i = 1; i <= dimension; i++) {
 			if (eigen -> eigenvalues[i] < 0) {
-				Melder_throw ("Covariance matrix not positive definite.");
+				Melder_throw ("Covariance matrix not positive definite, eigenvalue[", Melder_integer(i), "] is negative.");
 			}
 			double scalef = 1 / sqrt (eigen -> eigenvalues[i]);
 			for (long j = 1; j <= dimension; j++) {
@@ -364,62 +362,66 @@ static void Diagonalizer_and_CrossCorrelationTable_qdiag (Diagonalizer me, Cross
 
 		long iter = 0;
 		double delta_w;
-		MelderInfo_open ();
-		do {
-			// the standard diagonality measure is rather expensive to calculate so we compare the norms of
-			// differences of eigenvectors.
 
-			delta_w = 0;
-			for (long kol = 1; kol <= dimension; kol++) {
-				for (long i = 1; i <= dimension; i++) {
-					wvec[i] = w[i][kol];
+		autoMelderProgress progress (L"Simultaneous diagonalization of many CrossCorrelationTables...");
+		try {
+			do {
+				// the standard diagonality measure is rather expensive to calculate so we compare the norms of
+				// differences of eigenvectors.
+
+				delta_w = 0;
+				for (long kol = 1; kol <= dimension; kol++) {
+					for (long i = 1; i <= dimension; i++) {
+						wvec[i] = w[i][kol];
+					}
+
+					update_one_column (ccts.peek(), d.peek(), cweights, wvec.peek(), -1, mvec.peek());
+
+					Eigen_initFromSymmetricMatrix (eigen.peek(), d.peek(), dimension);
+
+					// Eigenvalues already sorted; get eigenvector of smallest !
+
+					for (long i = 1; i <= dimension; i++) {
+						wnew[i] = eigen -> eigenvectors[dimension][i];
+					}
+
+					update_one_column (ccts.peek(), d.peek(), cweights, wnew.peek(), 1, mvec.peek());
+					for (long i = 1; i <= dimension; i++) {
+						w[i][kol] = wnew[i];
+					}
+
+					// compare norms of eigenvectors. We have to compare ||wvec +/- w_new|| because eigenvectors
+					//  may change sign.
+
+					double normp = 0, normm = 0;
+					for (long j = 1; j <= dimension; j++) {
+						double dm = wvec[j] - wnew[j], dp = wvec[j] + wnew[j];
+						normp += dm * dm; normm += dp * dp;
+					}
+
+					normp = normp < normm ? normp : normm;
+					normp = sqrt (normp);
+					delta_w = normp > delta_w ? normp : delta_w;
 				}
+				iter++;
 
-				update_one_column (ccts.peek(), d.peek(), cweights, wvec.peek(), -1, mvec.peek());
-
-				Eigen_initFromSymmetricMatrix (eigen.peek(), d.peek(), dimension);
-
-				// Eigenvalues already sorted; get eigenvector of smallest !
-
-				for (long i = 1; i <= dimension; i++) {
-					wnew[i] = eigen -> eigenvectors[dimension][i];
-				}
-
-				update_one_column (ccts.peek(), d.peek(), cweights, wnew.peek(), 1, mvec.peek());
-				for (long i = 1; i <= dimension; i++) {
-					w[i][kol] = wnew[i];
-				}
-
-				// compare norms of eigenvectors. We have to compare ||wvec +/- w_new|| because eigenvectors
-				//  may change sign.
-
-				double normp = 0, normm = 0;
-				for (long j = 1; j <= dimension; j++) {
-					double dm = wvec[j] - wnew[j], dp = wvec[j] + wnew[j];
-					normp += dm * dm; normm += dp * dp;
-				}
-
-				normp = normp < normm ? normp : normm;
-				normp = sqrt (normp);
-				delta_w = normp > delta_w ? normp : delta_w;
-			}
-			iter++;
-			MelderInfo_writeLine5 (L"\nIteration ", Melder_integer (iter), L":  ", Melder_double (delta_w), L" (= vector norm difference)");
-		} while (delta_w > delta && iter < maxNumberOfIterations);
+				Melder_progress ((double) iter / (double) (maxNumberOfIterations + 1), L"Iteration: ", Melder_integer (iter), L", norm: ",
+					Melder_double (delta_w));
+			} while (delta_w > delta && iter < maxNumberOfIterations);
+		} catch (MelderError) {
+			Melder_clearError ();
+		}
 
 		// Revert the sphering W = P'*W;
 		// Take transpose to make W*C[i]W' diagonal instead of W'*C[i]*W => (P'*W)'=W'*P
-		// Calculate the "real" diagonality measure
 
 		NUMmatrix_copyElements (w, wc.peek(), 1, dimension, 1, dimension);
 		NUMdmatrices_multiply_VpC (w, wc.peek(), dimension, dimension, p.peek(), dimension); // W = W'*P: final result
 
-		double dm = CrossCorrelationTables_and_Diagonalizer_getDiagonalityMeasure (thee, me, cweights, 1, thy size);
-		MelderInfo_writeLine5 (L"\nDiagonality measure: ", Melder_double (dm), L" after ", Melder_integer (iter),
-		                       L" iterations.");
-		MelderInfo_close ();
+		// Calculate the "real" diagonality measure
+	//	double dm = CrossCorrelationTables_and_Diagonalizer_getDiagonalityMeasure (thee, me, cweights, 1, thy size);
+
 	} catch (MelderError) {
-		MelderInfo_close ();
 		Melder_throw (me, " & ", thee, ": no joint diagonalization (qdiag).");
 	}
 }
@@ -437,12 +439,12 @@ void MixingMatrix_and_CrossCorrelationTables_improveUnmixing (MixingMatrix me, C
  * 	no array boundary checks!
  * 	lag >= 0
  */
-static void NUMcrossCorrelate_rows (double **x, long nrows, long i1, long i2, long lag, double **cc, double *centroid, double scale) {
+static void NUMcrossCorrelate_rows (double **x, long nrows, long icol1, long icol2, long lag, double **cc, double *centroid, double scale) {
 	lag = abs (lag);
-	long nsamples = i2 - i1 + 1 + lag;
+	long nsamples = icol2 - icol1 + 1 + lag;
 	for (long i = 1; i <= nrows; i++) {
 		double sum = 0;
-		for (long k = i1; k <= i2 + lag; k++) {
+		for (long k = icol1; k <= icol2 + lag; k++) {
 			sum += x[i][k];
 		}
 		centroid[i] = sum / nsamples;
@@ -450,7 +452,7 @@ static void NUMcrossCorrelate_rows (double **x, long nrows, long i1, long i2, lo
 	for (long i = 1; i <= nrows; i++) {
 		for (long j = i; j <= nrows; j++) {
 			double ccor = 0;
-			for (long k = i1; k <= i2; k++) {
+			for (long k = icol1; k <= icol2; k++) {
 				ccor += (x[i][k] - centroid[i]) * (x[j][k + lag] - centroid[j]);
 			}
 			cc[j][i] = cc[i][j] = ccor * scale;
@@ -481,7 +483,7 @@ CrossCorrelationTable Sound_to_CrossCorrelationTable (Sound me, double startTime
 		i2 -= lag;
 		long nsamples = i2 - i1 + 1;
 		if (nsamples <= my ny) {
-			Melder_throw ("Not enough samples");
+			Melder_throw ("Not enough samples, choose a longer interval.");
 		}
 		autoCrossCorrelationTable thee = CrossCorrelationTable_create (my ny);
 
@@ -497,9 +499,7 @@ CrossCorrelationTable Sound_to_CrossCorrelationTable (Sound me, double startTime
 
 /* Calculate the CrossCorrelationTable between the channels of two multichannel sounds irrespective of the domains.
  * Both sounds are treated as if their domain runs from 0 to duration.
- * Outside the chose interval the sounds are assumed yo be zero
- *
- *
+ * Outside the chosen interval the sounds are assumed to be zero
  */
 CrossCorrelationTable Sounds_to_CrossCorrelationTable_combined (Sound me, Sound thee, double relativeStartTime, double relativeEndTime, double lagTime) {
 	try {
@@ -560,7 +560,7 @@ CrossCorrelationTables Sound_to_CrossCorrelationTables (Sound me, double startTi
 		if (lagTime < my dx) {
 			lagTime = my dx;
 		}
-		if (startTime + ncovars * lagTime > endTime) {
+		if (startTime + ncovars * lagTime >= endTime) {
 			Melder_throw ("Lag time too large.");
 		}
 		if (endTime <= startTime) {
@@ -586,16 +586,6 @@ Sound Sound_to_Sound_BSS (Sound me, double startTime, double endTime, long ncova
 		return thee.transfer();
 	} catch (MelderError) {
 		Melder_throw (me, ": not separated.");
-	}
-}
-
-PCA Sound_to_PCA_channels (Sound me, double startTime, double endTime) {
-	try {
-		autoCrossCorrelationTable thee = Sound_to_CrossCorrelationTable (me, startTime, endTime, 0);
-		autoPCA him = SSCP_to_PCA (thee.peek());
-		return him.transfer();
-	} catch (MelderError) {
-		Melder_throw (me, ": no PCA created.");
 	}
 }
 
@@ -779,7 +769,7 @@ Thing_implement (CrossCorrelationTable, SSCP, 0);
 void structCrossCorrelationTable :: v_info () {
 	structSSCP :: v_info ();
 	double dm = CrossCorrelationTable_getDiagonalityMeasure (this);
-	MelderInfo_writeLine2 (L"Diagonality measure: ", Melder_double (dm));
+	MelderInfo_writeLine (L"Diagonality measure: ", Melder_double (dm));
 }
 
 CrossCorrelationTable CrossCorrelationTable_create (long dimension) {
@@ -840,10 +830,10 @@ double CrossCorrelationTable_getDiagonalityMeasure (CrossCorrelationTable me) {
 void structCrossCorrelationTables :: v_info () {
 	structOrdered :: v_info ();
 	CrossCorrelationTable thee = (CrossCorrelationTable) item[1];
-	MelderInfo_writeLine2 (L"  Number of rows and columns: ", Melder_integer (thy numberOfRows));
+	MelderInfo_writeLine (L"  Number of rows and columns: ", Melder_integer (thy numberOfRows));
 	for (long i = 1; i <= size; i++) {
 		double dm = CrossCorrelationTable_getDiagonalityMeasure ( (CrossCorrelationTable) item[i]);
-		MelderInfo_writeLine4 (L"Diagonality measure for item ", Melder_integer (i), L": ", Melder_double (dm));
+		MelderInfo_writeLine (L"Diagonality measure for item ", Melder_integer (i), L": ", Melder_double (dm));
 	}
 }
 
@@ -960,61 +950,6 @@ Sound Sound_and_Covariance_whitenChannels (Sound me, Covariance thee, double var
     }
 }
 
-Sound Sound_and_PCA_projectChannels (Sound me, PCA thee, long numberOfComponents) {
-	try {
-		if (my ny != thy dimension) {
-			Melder_throw ("The number of channels of the sound and the dimension of the PCA must be equal.");
-		}
-		if (numberOfComponents <= 0 || numberOfComponents > thy numberOfEigenvalues) {
-            numberOfComponents = thy numberOfEigenvalues;
-        }
- 		autoSound him = Sound_create (numberOfComponents, my xmin, my xmax, my nx, my dx, my x1);
-		for (long ichan = 1; ichan <= numberOfComponents; ichan++) {
-			for (long is = 1; is <= my nx; is++) {
-				for (long evi = 1; evi <= thy dimension; evi++) {
-					his z[ichan][is] += thy eigenvectors[ichan][evi] * my z[evi][is];
-				}
-			}
-		}
-		return him.transfer();
-	} catch (MelderError) {
-		Melder_throw (me, ": not projected.");
-	}
-}
-
-Sound Sound_and_PCA_whitenChannels (Sound me, PCA thee, long numberOfComponents) {
-	try {
-		if (my ny != thy dimension) {
-			Melder_throw ("The number of channels of the sound and the dimension of the PCA must be equal.");
-		}
-		if (numberOfComponents <= 0 || numberOfComponents > thy numberOfEigenvalues) {
-            numberOfComponents = thy numberOfEigenvalues;
-        }
-        autoNUMmatrix<double> whiten (1, my ny, 1, my ny);
-        for (long i = 1; i <= my ny; i++) {
-            for (long j = i; j <= my ny; j++) {
-                double wij = 0;
-                for (long k = 1; k <= numberOfComponents; k++) {
-                    wij += thy eigenvectors[k][i] * thy eigenvectors[k][j] / sqrt (thy eigenvalues[k]);
-                }
-                whiten[i][j] = whiten[j][i] = wij;
-            }
-        }
-		autoSound him = Sound_create (numberOfComponents, my xmin, my xmax, my nx, my dx, my x1);
-		for (long i = 1; i <= his ny; i++) {
-            for (long j = 1; j <= his nx; j++) {
-                double hisij = 0;
-                for (long k = 1; k <= my ny; k++) {
-                    hisij += whiten[i][k] * my z[k][j];
-                }
-                his z[i][j] = hisij;
-            }
-        }
-		return him.transfer();
-	} catch (MelderError) {
-		Melder_throw ("Sound not created.");
-	}
-}
 
 /*
  * Generate n different cct's that have a common diagonalizer.
@@ -1079,5 +1014,4 @@ static void Sound_and_MixingMatrix_improveUnmixing_fica (Sound me, MixingMatrix 
 		Melder_throw (me, " & ", thee, " .");
 	}
 }
-
 /* End of file ICA.cpp 987*/

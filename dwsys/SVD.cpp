@@ -60,10 +60,15 @@
 #include "oo_DESCRIPTION.h"
 #include "SVD_def.h"
 
-Thing_implement (SVD, Data, 0);
-
 #define MAX(m,n) ((m) > (n) ? (m) : (n))
 #define MIN(m,n) ((m) < (n) ? (m) : (n))
+
+void structSVD :: v_info () {
+	MelderInfo_writeLine (L"Number of rows: ", Melder_integer (numberOfRows));
+	MelderInfo_writeLine (L"Number of columns: ", Melder_integer (numberOfColumns));
+}
+
+Thing_implement (SVD, Data, 0);
 
 static void NUMtranspose_d (double **m, long n);
 
@@ -76,11 +81,6 @@ static void SVD_transpose (SVD me) {
 	my v = tmpd;
 	my numberOfRows = my numberOfColumns;
 	my numberOfColumns = tmpl;
-}
-
-void structSVD :: v_info () {
-	MelderInfo_writeLine2 (L"Number of rows: ", Melder_integer (numberOfRows));
-	MelderInfo_writeLine2 (L"Number of columns: ", Melder_integer (numberOfColumns));
 }
 
 /*
@@ -242,6 +242,32 @@ void SVD_compute (SVD me) {
 	}
 }
 
+// V D^2 V'or V D^-2 V
+void SVD_getSquared (SVD me, double **m, bool inverse) {
+	if (inverse) {
+		for (long i = 1; i <= my numberOfColumns; i++) {
+			for (long j = 1; j <= my numberOfColumns; j++) {
+				double val = 0;
+				for (long k = 1; k <= my numberOfColumns; k++) {
+					if (my d[k] > 0) {
+						val += my v[i][k] * my v[j][k] / (my d[k] * my d[k]);
+					}
+				}
+				m[i][j] = val;
+			}
+		}
+	} else {
+		for (long i = 1; i <= my numberOfColumns; i++) {
+			for (long j = 1; j <= my numberOfColumns; j++) {
+				double val = 0;
+				for (long k = 1; k <= my numberOfColumns; k++) {
+					val += my d[k] * my d[k] * my v[i][k] * my v[j][k];
+				}
+				m[i][j] = val;
+			}
+		}
+	}
+}
 
 void SVD_solve (SVD me, double b[], double x[]) {
 	try {
@@ -368,7 +394,7 @@ void SVD_synthesize (SVD me, long sv_from, long sv_to, double **m) {
 Thing_implement (GSVD, Data, 0);
 
 void structGSVD :: v_info () {
-	MelderInfo_writeLine2 (L"Number of columns: ", Melder_integer (numberOfColumns));
+	MelderInfo_writeLine (L"Number of columns: ", Melder_integer (numberOfColumns));
 }
 
 GSVD GSVD_create (long numberOfColumns) {

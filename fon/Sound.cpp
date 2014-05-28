@@ -40,16 +40,16 @@ void structSound :: v_info () {
 	structData :: v_info ();
 	const double rho_c = 400;   /* rho = 1.14 kg m-3; c = 353 m s-1; [rho c] = kg m-2 s-1 */
 	double minimum = z [1] [1], maximum = minimum;
-	MelderInfo_writeLine3 (L"Number of channels: ", Melder_integer (ny), ny == 1 ? L" (mono)" : ny == 2 ? L" (stereo)" : L"");
-	MelderInfo_writeLine1 (L"Time domain:");
-	MelderInfo_writeLine3 (L"   Start time: ", Melder_double (xmin), L" seconds");
-	MelderInfo_writeLine3 (L"   End time: ", Melder_double (xmax), L" seconds");
-	MelderInfo_writeLine3 (L"   Total duration: ", Melder_double (xmax - xmin), L" seconds");
-	MelderInfo_writeLine1 (L"Time sampling:");
-	MelderInfo_writeLine2 (L"   Number of samples: ", Melder_integer (nx));
-	MelderInfo_writeLine3 (L"   Sampling period: ", Melder_double (dx), L" seconds");
-	MelderInfo_writeLine3 (L"   Sampling frequency: ", Melder_single (1.0 / dx), L" Hz");
-	MelderInfo_writeLine3 (L"   First sample centred at: ", Melder_double (x1), L" seconds");
+	MelderInfo_writeLine (L"Number of channels: ", Melder_integer (ny), ny == 1 ? L" (mono)" : ny == 2 ? L" (stereo)" : L"");
+	MelderInfo_writeLine (L"Time domain:");
+	MelderInfo_writeLine (L"   Start time: ", Melder_double (xmin), L" seconds");
+	MelderInfo_writeLine (L"   End time: ", Melder_double (xmax), L" seconds");
+	MelderInfo_writeLine (L"   Total duration: ", Melder_double (xmax - xmin), L" seconds");
+	MelderInfo_writeLine (L"Time sampling:");
+	MelderInfo_writeLine (L"   Number of samples: ", Melder_integer (nx));
+	MelderInfo_writeLine (L"   Sampling period: ", Melder_double (dx), L" seconds");
+	MelderInfo_writeLine (L"   Sampling frequency: ", Melder_single (1.0 / dx), L" Hz");
+	MelderInfo_writeLine (L"   First sample centred at: ", Melder_double (x1), L" seconds");
 	{// scope
 		double sum = 0.0, sumOfSquares = 0.0;
 		for (long channel = 1; channel <= ny; channel ++) {
@@ -62,22 +62,22 @@ void structSound :: v_info () {
 				if (value > maximum) maximum = value;
 			}
 		}
-		MelderInfo_writeLine1 (L"Amplitude:");
-		MelderInfo_writeLine3 (L"   Minimum: ", Melder_single (minimum), L" Pascal");
-		MelderInfo_writeLine3 (L"   Maximum: ", Melder_single (maximum), L" Pascal");
+		MelderInfo_writeLine (L"Amplitude:");
+		MelderInfo_writeLine (L"   Minimum: ", Melder_single (minimum), L" Pascal");
+		MelderInfo_writeLine (L"   Maximum: ", Melder_single (maximum), L" Pascal");
 		double mean = sum / (nx * ny);
-		MelderInfo_writeLine3 (L"   Mean: ", Melder_single (mean), L" Pascal");
-		MelderInfo_writeLine3 (L"   Root-mean-square: ", Melder_single (sqrt (sumOfSquares / (nx * ny))), L" Pascal");
+		MelderInfo_writeLine (L"   Mean: ", Melder_single (mean), L" Pascal");
+		MelderInfo_writeLine (L"   Root-mean-square: ", Melder_single (sqrt (sumOfSquares / (nx * ny))), L" Pascal");
 		double penergy = sumOfSquares * dx / ny;   /* Pa2 s = kg2 m-2 s-3 */
-		MelderInfo_write3 (L"Total energy: ", Melder_single (penergy), L" Pascal\u00B2 sec");
+		MelderInfo_write (L"Total energy: ", Melder_single (penergy), L" Pascal\u00B2 sec");
 		double energy = penergy / rho_c;   /* kg s-2 = Joule m-2 */
-		MelderInfo_writeLine3 (L" (energy in air: ", Melder_single (energy), L" Joule/m\u00B2)");
+		MelderInfo_writeLine (L" (energy in air: ", Melder_single (energy), L" Joule/m\u00B2)");
 		double power = energy / (dx * nx);   /* kg s-3 = Watt/m2 */
-		MelderInfo_write3 (L"Mean power (intensity) in air: ", Melder_single (power), L" Watt/m\u00B2");
+		MelderInfo_write (L"Mean power (intensity) in air: ", Melder_single (power), L" Watt/m\u00B2");
 		if (power != 0.0) {
-			MelderInfo_writeLine3 (L" = ", Melder_half (10 * log10 (power / 1e-12)), L" dB");
+			MelderInfo_writeLine (L" = ", Melder_half (10 * log10 (power / 1e-12)), L" dB");
 		} else {
-			MelderInfo_writeLine1 (L"");
+			MelderInfo_writeLine (L"");
 		}
 	}
 	if (nx > 1) {
@@ -94,7 +94,7 @@ void structSound :: v_info () {
 				stdev += value * value;
 			}
 			stdev = sqrt (stdev / (nx - 1));
-			MelderInfo_writeLine5 (L"Standard deviation in channel ", Melder_integer (channel), L": ", Melder_single (stdev), L" Pascal");
+			MelderInfo_writeLine (L"Standard deviation in channel ", Melder_integer (channel), L": ", Melder_single (stdev), L" Pascal");
 		}
 	}
 }
@@ -178,33 +178,59 @@ Sound Sound_convertToStereo (Sound me) {
 	}
 }
 
-Sound Sounds_combineToStereo (Sound me, Sound thee) {
+Sound Sounds_combineToStereo (Collection me) {
 	try {
-		if (my ny != 1 || thy ny != 1)
-			Melder_throw ("Can only combine mono sounds.");
-		if (my dx != thy dx)
-			Melder_throw ("Sampling frequencies are not equal.");
-		double dx = my dx;   // or thy dx, which is the same
-		double xmin = my xmin < thy xmin ? my xmin : thy xmin;
-		double xmax = my xmax > thy xmax ? my xmax : thy xmax;
-		long myInitialZeroes = floor ((my xmin - xmin) / dx);
-		long thyInitialZeroes = floor ((thy xmin - xmin) / dx);
-		double myx1 = my x1 - my dx * myInitialZeroes;
-		double thyx1 = thy x1 - thy dx * thyInitialZeroes;
-		double x1 = 0.5 * (myx1 + thyx1);
-		long mynx = my nx + myInitialZeroes;
-		long thynx = thy nx + thyInitialZeroes;
-		long nx = mynx > thynx ? mynx : thynx;
-		autoSound him = Sound_create (2, xmin, xmax, nx, dx, x1);
-		for (long i = 1; i <= my nx; i ++) {
-			his z [1] [i + myInitialZeroes] = my z [1] [i];
+		long totalNumberOfChannels = 0;
+		double sharedSamplingPeriod = 0.0;
+		for (long isound = 1; isound <= my size; isound ++) {
+			Sound sound = (Sound) my item [isound];
+			totalNumberOfChannels += sound -> ny;
+			if (sharedSamplingPeriod == 0.0) {
+				sharedSamplingPeriod = sound -> dx;
+			} else if (sound -> dx != sharedSamplingPeriod) {
+				Melder_throw ("To combine sounds, their sampling frequencies must be equal.\n"
+						"You could resample one or more of the sounds before combining.");
+			}
 		}
-		for (long i = 1; i <= thy nx; i ++) {
-			his z [2] [i + thyInitialZeroes] = thy z [1] [i];
+		double sharedMinimumTime = NUMundefined, sharedMaximumTime = NUMundefined;
+		for (long isound = 1; isound <= my size; isound ++) {
+			Sound sound = (Sound) my item [isound];
+			if (isound == 1) {
+				sharedMinimumTime = sound -> xmin;
+				sharedMaximumTime = sound -> xmax;
+			} else {
+				if (sound -> xmin < sharedMinimumTime) sharedMinimumTime = sound -> xmin;
+				if (sound -> xmax > sharedMaximumTime) sharedMaximumTime = sound -> xmax;
+			}
 		}
-		return him.transfer();
+		autoNUMvector <double> numberOfInitialZeroes (1, my size);
+		long sharedNumberOfSamples = 0;
+		double sumOfFirstTimes = 0.0;
+		for (long isound = 1; isound <= my size; isound ++) {
+			Sound sound = (Sound) my item [isound];
+			numberOfInitialZeroes [isound] = floor ((sound -> xmin - sharedMinimumTime) / sharedSamplingPeriod);
+			double newFirstTime = sound -> x1 - sound -> dx * numberOfInitialZeroes [isound];
+			sumOfFirstTimes += newFirstTime;
+			long newNumberOfSamplesThroughLastNonzero = sound -> nx + numberOfInitialZeroes [isound];
+			if (newNumberOfSamplesThroughLastNonzero > sharedNumberOfSamples) sharedNumberOfSamples = newNumberOfSamplesThroughLastNonzero;
+		}
+		double sharedTimeOfFirstSample = sumOfFirstTimes / my size;   // this is an approximation
+		autoSound thee = Sound_create (totalNumberOfChannels, sharedMinimumTime, sharedMaximumTime,
+			sharedNumberOfSamples, sharedSamplingPeriod, sharedTimeOfFirstSample);
+		long channelNumber = 0;
+		for (long isound = 1; isound <= my size; isound ++) {
+			Sound sound = (Sound) my item [isound];
+			long offset = numberOfInitialZeroes [isound];
+			for (long ichan = 1; ichan <= sound -> ny; ichan ++) {
+				channelNumber ++;
+				for (long isamp = 1; isamp <= sound -> nx; isamp ++) {
+					thy z [channelNumber] [isamp + offset] = sound -> z [ichan] [isamp];
+				}
+			}
+		}
+		return thee.transfer();
 	} catch (MelderError) {
-		Melder_throw (me, " & ", thee, ": not combined to stereo.");
+		Melder_throw ("Sounds not combined to stereo.");
 	}
 }
 
@@ -713,7 +739,7 @@ Sound Sound_autoCorrelate (Sound me, enum kSounds_convolve_scaling scaling, enum
 }
 
 void Sound_draw (Sound me, Graphics g,
-	double tmin, double tmax, double minimum, double maximum, bool garnish, const wchar *method)
+	double tmin, double tmax, double minimum, double maximum, bool garnish, const wchar_t *method)
 {
 	long ixmin, ixmax;
 	bool treversed = tmin > tmax;
