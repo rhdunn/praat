@@ -101,7 +101,8 @@ enum { GEENSYMBOOL_,
 		HERTZ_TO_BARK_, BARK_TO_HERTZ_, PHON_TO_DIFFERENCE_LIMENS_, DIFFERENCE_LIMENS_TO_PHON_,
 		HERTZ_TO_MEL_, MEL_TO_HERTZ_, HERTZ_TO_SEMITONES_, SEMITONES_TO_HERTZ_,
 		ERB_, HERTZ_TO_ERB_, ERB_TO_HERTZ_,
-	#define HIGH_FUNCTION_1  ERB_TO_HERTZ_
+		STRINGSTR_,
+	#define HIGH_FUNCTION_1  STRINGSTR_
 
 	/* Functions of 2 variables; if you add, update the #defines. */
 	#define LOW_FUNCTION_2  ARCTAN2_
@@ -141,13 +142,13 @@ enum { GEENSYMBOOL_,
 	/* String functions. */
 	#define LOW_STRING_FUNCTION  LOW_FUNCTION_STRNUM
 	#define LOW_FUNCTION_STRNUM  LENGTH_
-		LENGTH_, FILE_READABLE_, DELETE_FILE_, CREATE_DIRECTORY_, VARIABLE_EXISTS_,
+		LENGTH_, STRING_TO_NUMBER_, FILE_READABLE_, DELETE_FILE_, CREATE_DIRECTORY_, VARIABLE_EXISTS_,
 	#define HIGH_FUNCTION_STRNUM  VARIABLE_EXISTS_
 		DATESTR_,
 		ENVIRONMENTSTR_, INDEX_, RINDEX_,
 		STARTS_WITH_, ENDS_WITH_, REPLACESTR_, INDEX_REGEX_, RINDEX_REGEX_, REPLACE_REGEXSTR_,
 		EXTRACT_NUMBER_, EXTRACT_WORDSTR_, EXTRACT_LINESTR_,
-		STRINGSTR_, FIXEDSTR_, PERCENTSTR_,
+		FIXEDSTR_, PERCENTSTR_,
 	#define HIGH_STRING_FUNCTION  PERCENTSTR_
 
 	/* Range functions. */
@@ -207,6 +208,7 @@ static const wchar_t *Formula_instructionNames [1 + hoogsteSymbool] = { L"",
 	L"hertzToBark", L"barkToHertz", L"phonToDifferenceLimens", L"differenceLimensToPhon",
 	L"hertzToMel", L"melToHertz", L"hertzToSemitones", L"semitonesToHertz",
 	L"erb", L"hertzToErb", L"erbToHertz",
+	L"string$",
 	L"arctan2", L"randomUniform", L"randomInteger", L"randomGauss",
 	L"chiSquareP", L"chiSquareQ", L"incompleteGammaP", L"invChiSquareQ", L"studentP", L"studentQ", L"invStudentQ",
 	L"beta", L"beta2", L"besselI", L"besselK", L"lnBeta",
@@ -231,12 +233,12 @@ static const wchar_t *Formula_instructionNames [1 + hoogsteSymbool] = { L"",
 	L"zero#", L"linear#", L"randomUniform#", L"randomInteger#", L"randomGauss#",
 	L"numberOfRows", L"numberOfColumns",
 
-	L"length", L"fileReadable",	L"deleteFile", L"createDirectory", L"variableExists",
+	L"length", L"number", L"fileReadable",	L"deleteFile", L"createDirectory", L"variableExists",
 	L"date$",
 	L"environment$", L"index", L"rindex",
 	L"startsWith", L"endsWith", L"replace$", L"index_regex", L"rindex_regex", L"replace_regex$",
 	L"extractNumber", L"extractWord$", L"extractLine$",
-	L"string$", L"fixed$", L"percent$",
+	L"fixed$", L"percent$",
 	L"sum",
 	L".",
 	L"_true", L"_false",
@@ -2474,7 +2476,7 @@ static void do_writeInfo () {
 		else if (arg->which == Stackel_STRING)
 			MelderInfo_write (arg->string);
 	}
-	MelderInfo_close ();
+	MelderInfo_drain ();
 	pushNumber (1);
 }
 static void do_writeInfoLine () {
@@ -2491,7 +2493,7 @@ static void do_writeInfoLine () {
 			MelderInfo_write (arg->string);
 	}
 	MelderInfo_write (L"\n");
-	MelderInfo_close ();
+	MelderInfo_drain ();
 	pushNumber (1);
 }
 static void do_appendInfo () {
@@ -2506,7 +2508,7 @@ static void do_appendInfo () {
 		else if (arg->which == Stackel_STRING)
 			MelderInfo_write (arg->string);
 	}
-	MelderInfo_close ();
+	MelderInfo_drain ();
 	pushNumber (1);
 }
 static void do_appendInfoLine () {
@@ -2522,7 +2524,7 @@ static void do_appendInfoLine () {
 			MelderInfo_write (arg->string);
 	}
 	MelderInfo_write (L"\n");
-	MelderInfo_close ();
+	MelderInfo_drain ();
 	pushNumber (1);
 }
 static void do_min (void) {
@@ -2795,6 +2797,15 @@ static void do_length (void) {
 		pushNumber (result);
 	} else {
 		Melder_throw ("The function \"length\" requires a string, not ", Stackel_whichText (s), ".");
+	}
+}
+static void do_number (void) {
+	Stackel s = pop;
+	if (s->which == Stackel_STRING) {
+		double result = Melder_atof (s->string);
+		pushNumber (result);
+	} else {
+		Melder_throw ("The function \"number\" requires a string, not ", Stackel_whichText (s), ".");
 	}
 }
 static void do_fileReadable (void) {
@@ -4388,6 +4399,7 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 } break; case NUMBER_OF_COLUMNS_: { do_numberOfColumns ();
 /********** String functions: **********/
 } break; case LENGTH_: { do_length ();
+} break; case STRING_TO_NUMBER_: { do_number ();
 } break; case FILE_READABLE_: { do_fileReadable ();
 } break; case DATESTR_: { do_dateStr ();
 } break; case LEFTSTR_: { do_leftStr ();
