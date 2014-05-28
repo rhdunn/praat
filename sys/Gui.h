@@ -2,7 +2,7 @@
 #define _Gui_h_
 /* Gui.h
  *
- * Copyright (C) 1993-2011,2012 Paul Boersma
+ * Copyright (C) 1993-2011,2012,2013 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,8 +50,10 @@
 	#include <cairo/cairo.h>
 #elif defined (macintosh)
 	#include "macport_on.h"
-	#include <Carbon/Carbon.h>
-	#include <Cocoa/Cocoa.h>
+    #if useCarbon
+        #include <Carbon/Carbon.h>
+    #endif
+    #include <Cocoa/Cocoa.h>
 	#include "macport_off.h"
 #elif defined (_WIN32)
 	#include "winport_on.h"
@@ -97,7 +99,30 @@
 	#define False 0
 	typedef void *GuiObject;
 #elif cocoa
-	typedef class structGuiObject *GuiObject;   // Opaque
+	Thing_declare (GuiThing);
+	@protocol GuiCocoaAny
+		- (GuiThing) userData;
+		- (void) setUserData: (GuiThing) userData;
+	@end
+	typedef NSObject <GuiCocoaAny> *GuiObject;
+    @interface GuiCocoaButton : NSButton <GuiCocoaAny> @end
+    @interface GuiCocoaScrollBar : NSScroller <GuiCocoaAny> @end
+	@interface GuiCocoaLabel : NSTextField <GuiCocoaAny> @end
+	@interface GuiCocoaMenu : NSMenu <GuiCocoaAny> @end
+	@interface GuiCocoaMenuButton : NSPopUpButton <GuiCocoaAny> @end
+	@interface GuiCocoaMenuItem : NSMenuItem <GuiCocoaAny> @end
+	@interface GuiCocoaText : NSTextField <GuiCocoaAny> @end
+    @interface GuiCocoaWindow : NSWindow <GuiCocoaAny> @end
+    @interface GuiCocoaScrolledWindow : NSScrollView <GuiCocoaAny> @end
+    @interface GuiCocoaCheckButton : NSButton <GuiCocoaAny> @end
+    @interface GuiCocoaDrawingArea : NSView <GuiCocoaAny> @end
+    @interface GuiCocoaOptionMenu : NSPopUpButton <GuiCocoaAny> @end
+    @interface GuiCocoaList : NSView <GuiCocoaAny, NSTableViewDataSource, NSTableViewDelegate>
+        @property (nonatomic, retain) NSMutableArray *contents;
+        @property (nonatomic, retain) NSTableView *tableView;
+    @end
+
+
 #elif motif
 	typedef class structGuiObject *GuiObject;   // Opaque
 
@@ -327,7 +352,7 @@ Thing_define (GuiShell, GuiForm) { public:
 	#if gtk
 		GtkWindow *d_gtkWindow;
 	#elif cocoa
-		NSWindow *d_nsWindow;
+		GuiCocoaWindow *d_cocoaWindow;
 	#elif motif
 		GuiObject d_xmShell;
 	#endif
@@ -563,9 +588,9 @@ Thing_define (GuiMenu, GuiThing) { public:
 	#if gtk
 		GtkMenuItem *d_gtkMenuTitle;
 	#elif cocoa
-		NSMenu *d_nsMenu;
-		NSMenuItem *d_nsMenuItem;
-		NSPopUpButton *d_nsMenuButton;
+		GuiCocoaMenu *d_cocoaMenu;
+		GuiCocoaMenuItem *d_cocoaMenuItem;
+		GuiCocoaMenuButton *d_cocoaMenuButton;
 	#elif motif
 		GuiObject d_xmMenuTitle;   // in case the menu is in a menu bar
 		GuiObject d_xmMenuBar;   // in case the menu is in a form

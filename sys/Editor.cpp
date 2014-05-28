@@ -1,6 +1,6 @@
 /* Editor.cpp
  *
- * Copyright (C) 1992-2012 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse
+ * Copyright (C) 1992-2012,2013 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #include "machine.h"
 #include "EditorM.h"
 #include "praat_script.h"
-#include "Preferences.h"
 
 #include "enums_getText.h"
 #include "Editor_enums.h"
@@ -31,19 +30,12 @@
 
 Thing_implement (Editor, Thing, 0);
 
-/********** PREFERENCES **********/
-
-static struct {
-	struct {
-		bool eraseFirst;
-		enum kEditor_writeNameAtTop writeNameAtTop;
-	} picture;
-} preferences;
-
-void Editor_prefs (void) {
-	Preferences_addBool (L"Editor.picture.eraseFirst", & preferences.picture.eraseFirst, true);
-	Preferences_addEnum (L"Editor.picture.writeNameAtTop", & preferences.picture.writeNameAtTop, kEditor_writeNameAtTop, DEFAULT);
-}
+#include "prefs_define.h"
+#include "Editor_prefs.h"
+#include "prefs_install.h"
+#include "Editor_prefs.h"
+#include "prefs_copyToInstance.h"
+#include "Editor_prefs.h"
 
 /********** class EditorCommand **********/
 
@@ -71,11 +63,12 @@ void structEditorMenu :: v_destroy () {
 static void commonCallback (GUI_ARGS) {
 	GUI_IAM (EditorCommand);
 	if (my d_editor && my d_editor -> v_scriptable () && ! wcsstr (my itemTitle, L"...")) {
-		UiHistory_write (L"\n");
-		UiHistory_write (my itemTitle);
+		UiHistory_write (L"\ndo (\"");
+		UiHistory_write_expandQuotes (my itemTitle);
+		UiHistory_write (L"\")");
 	}
 	try {
-		my commandCallback (my d_editor, me, NULL, NULL, NULL);
+		my commandCallback (my d_editor, me, NULL, 0, NULL, NULL, NULL);
 	} catch (MelderError) {
 		Melder_error_ ("Menu command \"", my itemTitle, "\" not completed.");
 		Melder_flushError (NULL);
@@ -83,7 +76,7 @@ static void commonCallback (GUI_ARGS) {
 }
 
 GuiMenuItem EditorMenu_addCommand (EditorMenu me, const wchar_t *itemTitle, long flags,
-	void (*commandCallback) (Editor me, EditorCommand cmd, UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter))
+	void (*commandCallback) (Editor me, EditorCommand cmd, UiForm sendingForm, int narg, Stackel args, const wchar_t *sendingString, Interpreter interpreter))
 {
 	autoEditorCommand thee = Thing_new (EditorCommand);
 	thy d_editor = my d_editor;
@@ -115,7 +108,7 @@ EditorMenu Editor_addMenu (Editor me, const wchar_t *menuTitle, long flags) {
 /*GuiObject EditorMenu_getMenuWidget (EditorMenu me) { return my menuWidget; }*/
 
 GuiMenuItem Editor_addCommand (Editor me, const wchar_t *menuTitle, const wchar_t *itemTitle, long flags,
-	void (*commandCallback) (Editor me, EditorCommand cmd, UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter))
+	void (*commandCallback) (Editor me, EditorCommand cmd, UiForm sendingForm, int narg, Stackel args, const wchar_t *sendingString, Interpreter interpreter))
 {
 	try {
 		long numberOfMenus = my menus -> size;
@@ -130,8 +123,10 @@ GuiMenuItem Editor_addCommand (Editor me, const wchar_t *menuTitle, const wchar_
 	}
 }
 
-static void Editor_scriptCallback (Editor me, EditorCommand cmd, UiForm sendingForm, const wchar_t *sendingString, Interpreter interpreter) {
+static void Editor_scriptCallback (Editor me, EditorCommand cmd, UiForm sendingForm, int narg, Stackel args, const wchar_t *sendingString, Interpreter interpreter) {
 	(void) sendingForm;
+	(void) narg;
+	(void) args;
 	(void) sendingString;
 	(void) interpreter;
 	DO_RunTheScriptFromAnyAddedEditorCommand (me, cmd -> script);
@@ -197,7 +192,7 @@ EditorCommand Editor_getMenuCommand (Editor me, const wchar_t *menuTitle, const 
 	Melder_throw ("Command \"", itemTitle, "\" not found in menu \"", menuTitle, "\".");
 }
 
-void Editor_doMenuCommand (Editor me, const wchar_t *commandTitle, const wchar_t *arguments, Interpreter interpreter) {
+void Editor_doMenuCommand (Editor me, const wchar_t *commandTitle, int narg, Stackel args, const wchar_t *arguments, Interpreter interpreter) {
 	int numberOfMenus = my menus -> size;
 	for (int imenu = 1; imenu <= numberOfMenus; imenu ++) {
 		EditorMenu menu = (EditorMenu) my menus -> item [imenu];
@@ -205,7 +200,7 @@ void Editor_doMenuCommand (Editor me, const wchar_t *commandTitle, const wchar_t
 		for (long icommand = 1; icommand <= numberOfCommands; icommand ++) {
 			EditorCommand command = (EditorCommand) menu -> commands -> item [icommand];
 			if (wcsequ (commandTitle, command -> itemTitle)) {
-				command -> commandCallback (me, command, NULL, arguments, interpreter);
+				command -> commandCallback (me, command, NULL, narg, args, arguments, interpreter);
 				return;
 			}
 		}
@@ -363,22 +358,22 @@ void structEditor :: v_form_pictureWindow (EditorCommand cmd) {
 	BOOLEAN (L"Erase first", 1);
 }
 void structEditor :: v_ok_pictureWindow (EditorCommand cmd) {
-	SET_INTEGER (L"Erase first", preferences.picture.eraseFirst);
+	SET_INTEGER (L"Erase first", pref_picture_eraseFirst ());
 }
 void structEditor :: v_do_pictureWindow (EditorCommand cmd) {
-	preferences.picture.eraseFirst = GET_INTEGER (L"Erase first");
+	pref_picture_eraseFirst () = GET_INTEGER (L"Erase first");
 }
 
 void structEditor :: v_form_pictureMargins (EditorCommand cmd) {
 	Any radio = 0;
 	LABEL (L"", L"Margins:")
-	OPTIONMENU_ENUM (L"Write name at top", kEditor_writeNameAtTop, DEFAULT);
+	OPTIONMENU_ENUM (L"Write name at top", kEditor_writeNameAtTop, kEditor_writeNameAtTop_DEFAULT);
 }
 void structEditor :: v_ok_pictureMargins (EditorCommand cmd) {
-	SET_ENUM (L"Write name at top", kEditor_writeNameAtTop, preferences.picture.writeNameAtTop);
+	SET_ENUM (L"Write name at top", kEditor_writeNameAtTop, pref_picture_writeNameAtTop ());
 }
 void structEditor :: v_do_pictureMargins (EditorCommand cmd) {
-	preferences.picture.writeNameAtTop = GET_ENUM (kEditor_writeNameAtTop, L"Write name at top");
+	pref_picture_writeNameAtTop () = GET_ENUM (kEditor_writeNameAtTop, L"Write name at top");
 }
 
 static void gui_window_cb_goAway (I) {
@@ -457,6 +452,7 @@ void Editor_init (Editor me, int x, int y, int width, int height, const wchar_t 
 	my d_windowForm = GuiWindow_create (left, top, width, height, title, gui_window_cb_goAway, me, my v_canFullScreen () ? GuiWindow_FULLSCREEN : 0);
 	Thing_setName (me, title);
 	my data = data;
+	my v_copyPreferencesToInstance ();
 
 	/* Create menus. */
 
@@ -498,16 +494,16 @@ void Editor_save (Editor me, const wchar_t *text) {
 }
 
 void Editor_openPraatPicture (Editor me) {
-	my pictureGraphics = praat_picture_editor_open (preferences.picture.eraseFirst);
+	my pictureGraphics = praat_picture_editor_open (my pref_picture_eraseFirst ());
 }
 void Editor_closePraatPicture (Editor me) {
-	if (my data != NULL && preferences.picture.writeNameAtTop != kEditor_writeNameAtTop_NO) {
+	if (my data != NULL && my pref_picture_writeNameAtTop () != kEditor_writeNameAtTop_NO) {
 		Graphics_setNumberSignIsBold (my pictureGraphics, false);
 		Graphics_setPercentSignIsItalic (my pictureGraphics, false);
 		Graphics_setCircumflexIsSuperscript (my pictureGraphics, false);
 		Graphics_setUnderscoreIsSubscript (my pictureGraphics, false);
 		Graphics_textTop (my pictureGraphics,
-			preferences.picture.writeNameAtTop == kEditor_writeNameAtTop_FAR,
+			my pref_picture_writeNameAtTop () == kEditor_writeNameAtTop_FAR,
 			my data -> name);
 		Graphics_setNumberSignIsBold (my pictureGraphics, true);
 		Graphics_setPercentSignIsItalic (my pictureGraphics, true);

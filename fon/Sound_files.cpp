@@ -211,7 +211,9 @@ Sound Sound_readFromKayFile (MelderFile file) {
 		unsigned long numberOfSamples = bingetu4LE (f);
 		if (samplingFrequency <= 0 || samplingFrequency > 1e7 || numberOfSamples >= 1000000000)
 			Melder_throw ("Not a correct Kay file.");
-		if (fread (data, 1, 4, f) < 4) readError ();   // absolute extrema A/B
+		signed int tmp1 = bingeti2LE (f);
+		signed int tmp2 = bingeti2LE (f);
+		long numberOfChannels = tmp1 == -1 || tmp2 == -1 ? 1 : 2;
 
 		/* SD chunk */
 
@@ -228,9 +230,11 @@ Sound Sound_readFromKayFile (MelderFile file) {
 		if (chunkSize != numberOfSamples * 2)
 			Melder_throw ("Incomplete SD chunk.");
 
-		autoSound me = Sound_createSimple (1, numberOfSamples / samplingFrequency, samplingFrequency);
-		for (unsigned long i = 1; i <= numberOfSamples; i ++) {
-			my z [1] [i] = bingeti2LE (f) / 32768.0;
+		autoSound me = Sound_createSimple (numberOfChannels, numberOfSamples / samplingFrequency, samplingFrequency);
+		for (long ichan = 1; ichan <= numberOfChannels; ichan ++) {
+			for (unsigned long i = 1; i <= numberOfSamples; i ++) {
+				my z [ichan] [i] = bingeti2LE (f) / 32768.0;
+			}
 		}
 		f.close (file);
 		return me.transfer();
@@ -257,7 +261,7 @@ Sound Sound_readFromRawAlawFile (MelderFile file) {
 
 void Sound_writeToAudioFile (Sound me, MelderFile file, int audioFileType, int numberOfBitsPerSamplePoint) {
 	try {
-		autoMelderFile mfile = MelderFile_create (file, Melder_macAudioFileType (audioFileType), L"PpgB", Melder_winAudioFileExtension (audioFileType));
+		autoMelderFile mfile = MelderFile_create (file);
 		MelderFile_writeAudioFileHeader (file, audioFileType, floor (1.0 / my dx + 0.5), my nx, my ny, numberOfBitsPerSamplePoint);
 		MelderFile_writeFloatToAudio (file, my ny, Melder_defaultAudioFileEncoding (audioFileType, numberOfBitsPerSamplePoint), my z, my nx, TRUE);
 		MelderFile_writeAudioFileTrailer (file, audioFileType, floor (1.0 / my dx + 0.5), my nx, my ny, numberOfBitsPerSamplePoint);
@@ -271,7 +275,6 @@ void Sound_writeToSesamFile (Sound me, MelderFile file) {
 	try {
 		autofile f = Melder_fopen (file, "wb");
 		long header [1 + 128], tail;
-		MelderFile_setMacTypeAndCreator (file, 'BINA', 'PpgB');
 		for (long i = 1; i <= 128; i ++) header [i] = 0;
 		/* ILS header. */
 			header [6] = ((my nx - 1) >> 8) + 1;   /* Number of disk blocks. */
@@ -299,7 +302,7 @@ void Sound_writeToSesamFile (Sound me, MelderFile file) {
 
 void Sound_writeToKayFile (Sound me, MelderFile file) {
 	try {
-		autoMelderFile mfile = MelderFile_create (file, L"BINA", L"PpgB", L"KaySound");
+		autoMelderFile mfile = MelderFile_create (file);
 
 		/* Form Chunk: contains all other chunks. */
 		fwrite ("FORMDS16", 1, 8, file -> filePointer);
@@ -321,11 +324,23 @@ void Sound_writeToKayFile (Sound me, MelderFile file) {
 			if (value > maximum) maximum = value;
 		}
 		binputi2LE (maximum, file -> filePointer);   // absolute maximum window A
-		binputi2LE (-1, file -> filePointer);   // absolute maximum window B
+		if (my ny == 1) {
+			binputi2LE (-1, file -> filePointer);
+		} else {
+			int maximum = 0;
+			for (long i = 1; i <= my nx; i ++) {
+				long value = floor (my z [2] [i] * 32768 + 0.5);
+				if (value < - maximum) maximum = - value;
+				if (value > maximum) maximum = value;
+			}
+			binputi2LE (maximum, file -> filePointer);   // absolute maximum window B
+		}
 		fwrite ("SDA_", 1, 4, file -> filePointer);
 		binputi4LE (my nx * 2, file -> filePointer);   // chunk size
 
-		MelderFile_writeFloatToAudio (file, my ny, Melder_LINEAR_16_LITTLE_ENDIAN, my z, my nx, TRUE);
+		MelderFile_writeFloatToAudio (file, 1, Melder_LINEAR_16_LITTLE_ENDIAN, my z, my nx, TRUE);
+		if (my ny > 1)
+			MelderFile_writeFloatToAudio (file, 1, Melder_LINEAR_16_LITTLE_ENDIAN, my z + 1, my nx, TRUE);
 		mfile.close ();
 	} catch (MelderError) {
 		Melder_throw (me, ": not written to Kay sound file ", file, ".");
@@ -334,7 +349,7 @@ void Sound_writeToKayFile (Sound me, MelderFile file) {
 
 void Sound_writeToRawSoundFile (Sound me, MelderFile file, int encoding) {
 	try {
-		autoMelderFile mfile = MelderFile_create (file, L"BINA", L"PpgB", L"rawSound");
+		autoMelderFile mfile = MelderFile_create (file);
 		MelderFile_writeFloatToAudio (file, my ny, encoding, my z, my nx, TRUE);
 		mfile.close ();
 	} catch (MelderError) {

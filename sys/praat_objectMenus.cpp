@@ -1,6 +1,6 @@
 /* praat_objectMenus.cpp
  *
- * Copyright (C) 1992-2012 Paul Boersma
+ * Copyright (C) 1992-2012,2013 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -372,7 +372,8 @@ END
 
 static void readFromFile (MelderFile file) {
 	autoData object = (Data) Data_readFromFile (file);
-	if (object.peek() && Thing_member (object.peek(), classManPages) && ! Melder_batch) {
+	if (object.peek() == NULL) return;
+	if (Thing_member (object.peek(), classManPages) && ! Melder_batch) {
 		ManPages pages = (ManPages) object.peek();
 		ManPage firstPage = static_cast<ManPage> (pages -> pages -> item [1]);
 		Manual_create (firstPage -> title, object.transfer(), true);
@@ -381,7 +382,7 @@ static void readFromFile (MelderFile file) {
 				"Only navigate these pages if you trust their author!");
 		return;
 	}
-	if (object.peek() && Thing_member (object.peek(), classScript) && ! Melder_batch) {
+	if (Thing_member (object.peek(), classScript) && ! Melder_batch) {
 		ScriptEditor_createFromScript (NULL, (Script) object.peek());
 		return;
 	}
@@ -521,7 +522,7 @@ void praat_addFixedButtons (GuiWindow window) {
 }
 
 static void searchProc (void) {
-	DO_SearchManual (NULL, NULL, NULL, NULL, false, NULL);
+	DO_SearchManual (NULL, 0, NULL, NULL, NULL, NULL, false, NULL);
 }
 
 static MelderString itemTitle_about = { 0 };

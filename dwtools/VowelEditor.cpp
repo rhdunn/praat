@@ -1,6 +1,6 @@
 /* VowelEditor.c
  *
- * Copyright (C) 2008-2011 David Weenink
+ * Copyright (C) 2008-2013 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -967,9 +967,9 @@ static void menu_cb_extract_KlattGrid (EDITOR_ARGS) {
 	VowelEditor_updateVowel (me);
 	autoFormantGrid fg = FormantTier_to_FormantGrid (my vowel -> ft);
 	autoKlattGrid publish = KlattGrid_create (fg -> xmin, fg -> xmax, fg -> formants -> size, 0, 0, 0, 0, 0, 0);
-	KlattGrid_addVoicingAmplitudePoint (publish.peek(), fg -> xmin, 90); 
-	KlattGrid_replacePitchTier (publish.peek(), my vowel -> pt); 
-	KlattGrid_replaceFormantGrid (publish.peek(), KlattGrid_ORAL_FORMANTS, fg.peek()); 
+	KlattGrid_addVoicingAmplitudePoint (publish.peek(), fg -> xmin, 90);
+	KlattGrid_replacePitchTier (publish.peek(), my vowel -> pt);
+	KlattGrid_replaceFormantGrid (publish.peek(), KlattGrid_ORAL_FORMANTS, fg.peek());
 	my broadcastPublication (publish.transfer());
 }
 
@@ -1073,7 +1073,7 @@ static void menu_cb_setF0 (EDITOR_ARGS) {
 		checkF0 (&my f0, &f0);
 		my f0.start = f0;
 		my f0.slopeOctPerSec = GET_REAL (L"Slope");
-		VowelEditor_setSource (me); 
+		VowelEditor_setSource (me);
 		my f0TextField -> f_setString (Melder_double (my f0.start));
 		my f0SlopeTextField -> f_setString (Melder_double (my f0.slopeOctPerSec));
 	EDITOR_END
@@ -1093,7 +1093,7 @@ static void menu_cb_setF3F4 (EDITOR_ARGS) {
 		if (f3 >= f4) {
 			Melder_throw ("F4 must be larger than F3.");
 		}
-		VowelEditor_setF3F4 (me, f3, b3, f4, b4); 
+		VowelEditor_setF3F4 (me, f3, b3, f4, b4);
 	EDITOR_END
 }
 static void menu_cb_reverseTrajectory (EDITOR_ARGS) {
@@ -1525,7 +1525,7 @@ void structVowelEditor :: v_createHelpMenuItems (EditorMenu menu) {
 
 void structVowelEditor :: v_createChildren ()
 {
-	double button_width = 60, text_width = 95, status_info_width = 290;
+	double button_width = 90, text_width = 95, status_info_width = 290;
 	double left, right, top, bottom, bottom_widgets_top, bottom_widgets_bottom, bottom_widgets_halfway;
 
 	// Three buttons on a row: Play, Reverse, Publish

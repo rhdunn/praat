@@ -2,7 +2,7 @@
 #define _Preferences_h_
 /* Preferences.h
  *
- * Copyright (C) 1996-2011 Paul Boersma
+ * Copyright (C) 1996-2011,2013 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,15 @@
  */
 #define Preferences_STRING_BUFFER_SIZE 1+kMelder_MAXPATH
 
+#define pref_wcscpy(to,from) \
+	wcsncpy (to, from, Preferences_STRING_BUFFER_SIZE); \
+	to [Preferences_STRING_BUFFER_SIZE - 1] = '\0';
+
+#define pref_wcscpy2(to2,to1,from) \
+	wcsncpy (to1, from, Preferences_STRING_BUFFER_SIZE); \
+	to1 [Preferences_STRING_BUFFER_SIZE - 1] = '\0'; \
+	wcscpy (to2, to1);
+
 enum kPreferences_dummy { dummy1 = 1, dummy2 = 2 };
 
 void Preferences_addByte (const wchar_t *string, signed char *value, signed char defaultValue);
@@ -45,7 +54,7 @@ void _Preferences_addEnum (const wchar_t *string, enum kPreferences_dummy *value
 	const wchar_t *(*getText) (int value), int (*getValue) (const wchar_t *text), enum kPreferences_dummy defaultValue);
 #define Preferences_addEnum(string,value,enumerated,defaultValue) \
 	_Preferences_addEnum (string, (enum kPreferences_dummy *) value, enumerated##_MIN, enumerated##_MAX, \
-	enumerated##_getText, enumerated##_getValue, (enum kPreferences_dummy) enumerated##_##defaultValue)
+	enumerated##_getText, enumerated##_getValue, (enum kPreferences_dummy) defaultValue)
 
 void Preferences_read (MelderFile file);
 void Preferences_write (MelderFile file);

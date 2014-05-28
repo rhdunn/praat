@@ -90,7 +90,7 @@ void Data_writeText (Data me, MelderFile openFile) {
 }
 
 MelderFile Data_createTextFile (Data me, MelderFile file, bool verbose) {
-	autoMelderFile mfile = MelderFile_create (file, L"TEXT", 0, L"txt");
+	autoMelderFile mfile = MelderFile_create (file);
 	#if defined (_WIN32)
 		file -> requiresCRLF = true;
 	#endif
@@ -124,7 +124,6 @@ static void _Data_writeToTextFile (Data me, MelderFile file, bool verbose) {
 			if (file -> filePointer) funlockfile (file -> filePointer);
 		#endif
 		mfile.close ();
-		MelderFile_setMacTypeAndCreator (file, 'TEXT', 0);
 	} catch (MelderError) {
 		#ifndef _WIN32
 			if (file -> filePointer) funlockfile (file -> filePointer);   // the file pointer is NULL before Data_createTextFile() and after mfile.close()
@@ -163,7 +162,7 @@ void Data_writeToBinaryFile (Data me, MelderFile file) {
 	try {
 		if (! Data_canWriteBinary (me))
 			Melder_throw ("Objects of class ", my classInfo -> className, L" cannot be written to a generic binary file.");
-		autoMelderFile mfile = MelderFile_create (file, 0, 0, 0);
+		autoMelderFile mfile = MelderFile_create (file);
 		if (fprintf (file -> filePointer, "ooBinaryFile") < 0)
 			Melder_throw ("Cannot write first bytes of file.");
 		binputw1 (
@@ -173,7 +172,6 @@ void Data_writeToBinaryFile (Data me, MelderFile file) {
 			file -> filePointer);
 		Data_writeBinary (me, file -> filePointer);
 		mfile.close ();
-		MelderFile_setMacTypeAndCreator (file, 'BINA', 0);
 	} catch (MelderError) {
 		Melder_throw (me, ": not written to binary file ", file, ".");
 	}
@@ -268,8 +266,8 @@ Any Data_readFromBinaryFile (MelderFile file) {
 /* Generic reading. */
 
 static int numFileTypeRecognizers = 0;
-static Any (*fileTypeRecognizers [100]) (int nread, const char *header, MelderFile fs);
-void Data_recognizeFileType (Any (*recognizer) (int nread, const char *header, MelderFile fs)) {
+static Any (*fileTypeRecognizers [100]) (int nread, const char *header, MelderFile file);
+void Data_recognizeFileType (Any (*recognizer) (int nread, const char *header, MelderFile file)) {
 	Melder_assert (numFileTypeRecognizers < 100);
 	fileTypeRecognizers [++ numFileTypeRecognizers] = recognizer;
 }
@@ -313,6 +311,7 @@ Any Data_readFromFile (MelderFile file) {
 	MelderFile_getParentDir (file, & Data_directoryBeingRead);
 	for (i = 1; i <= numFileTypeRecognizers; i ++) {
 		Data object = (Data) fileTypeRecognizers [i] (nread, header, file);
+		if (object == (Data) 1) return NULL;
 		if (object) return object;
 	}
 
