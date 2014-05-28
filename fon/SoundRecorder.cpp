@@ -1,6 +1,6 @@
 /* SoundRecorder.cpp
  *
- * Copyright (C) 1992-2011,2012,2013 Paul Boersma
+ * Copyright (C) 1992-2011,2012,2013,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -228,7 +228,9 @@ static void stopRecording (SoundRecorder me) {
 void structSoundRecorder :: v_destroy () {
 	stopRecording (this);   // must occur before freeing my buffer
 	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);   // must also occur before freeing my buffer
-	#if gtk
+	#if cocoa
+		if (d_cocoaTimer) CFRunLoopTimerInvalidate (d_cocoaTimer);
+	#elif gtk
 		g_idle_remove_by_data (this);
 	#elif motif
 		if (workProcId) XtRemoveWorkProc (workProcId);
@@ -257,8 +259,8 @@ void structSoundRecorder :: v_destroy () {
 static void showMaximum (SoundRecorder me, int channel, double maximum) {
 	maximum /= 32768.0;
 	Graphics_setWindow (my graphics,
-		my numberOfChannels == 1 || channel == 1 ? -0.1 : -2.1,
-		my numberOfChannels == 1 || channel == 2 ? 1.1 : 3.1,
+		my numberOfChannels == 1 || channel == 1 ? 0.0 : -1.0,
+		my numberOfChannels == 1 || channel == 2 ? 1.0 : 2.0,
 		-0.1, 1.1);
 	Graphics_setGrey (my graphics, 0.9);
 	Graphics_fillRectangle (my graphics, 0.0, 1.0, maximum, 1.0);
@@ -344,9 +346,11 @@ static void showMeter (SoundRecorder me, short *buffer, long nsamp) {
 		Graphics_setColour (my graphics, Graphics_BLACK);
 		Graphics_fillCircle_mm (my graphics, centreOfGravity, intensity, 3.0);
 	}
+	Graphics_flushWs (my graphics);
 }
 
 static bool tooManySamplesInBufferToReturnToGui (SoundRecorder me) {
+	(void) me;
 	return false;
 }
 
@@ -355,7 +359,9 @@ static long getMyNsamp (SoundRecorder me) {
 	return nsamp;
 }
 
-#if gtk
+#if cocoa
+static void workProc (CFRunLoopTimerRef timer, void *void_me) {
+#elif gtk
 static gboolean workProc (void *void_me) {
 #else
 static bool workProc (void *void_me) {
@@ -472,15 +478,16 @@ static bool workProc (void *void_me) {
 				showMeter (me, NULL, 0);
 			}
 		}
-		#if gtk
-			return true;
-		#else
-			return false;
-		#endif
 	} catch (MelderError) {
 		Melder_flushError (NULL);
-		return false;
 	}
+	#if cocoa
+		return;
+	#elif gtk
+		return true;
+	#else
+		return false;
+	#endif
 }
 
 static int portaudioStreamCallback (
@@ -1165,7 +1172,12 @@ event. width  = my meter -> f_getWidth  ();
 event. height = my meter -> f_getHeight ();
 gui_drawingarea_cb_resize (me.peek(), & event);
 
-		#if gtk
+		#if cocoa
+			CFRunLoopTimerContext context = { 0, me.peek(), NULL, NULL, NULL };
+			my d_cocoaTimer = CFRunLoopTimerCreate (NULL, CFAbsoluteTimeGetCurrent () + 0.02,
+				0.02, 0, 0, workProc, & context);
+			CFRunLoopAddTimer (CFRunLoopGetCurrent (), my d_cocoaTimer, kCFRunLoopCommonModes);
+		#elif gtk
 			g_idle_add (workProc, me.peek());
 		#elif motif
 			my workProcId = GuiAddWorkProc (workProc, me.peek());

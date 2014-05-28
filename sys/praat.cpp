@@ -1,6 +1,6 @@
 /* praat.cpp
  *
- * Copyright (C) 1992-2012,2013 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -502,9 +502,9 @@ static void gui_cb_list (void *void_me, GuiListEvent event) {
 			long readableClassId = ((Thing) theCurrentPraatObjects -> list [IOBJECT]. object) -> classInfo -> sequentialUniqueIdOfReadableClass;
 			theCurrentPraatObjects -> numberOfSelected [readableClassId] ++;
 			Melder_assert (theCurrentPraatObjects -> numberOfSelected [readableClassId] > 0);
-			UiHistory_write (first ? L"\nselectObject (\"" : L"\nplusObject (\"");
+			UiHistory_write (first ? L"\nselectObject: \"" : L"\nplusObject: \"");
 			UiHistory_write_expandQuotes (FULL_NAME);
-			UiHistory_write (L"\")");
+			UiHistory_write (L"\"");
 			first = FALSE;
 			theCurrentPraatObjects -> totalSelection += 1;
 		}
@@ -870,45 +870,49 @@ void praat_dontUsePictureWindow (void) { praatP.dontUsePictureWindow = TRUE; }
 			gboolean retval;
 			g_signal_emit_by_name (GTK_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "client-event", NULL, & retval);
 		#else
-			GdkEventClient gevent;
-			gevent. type = GDK_CLIENT_EVENT;
-			gevent. window = GTK_WIDGET (theCurrentPraatApplication -> topShell -> d_gtkWindow) -> window;
-			gevent. send_event = 1;
-			gevent. message_type = gdk_atom_intern_static_string ("SENDPRAAT");
-			gevent. data_format = 8;
-			// Melder_casual ("event put");
-			gdk_event_put ((GdkEvent *) & gevent);
+			#if ALLOW_GDK_DRAWING && ! defined (NO_GRAPHICS)
+				GdkEventClient gevent;
+				gevent. type = GDK_CLIENT_EVENT;
+				gevent. window = GTK_WIDGET (theCurrentPraatApplication -> topShell -> d_gtkWindow) -> window;
+				gevent. send_event = 1;
+				gevent. message_type = gdk_atom_intern_static_string ("SENDPRAAT");
+				gevent. data_format = 8;
+				// Melder_casual ("event put");
+				gdk_event_put ((GdkEvent *) & gevent);
+			#endif
 		#endif
 	}
 #endif
 
 #if defined (UNIX)
-	static gboolean cb_userMessage (GtkWidget widget, GdkEventClient *event, gpointer user_data) {
-		(void) widget;
-		(void) user_data;
-		//Melder_casual ("client event called");
-		autofile f;
-		try {
-			f.reset (Melder_fopen (& messageFile, "r"));
-		} catch (MelderError) {
-			Melder_clearError ();
-			return true;   // OK
-		}
-		long pid = 0;
-		int narg = fscanf (f, "#%ld", & pid);
-		f.close (& messageFile);
-		{// scope
-			autoPraatBackground background;
+	#if ALLOW_GDK_DRAWING && ! defined (NO_GRAPHICS)
+		static gboolean cb_userMessage (GtkWidget widget, GdkEventClient *event, gpointer user_data) {
+			(void) widget;
+			(void) user_data;
+			//Melder_casual ("client event called");
+			autofile f;
 			try {
-				praat_executeScriptFromFile (& messageFile, NULL);
+				f.reset (Melder_fopen (& messageFile, "r"));
 			} catch (MelderError) {
-				Melder_error_ (Melder_peekUtf8ToWcs (praatP.title), L": message not completely handled.");
-				Melder_flushError (NULL);
+				Melder_clearError ();
+				return true;   // OK
 			}
+			long pid = 0;
+			int narg = fscanf (f, "#%ld", & pid);
+			f.close (& messageFile);
+			{// scope
+				autoPraatBackground background;
+				try {
+					praat_executeScriptFromFile (& messageFile, NULL);
+				} catch (MelderError) {
+					Melder_error_ (Melder_peekUtf8ToWcs (praatP.title), L": message not completely handled.");
+					Melder_flushError (NULL);
+				}
+			}
+			if (narg && pid) kill (pid, SIGUSR2);
+			return true;
 		}
-		if (narg && pid) kill (pid, SIGUSR2);
-		return true;
-	}
+	#endif
 #elif defined (_WIN32)
 	static int cb_userMessage (void) {
 		autoPraatBackground background;
@@ -929,6 +933,84 @@ void praat_dontUsePictureWindow (void) { praatP.dontUsePictureWindow = TRUE; }
 		long l = wcslen (text);
 		if (l > 0 && text [l - 1] == '\"') text [l - 1] = '\0';
 		sendpraatW (NULL, Melder_peekUtf8ToWcs (praatP.title), 0, text);
+	}
+#elif cocoa
+	static int (*theUserMessageCallbackA) (char *message);
+	static int (*theUserMessageCallbackW) (wchar_t *message);
+	static void mac_setUserMessageCallbackA (int (*userMessageCallback) (char *message)) {
+		theUserMessageCallbackA = userMessageCallback;
+	}
+	static void mac_setUserMessageCallbackW (int (*userMessageCallback) (wchar_t *message)) {
+		theUserMessageCallbackW = userMessageCallback;
+	}
+	static pascal OSErr mac_processSignalA (const AppleEvent *theAppleEvent, AppleEvent *reply, long handlerRefCon) {
+		static int duringAppleEvent = FALSE;
+		(void) reply;
+		(void) handlerRefCon;
+		if (! duringAppleEvent) {
+			char *buffer;
+			long actualSize;
+			duringAppleEvent = TRUE;
+			//AEInteractWithUser (kNoTimeOut, NULL, NULL);   // use time out of 0 to execute immediately (without bringing to foreground)
+			ProcessSerialNumber psn;
+			GetCurrentProcess (& psn);
+			SetFrontProcess (& psn);
+			AEGetParamPtr (theAppleEvent, 1, typeChar, NULL, NULL, 0, & actualSize);
+			buffer = (char *) malloc (actualSize);
+			AEGetParamPtr (theAppleEvent, 1, typeChar, NULL, & buffer [0], actualSize, NULL);
+			if (theUserMessageCallbackA)
+				theUserMessageCallbackA (buffer);
+			free (buffer);
+			duringAppleEvent = FALSE;
+		}
+		return noErr;
+	}
+	static pascal OSErr mac_processSignalW (const AppleEvent *theAppleEvent, AppleEvent *reply, long handlerRefCon) {
+		static int duringAppleEvent = FALSE;
+		(void) reply;
+		(void) handlerRefCon;
+		if (! duringAppleEvent) {
+			wchar_t *buffer;
+			long actualSize;
+			duringAppleEvent = TRUE;
+			//AEInteractWithUser (kNoTimeOut, NULL, NULL);   // use time out of 0 to execute immediately (without bringing to foreground)
+			ProcessSerialNumber psn;
+			GetCurrentProcess (& psn);
+			SetFrontProcess (& psn);
+			AEGetParamPtr (theAppleEvent, 1, typeUnicodeText, NULL, NULL, 0, & actualSize);
+			buffer = (wchar_t *) malloc (actualSize);
+			AEGetParamPtr (theAppleEvent, 1, typeUnicodeText, NULL, & buffer [0], actualSize, NULL);
+			if (theUserMessageCallbackW)
+				theUserMessageCallbackW (buffer);
+			free (buffer);
+			duringAppleEvent = FALSE;
+		}
+		return noErr;
+	}
+	static int cb_userMessageA (char *messageA) {
+		autoPraatBackground background;
+		autostring message = Melder_8bitToWcs (messageA, 0);
+		try {
+			praat_executeScriptFromText (message.peek());
+		} catch (MelderError) {
+			Melder_error_ (praatP.title, ": message not completely handled.");
+			Melder_flushError (NULL);
+		}
+		return 0;
+	}
+	static int cb_userMessageW (wchar_t *message) {
+		autoPraatBackground background;
+		try {
+			praat_executeScriptFromText (message);
+		} catch (MelderError) {
+			Melder_error_ (praatP.title, ": message not completely handled.");
+			Melder_flushError (NULL);
+		}
+		return 0;
+	}
+	static int cb_quitApplication (void) {
+		DO_Quit (NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL);
+		return 0;
 	}
 #elif defined (macintosh)
 	static int cb_userMessageA (char *messageA) {
@@ -1164,6 +1246,8 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 			}
 		#else
 			if (! Melder_batch) {
+				mac_setUserMessageCallbackA (cb_userMessageA);
+				mac_setUserMessageCallbackW (cb_userMessageW);
 				Gui_setQuitApplicationCallback (cb_quitApplication);
 			}
 		#endif
@@ -1202,7 +1286,8 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 			g_set_application_name (title);
 			trace ("locale %s", setlocale (LC_ALL, NULL));
 		#elif cocoa
-			[NSApplication sharedApplication];
+			//[NSApplication sharedApplication];
+			[GuiCocoaApplication sharedApplication];
 		#elif defined (_WIN32)
 			argv [0] = & praatP. title [0];   /* argc == 4 */
 			Gui_setOpenDocumentCallback (cb_openDocument);
@@ -1218,7 +1303,7 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 		trace ("locale %s", setlocale (LC_ALL, NULL));
 		Gui_getWindowPositioningBounds (& x, & y, NULL, NULL);
 		trace ("locale %s", setlocale (LC_ALL, NULL));
-		theCurrentPraatApplication -> topShell = raam = GuiWindow_create (x + 10, y, WINDOW_WIDTH, WINDOW_HEIGHT,
+		theCurrentPraatApplication -> topShell = raam = GuiWindow_create (x + 10, y, WINDOW_WIDTH, WINDOW_HEIGHT, 450, 250,
 			Melder_peekUtf8ToWcs (objectWindowTitle), gui_cb_quit, NULL, 0);
 		trace ("locale %s", setlocale (LC_ALL, NULL));
 		#if motif
@@ -1238,6 +1323,10 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 	} else {
 
 		#ifdef macintosh
+			#if ! useCarbon
+				AEInstallEventHandler (758934755, 0, (AEEventHandlerProcPtr) (mac_processSignalA), 0, false);
+				AEInstallEventHandler (758934756, 0, (AEEventHandlerProcPtr) (mac_processSignalW), 0, false);
+			#endif
 			MelderGui_create (raam);   /* BUG: default Melder_assert would call printf recursively!!! */
 		#endif
 		#if defined (macintosh) && useCarbon
@@ -1261,10 +1350,14 @@ void praat_init (const char *title, unsigned int argc, char **argv) {
 		trace ("showing the Objects window");
 		raam -> f_show ();
 	//Melder_fatal ("stop");
-		#ifdef UNIX
+		#if defined (UNIX) && ! defined (NO_GRAPHICS)
 			try {
 				autofile f = Melder_fopen (& pidFile, "a");
-				fprintf (f, " %ld", (long) GDK_WINDOW_XID (GDK_DRAWABLE (GTK_WIDGET (theCurrentPraatApplication -> topShell -> d_gtkWindow) -> window)));
+				#if ALLOW_GDK_DRAWING
+					fprintf (f, " %ld", (long) GDK_WINDOW_XID (GDK_DRAWABLE (GTK_WIDGET (theCurrentPraatApplication -> topShell -> d_gtkWindow) -> window)));
+				#else
+					fprintf (f, " %ld", (long) GDK_WINDOW_XID (gtk_widget_get_window (GTK_WIDGET (theCurrentPraatApplication -> topShell -> d_gtkWindow))));
+				#endif
 				f.close (& pidFile);
 			} catch (MelderError) {
 				Melder_clearError ();
@@ -1307,39 +1400,41 @@ static void executeStartUpFile (MelderDir startUpDirectory, const wchar_t *fileN
 
 #if gtk
 	#include <gdk/gdkkeysyms.h>
-	static gint theKeySnooper (GtkWidget *widget, GdkEventKey *event, gpointer data) {
-		trace ("keyval %ld, type %ld", (long) event -> keyval, (long) event -> type);
-		if ((event -> keyval == GDK_Tab || event -> keyval == GDK_ISO_Left_Tab) && event -> type == GDK_KEY_PRESS) {
-			trace ("tab key pressed in window %p", widget);
-			if (event -> state == 0) {
-				if (GTK_IS_WINDOW (widget)) {
-					GtkWidget *shell = gtk_widget_get_toplevel (GTK_WIDGET (widget));
-					trace ("tab pressed in GTK window %p", shell);
-					void (*tabCallback) (GuiObject, gpointer) = (void (*) (GuiObject, gpointer)) g_object_get_data (G_OBJECT (widget), "tabCallback");
-					if (tabCallback) {
-						trace ("a tab callback exists");
-						void *tabClosure = g_object_get_data (G_OBJECT (widget), "tabClosure");
-						tabCallback (widget, tabClosure);
-						return TRUE;
+	#if ALLOW_GDK_DRAWING
+		static gint theKeySnooper (GtkWidget *widget, GdkEventKey *event, gpointer data) {
+			trace ("keyval %ld, type %ld", (long) event -> keyval, (long) event -> type);
+			if ((event -> keyval == GDK_Tab || event -> keyval == GDK_ISO_Left_Tab) && event -> type == GDK_KEY_PRESS) {
+				trace ("tab key pressed in window %p", widget);
+				if (event -> state == 0) {
+					if (GTK_IS_WINDOW (widget)) {
+						GtkWidget *shell = gtk_widget_get_toplevel (GTK_WIDGET (widget));
+						trace ("tab pressed in GTK window %p", shell);
+						void (*tabCallback) (GuiObject, gpointer) = (void (*) (GuiObject, gpointer)) g_object_get_data (G_OBJECT (widget), "tabCallback");
+						if (tabCallback) {
+							trace ("a tab callback exists");
+							void *tabClosure = g_object_get_data (G_OBJECT (widget), "tabClosure");
+							tabCallback (widget, tabClosure);
+							return TRUE;
+						}
 					}
-				}
-			} else if (event -> state == GDK_SHIFT_MASK) {   // BUG: 
-				if (GTK_IS_WINDOW (widget)) {
-					GtkWidget *shell = gtk_widget_get_toplevel (GTK_WIDGET (widget));
-					trace ("shift-tab pressed in GTK window %p", shell);
-					void (*tabCallback) (GuiObject, gpointer) = (void (*) (GuiObject, gpointer)) g_object_get_data (G_OBJECT (widget), "shiftTabCallback");
-					if (tabCallback) {
-						trace ("a shift tab callback exists");
-						void *tabClosure = g_object_get_data (G_OBJECT (widget), "shiftTabClosure");
-						tabCallback (widget, tabClosure);
-						return TRUE;
+				} else if (event -> state == GDK_SHIFT_MASK) {   // BUG: 
+					if (GTK_IS_WINDOW (widget)) {
+						GtkWidget *shell = gtk_widget_get_toplevel (GTK_WIDGET (widget));
+						trace ("shift-tab pressed in GTK window %p", shell);
+						void (*tabCallback) (GuiObject, gpointer) = (void (*) (GuiObject, gpointer)) g_object_get_data (G_OBJECT (widget), "shiftTabCallback");
+						if (tabCallback) {
+							trace ("a shift tab callback exists");
+							void *tabClosure = g_object_get_data (G_OBJECT (widget), "shiftTabClosure");
+							tabCallback (widget, tabClosure);
+							return TRUE;
+						}
 					}
 				}
 			}
+			trace ("end");
+			return FALSE;   // pass event on
 		}
-		trace ("end");
-		return FALSE;   // pass event on
-	}
+	#endif
 #endif
 
 void praat_run (void) {
@@ -1400,12 +1495,14 @@ void praat_run (void) {
 				MelderDir_getSubdir (& praatDir, directoryNames -> strings [i], & pluginDir);
 				MelderDir_getFile (& pluginDir, L"setup.praat", & plugin);
 				if (MelderFile_readable (& plugin)) {
+					Melder_backgrounding = true;
 					try {
 						praat_executeScriptFromFile (& plugin, NULL);
 					} catch (MelderError) {
 						Melder_error_ (praatP.title, ": plugin ", & plugin, " contains an error.");
 						Melder_flushError (NULL);
 					}
+					Melder_backgrounding = false;
 				}
 			}
 		}
@@ -1497,9 +1594,13 @@ void praat_run (void) {
 			//gtk_widget_add_events (G_OBJECT (theCurrentPraatApplication -> topShell), GDK_ALL_EVENTS_MASK);
 			trace ("install GTK key snooper");
 			trace ("locale is %s", setlocale (LC_ALL, NULL));
-			g_signal_connect (G_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "client-event", G_CALLBACK (cb_userMessage), NULL);
+			#if ALLOW_GDK_DRAWING
+				g_signal_connect (G_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "client-event", G_CALLBACK (cb_userMessage), NULL);
+			#endif
 			signal (SIGUSR1, cb_sigusr1);
-			gtk_key_snooper_install (theKeySnooper, 0);
+			#if ALLOW_GDK_DRAWING
+				gtk_key_snooper_install (theKeySnooper, 0);
+			#endif
 			trace ("start the GTK event loop");
 			trace ("locale is %s", setlocale (LC_ALL, NULL));
 			gtk_main ();

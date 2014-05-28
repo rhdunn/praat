@@ -1,6 +1,6 @@
 /* praat_menuCommands.cpp
  *
- * Copyright (C) 1992-2012,2013 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,9 +74,8 @@ static void do_menu (I, unsigned long modified) {
 		praat_Command me = & theCommands [i];
 		if (my callback == callback) {
 			if (my title != NULL && ! wcsstr (my title, L"...")) {
-				UiHistory_write (L"\ndo (\"");
+				UiHistory_write (L"\n");
 				UiHistory_write_expandQuotes (my title);
-				UiHistory_write (L"\")");
 			}
 			try {
 				callback (NULL, 0, NULL, NULL, NULL, my title, modified, NULL);
@@ -443,10 +442,7 @@ praat_Command praat_getMenuCommand (long i)
 void praat_addCommandsToEditor (Editor me) {
 	const wchar_t *windowName = my classInfo -> className;
 	for (long i = 1; i <= theNumberOfCommands; i ++) if (wcsequ (theCommands [i]. window, windowName)) {
-		if (! Editor_addCommandScript (me, theCommands [i]. menu, theCommands [i]. title, 0, theCommands [i]. script))
-			Melder_flushError ("To fix this, go to Praat->Preferences->Buttons->Editors, "
-				"and remove the script from this menu.\n"
-				"You may want to install the script in a different menu.");
+		Editor_addCommandScript (me, theCommands [i]. menu, theCommands [i]. title, 0, theCommands [i]. script);
 	}
 }
 

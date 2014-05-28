@@ -53,7 +53,7 @@ Thing_implement (GuiDialog, GuiShell, 0);
 	- (void) dealloc {   // override
 		GuiDialog me = d_userData;
 		forget (me);
-		Melder_casual ("deleting a dialog");
+		trace ("deleting a dialog");
 		[super dealloc];
 	}
 	- (GuiDialog) userData {
@@ -61,6 +61,18 @@ Thing_implement (GuiDialog, GuiShell, 0);
 	}
 	- (void) setUserData: (GuiDialog) userData {
 		d_userData = userData;
+	}
+	- (BOOL) windowShouldClose: (id) sender {
+		GuiCocoaDialog *widget = (GuiCocoaDialog *) sender;
+		GuiDialog me = [widget userData];
+		if (my d_goAwayCallback != NULL) {
+			trace ("calling goAwayCallback)");
+			my d_goAwayCallback (my d_goAwayBoss);
+		} else {
+			trace ("hiding window");
+			[widget orderOut: nil];
+		}
+		return FALSE;
 	}
 	@end
 #elif motif

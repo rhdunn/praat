@@ -1,6 +1,6 @@
 /* praat_script.cpp
  *
- * Copyright (C) 1993-2012,2013 Paul Boersma
+ * Copyright (C) 1993-2012,2013,2014 Paul Boersma
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,28 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-
-/*
- * pb 2002/03/07 GPL
- * pb 2002/10/02 system -> Melder_system
- * pb 2003/03/09 set UiInterpreter back to NULL
- * pb 2004/02/22 allow numeric expressions after select/plus/minus
- * pb 2004/10/27 warning off
- * pb 2004/12/04 support for multiple open script dialogs with Apply buttons, both from "Run script..." and from added buttons
- * pb 2005/02/10 corrected bug in nowarn
- * pb 2005/08/22 renamed Control menu to "Praat"
- * pb 2006/01/11 local variables
- * pb 2006/12/28 theCurrentPraat
- * pb 2007/02/17 corrected the messages about trailing spaces
- * pb 2007/06/11 wchar_t
- * pb 2007/10/04 removed swscanf
- * pb 2009/01/04 allow proc(args) syntax
- * pb 2009/01/17 arguments to UiForm callbacks
- * pb 2009/01/20 pause uses a pause form
- * pb 2011/03/20 C++
- * pb 2011/03/24 command no longer const
- * pb 2011/07/05 C++
  */
 
 #include <ctype.h>
@@ -108,7 +86,62 @@ Editor praat_findEditorFromString (const wchar_t *string) {
 	Melder_throw ("Editor \"", string, "\" does not exist.");
 }
 
-void praat_executeCommand (Interpreter interpreter, wchar_t *command) {
+static int parseCommaSeparatedArguments (Interpreter interpreter, wchar_t *arguments, structStackel args []) {
+	int narg = 0, depth = 0;
+	for (wchar_t *p = arguments; ; p ++) {
+		bool endOfArguments = *p == '\0';
+		if (endOfArguments || (*p == ',' && depth == 0)) {
+			if (narg == MAXIMUM_NUMBER_OF_FIELDS)
+				Melder_throw ("Cannot have more than ", MAXIMUM_NUMBER_OF_FIELDS, " arguments");
+			*p = '\0';
+			struct Formula_Result result;
+			Interpreter_anyExpression (interpreter, arguments, & result);
+			narg ++;
+			/*
+			 * First remove the old contents.
+			 */
+			switch (args [narg]. which) {
+				case Stackel_NUMBER: {
+					// do nothing
+				} break;
+				case Stackel_STRING: {
+					Melder_free (args [narg].string);
+				} break;
+			}
+			/*
+			 * Then copy in the new contents.
+			 */
+			switch (result. expressionType) {
+				case kFormula_EXPRESSION_TYPE_NUMERIC: {
+					args [narg]. which = Stackel_NUMBER;
+					args [narg]. number = result. result. numericResult;
+				} break;
+				case kFormula_EXPRESSION_TYPE_STRING: {
+					args [narg]. which = Stackel_STRING;
+					args [narg]. string = result. result. stringResult;
+				} break;
+			}
+			arguments = p + 1;
+		} else if (*p == '(' || *p == '[' || *p == '{') {
+			depth ++;
+		} else if (*p == ')' || *p == ']' || *p == '}') {
+			depth --;
+		} else if (*p == '\"') {
+			for (;;) {
+				p ++;
+				if (*p == '\"') {
+					if (p [1] == '\"') p ++;
+					else break;
+				}
+			}
+		}
+		if (endOfArguments) break;
+	}
+	return narg;
+}
+
+int praat_executeCommand (Interpreter interpreter, wchar_t *command) {
+	static struct structStackel args [1 + MAXIMUM_NUMBER_OF_FIELDS];
 	//Melder_casual ("praat_executeCommand: %ld: %ls", interpreter, command);
 	if (command [0] == '\0' || command [0] == '#' || command [0] == '!' || command [0] == ';')
 		/* Skip empty lines and comments. */;
@@ -200,13 +233,14 @@ void praat_executeCommand (Interpreter interpreter, wchar_t *command) {
 				praat_executeCommand (interpreter, command + 8);
 			} catch (MelderError) {
 				Melder_clearError ();
+				return 0;
 			}
 		} else if (wcsnequ (command, L"demo ", 5)) {
 			autoDemoOpen demo;
 			praat_executeCommand (interpreter, command + 5);
 		} else if (wcsnequ (command, L"pause ", 6) || wcsequ (command, L"pause")) {
 			if (theCurrentPraatApplication -> batch)
-				return;   // in batch we ignore pause statements
+				return 1;   // in batch we ignore pause statements
 			UiPause_begin (theCurrentPraatApplication -> topShell, L"stop or continue", interpreter);
 			UiPause_comment (wcsequ (command, L"pause") ? L"..." : command + 6);
 			UiPause_end (1, 1, 0, L"Continue", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, interpreter);
@@ -217,10 +251,14 @@ void praat_executeCommand (Interpreter interpreter, wchar_t *command) {
 				Melder_throw ("The script command \"editor\" is not available inside manuals.");
 			if (command [6] == ' ' && isalpha (command [7])) {
 				praatP. editor = praat_findEditorFromString (command + 7);
-			} else if (interpreter && interpreter -> editorClass) {
-				praatP. editor = praat_findEditorFromString (interpreter -> environmentName);
+			} else if (command [6] == '\0') {
+				if (interpreter && interpreter -> editorClass) {
+					praatP. editor = praat_findEditorFromString (interpreter -> environmentName);
+				} else {
+					Melder_throw ("The function \"editor\" requires an argument when called from outside an editor.");
+				}
 			} else {
-				Melder_throw ("No editor specified.");
+				Interpreter_voidExpression (interpreter, command);
 			}
 		} else if (wcsnequ (command, L"endeditor", 9)) {
 			if (theCurrentPraatObjects != & theForegroundPraatObjects)
@@ -313,27 +351,60 @@ void praat_executeCommand (Interpreter interpreter, wchar_t *command) {
 			Interpreter_voidExpression (interpreter, command);
 		}
 	} else {   /* Simulate menu choice. */
-		wchar_t *arguments;
+		bool hasDots = false, hasColon = false;
 
  		/* Parse command line into command and arguments. */
-		/* The separation is formed by the three dots. */
+		/* The separation is formed by the three dots or a colon. */
 
-		if ((arguments = wcsstr (command, L"...")) == NULL || wcslen (arguments) < 4) {
-			static wchar_t dummy = { 0 };
-			arguments = & dummy;
-		} else {
-			arguments += 4;
-			if (arguments [-1] != ' ' && arguments [-1] != '0') {
-				Melder_throw ("There should be a space after the three dots.");
+		wchar_t *arguments = & command [0];
+		for (arguments = & command [0]; *arguments != '\0'; arguments ++) {
+			if (*arguments == ':') {
+				hasColon = true;
+				if (arguments [1] == '\0') {
+					arguments = & arguments [1];   // empty string
+				} else {
+					if (arguments [1] != ' ') {
+						Melder_throw ("There should be a space after the colon.");
+					}
+					arguments [1] = '\0';   // new end of "command"
+					arguments += 2;   // the arguments start after the space
+				}
+				break;
 			}
-			arguments [-1] = '\0'; // new end of "command"
+			if (*arguments == '.' && arguments [1] == '.' && arguments [2] == '.') {
+				hasDots = true;
+				arguments += 3;
+				if (*arguments == '\0') {
+					// empty string
+				} else {
+					if (*arguments != ' ') {
+						Melder_throw ("There should be a space after the three dots.");
+					}
+					*arguments = '\0';   // new end of "command"
+					arguments ++;   // the arguments start after the space
+				}
+				break;
+			}
 		}
 
 		/* See if command exists and is available; ignore separators. */
 		/* First try loose commands, then fixed commands. */
 
+		int narg;
+		wchar_t command2 [200];
+		if (hasColon) {
+			narg = parseCommaSeparatedArguments (interpreter, arguments, args);
+			wcscpy (command2, command);
+			wchar_t *colon = wcschr (command2, ':');
+			colon [0] = colon [1] = colon [2] = '.';
+			colon [3] = '\0';
+		}
 		if (theCurrentPraatObjects == & theForegroundPraatObjects && praatP. editor != NULL) {
-			Editor_doMenuCommand ((Editor) praatP. editor, command, 0, NULL, arguments, interpreter);
+			if (hasColon) {
+				Editor_doMenuCommand ((Editor) praatP. editor, command2, narg, args, NULL, interpreter);
+			} else {
+				Editor_doMenuCommand ((Editor) praatP. editor, command, 0, NULL, arguments, interpreter);
+			}
 		} else if (theCurrentPraatObjects != & theForegroundPraatObjects &&
 		    (wcsnequ (command, L"Save ", 5) ||
 			 wcsnequ (command, L"Write ", 6) ||
@@ -344,14 +415,18 @@ void praat_executeCommand (Interpreter interpreter, wchar_t *command) {
 		} else {
 			bool theCommandIsAnExistingAction = false;
 			try {
-				theCommandIsAnExistingAction = praat_doAction (command, arguments, interpreter);
+				if (hasColon) {
+					theCommandIsAnExistingAction = praat_doAction (command2, narg, args, interpreter);
+				} else {
+					theCommandIsAnExistingAction = praat_doAction (command, arguments, interpreter);
+				}
 			} catch (MelderError) {
 				/*
 				 * We only get here if the command *was* an existing action.
 				 * Anything could have gone wrong in its execution,
 				 * but one invisible problem can be checked here.
 				 */
-				if (arguments [0] != '\0' && arguments [wcslen (arguments) - 1] == ' ') {
+				if (hasDots && arguments [0] != '\0' && arguments [wcslen (arguments) - 1] == ' ') {
 					Melder_throw ("It may be helpful to remove the trailing spaces in \"", arguments, "\".");
 				} else {
 					throw;
@@ -360,14 +435,18 @@ void praat_executeCommand (Interpreter interpreter, wchar_t *command) {
 			if (! theCommandIsAnExistingAction) {
 				bool theCommandIsAnExistingMenuCommand = false;
 				try {
-					theCommandIsAnExistingMenuCommand = praat_doMenuCommand (command, arguments, interpreter);
+					if (hasColon) {
+						theCommandIsAnExistingMenuCommand = praat_doMenuCommand (command2, narg, args, interpreter);
+					} else {
+						theCommandIsAnExistingMenuCommand = praat_doMenuCommand (command, arguments, interpreter);
+					}
 				} catch (MelderError) {
 					/*
 					 * We only get here if the command *was* an existing menu command.
 					 * Anything could have gone wrong in its execution,
 					 * but one invisible problem can be checked here.
 					 */
-					if (arguments [0] != '\0' && arguments [wcslen (arguments) - 1] == ' ') {
+					if (hasDots && arguments [0] != '\0' && arguments [wcslen (arguments) - 1] == ' ') {
 						Melder_throw ("It may be helpful to remove the trailing spaces in \"", arguments, L"\".");
 					} else {
 						throw;
@@ -390,6 +469,7 @@ void praat_executeCommand (Interpreter interpreter, wchar_t *command) {
 		}
 		praat_updateSelection ();
 	}
+	return 1;
 }
 
 void praat_executeCommandFromStandardInput (const char *programName) {
@@ -423,7 +503,26 @@ void praat_executeScriptFromFile (MelderFile file, const wchar_t *arguments) {
 		}
 		Interpreter_run (interpreter.peek(), text.peek());
 	} catch (MelderError) {
-		Melder_throw ("Script ", file, " not completed.");
+		Melder_throw (L"Script ", file, L" not completed.");
+	}
+}
+
+void praat_executeScriptFromFileName (const wchar_t *fileName, int narg, Stackel args) {
+	/*
+	 * The argument 'fileName' is unsafe. Duplicate its contents.
+	 */
+	structMelderFile file = { 0 };
+	Melder_relativePathToFile (fileName, & file);
+	try {
+		autostring text = MelderFile_readText (& file);
+		autoMelderFileSetDefaultDir dir (& file);   // so that relative file names can be used inside the script
+		Melder_includeIncludeFiles (& text);
+		autoInterpreter interpreter = Interpreter_createFromEnvironment (praatP.editor);
+		Interpreter_readParameters (interpreter.peek(), text.peek());
+		Interpreter_getArgumentsFromArgs (interpreter.peek(), narg, args);
+		Interpreter_run (interpreter.peek(), text.peek());
+	} catch (MelderError) {
+		Melder_throw (L"Script ", & file, L" not completed.");   // don't refer to 'fileName', because its contents may have changed
 	}
 }
 
@@ -498,7 +597,7 @@ static void firstPassThroughScript (MelderFile file) {
 		if (Interpreter_readParameters (interpreter.peek(), text.peek()) > 0) {
 			Any form = Interpreter_createForm (interpreter.peek(),
 				praatP.editor ? ((Editor) praatP.editor) -> d_windowForm : theCurrentPraatApplication -> topShell,
-				Melder_fileToPath (file), secondPassThroughScript, NULL);
+				Melder_fileToPath (file), secondPassThroughScript, NULL, false);
 			UiForm_destroyWhenUnmanaged (form);
 			UiForm_do (form, false);
 		} else {
@@ -517,30 +616,6 @@ static void fileSelectorOkCallback (UiForm dia, int narg, Stackel args, const wc
 	(void) modified;
 	(void) dummy;
 	firstPassThroughScript (UiFile_getFile (dia));
-}
-
-/*
- * DO_praat_runScript () is the command callback for "Run script...", which is a bit obsolete command,
- * hidden in the Praat menu, and otherwise replaced by "execute".
- */
-void DO_praat_runScript (UiForm sendingForm, int narg, Stackel args, const wchar_t *sendingString, Interpreter interpreter_dummy, const wchar_t *invokingButtonTitle, bool modified, void *dummy) {
-	(void) interpreter_dummy;
-	(void) modified;
-	(void) dummy;
-	if (sendingForm == NULL && sendingString == NULL) {
-		/*
-		 * User clicked the "Run script..." button in the Praat menu.
-		 */
-		static Any file_dialog;
-		if (! file_dialog)
-			file_dialog = UiInfile_create (theCurrentPraatApplication -> topShell, L"Praat: run script", fileSelectorOkCallback, NULL, invokingButtonTitle, NULL, false);
-		UiInfile_do (file_dialog);
-	} else {
-		/*
-		 * A script called "Run script..."
-		 */
-		praat_executeScriptFromFileNameWithArguments (sendingString);
-	}
 }
 
 void DO_RunTheScriptFromAnyAddedMenuCommand (UiForm sendingForm_dummy, int narg, Stackel args, const wchar_t *scriptPath, Interpreter interpreter, const wchar_t *invokingButtonTitle, bool modified, void *dummy) {

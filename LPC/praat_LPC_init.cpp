@@ -362,8 +362,7 @@ DIRECT (PowerCepstrogram_help)
 	Melder_help (L"PowerCepstrogram");
 END
 
-
-FORM (PowerCepstrogram_paint, L"PowerCepstrogram: Paint", 0)
+FORM (old_PowerCepstrogram_paint, L"PowerCepstrogram: Paint", 0)
 	REAL (L"left Time range (s)", L"0.0")
 	REAL (L"right Time range (s)", L"0.0")
 	REAL (L"left Quefrency range (s)", L"0.0")
@@ -378,7 +377,30 @@ DO
 		iam (PowerCepstrogram);
 		PowerCepstrogram_paint (me, GRAPHICS, GET_REAL (L"left Time range"), GET_REAL (L"right Time range"),
 			GET_REAL (L"left Quefrency range"), GET_REAL (L"right Quefrency range"),
-  			GET_REAL (L"Minimum"), GET_REAL (L"Maximum"), GET_INTEGER (L"Garnish"));
+  			GET_REAL (L"Maximum"), false, GET_REAL (L"Maximum") - GET_REAL (L"Minimum"),
+			0.0, GET_INTEGER (L"Garnish"));
+	}
+END
+
+FORM (PowerCepstrogram_paint, L"PowerCepstrogram: Paint", L"PowerCepstrogram: Paint...")
+	REAL (L"left Time range (s)", L"0.0")
+	REAL (L"right Time range (s)", L"0.0")
+	REAL (L"left Quefrency range (s)", L"0.0")
+	REAL (L"right Quefrency range (s)", L"0.0")
+	REAL (L"Maximum (dB)", L"80.0")
+	BOOLEAN (L"Autoscaling", 0);
+	REAL (L"Dynamic range (dB)", L"30.0");
+	REAL (L"Dynamic compression (0-1)", L"0.0");
+	BOOLEAN (L"Garnish", 1);
+	OK
+DO_ALTERNATIVE (old_PowerCepstrogram_paint)
+	autoPraatPicture picture;
+	LOOP {
+		iam (PowerCepstrogram);
+		PowerCepstrogram_paint (me, GRAPHICS, GET_REAL (L"left Time range"), GET_REAL (L"right Time range"),
+			GET_REAL (L"left Quefrency range"), GET_REAL (L"right Quefrency range"),
+  			GET_REAL (L"Maximum"), GET_INTEGER (L"Autoscaling"), GET_REAL (L"Dynamic range"), 
+			GET_REAL (L"Dynamic compression"), GET_INTEGER (L"Garnish"));
 	}
 END
 
@@ -547,7 +569,7 @@ DO
 	}
 END
 
-FORM (PowerCepstrogram_to_Table_cpp, L"PowerCepstrogram: To Table (peak prominence)", L"PowerCepstrogram: To Table (peak prominence...")
+FORM (PowerCepstrogram_to_Table_cpp, L"PowerCepstrogram: To Table (peak prominence)", L"PowerCepstrogram: To Table (peak prominence)...")
 	REAL (L"left Peak search pitch range (Hz)", L"60.0")
 	REAL (L"right Peak search pitch range (Hz)", L"330.0")
 	POSITIVE (L"Tolerance (0-1)", L"0.05")

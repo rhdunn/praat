@@ -1,6 +1,6 @@
 /* praat_picture.cpp
  *
- * Copyright (C) 1992-2012,2013 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -205,6 +205,7 @@ DO
 		theCurrentPraatPicture -> y1NDC = 12-bottom - ymargin;
 		theCurrentPraatPicture -> y2NDC = 12-top + ymargin;
 		Picture_setSelection (praat_picture, theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC, false);
+		Graphics_updateWs (GRAPHICS);
 	} else if (theCurrentPraatObjects != & theForegroundPraatObjects) {   // in manual?
 		if (top > bottom) { double temp; temp = top; top = bottom; bottom = temp; }
 		double x1wNDC, x2wNDC, y1wNDC, y2wNDC;
@@ -251,6 +252,7 @@ DO
 		theCurrentPraatPicture -> y1NDC = 12-bottom;
 		theCurrentPraatPicture -> y2NDC = 12-top;
 		Picture_setSelection (praat_picture, theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC, false);
+		Graphics_updateWs (GRAPHICS);   // BUG: needed on Cocoa, but why?
 	} else if (theCurrentPraatObjects != & theForegroundPraatObjects) {   // in manual?
 		if (top > bottom) { double temp; temp = top; top = bottom; bottom = temp; }
 		double x1wNDC, x2wNDC, y1wNDC, y2wNDC;
@@ -482,6 +484,40 @@ static void DO_Picture_writeToPdfFile (UiForm sendingForm, int narg, Stackel arg
 		if (args == NULL && sendingString == NULL) file = UiFile_getFile (dia);
 		else { Melder_relativePathToFile (args ? args [1]. string : sendingString, & file2); file = & file2; }
 		Picture_writeToPdfFile (praat_picture, file);
+	}
+}
+
+static void DO_Picture_writeToPngFile_300 (UiForm sendingForm, int narg, Stackel args, const wchar_t *sendingString, Interpreter interpreter, const wchar_t *invokingButtonTitle, bool modified, void *dummy) {
+	static Any dia;
+	(void) narg;
+	(void) interpreter;
+	(void) modified;
+	(void) dummy;
+	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Save as PNG file",
+		DO_Picture_writeToPngFile_300, NULL, invokingButtonTitle, NULL);
+	if (sendingForm == NULL && args == NULL && sendingString == NULL) {
+		UiOutfile_do (dia, L"praat.png");
+	} else { MelderFile file; structMelderFile file2 = { 0 };
+		if (args == NULL && sendingString == NULL) file = UiFile_getFile (dia);
+		else { Melder_relativePathToFile (args ? args [1]. string : sendingString, & file2); file = & file2; }
+		Picture_writeToPngFile_300 (praat_picture, file);
+	}
+}
+
+static void DO_Picture_writeToPngFile_600 (UiForm sendingForm, int narg, Stackel args, const wchar_t *sendingString, Interpreter interpreter, const wchar_t *invokingButtonTitle, bool modified, void *dummy) {
+	static Any dia;
+	(void) narg;
+	(void) interpreter;
+	(void) modified;
+	(void) dummy;
+	if (! dia) dia = UiOutfile_create (theCurrentPraatApplication -> topShell, L"Save as PNG file",
+		DO_Picture_writeToPngFile_600, NULL, invokingButtonTitle, NULL);
+	if (sendingForm == NULL && args == NULL && sendingString == NULL) {
+		UiOutfile_do (dia, L"praat.png");
+	} else { MelderFile file; structMelderFile file2 = { 0 };
+		if (args == NULL && sendingString == NULL) file = UiFile_getFile (dia);
+		else { Melder_relativePathToFile (args ? args [1]. string : sendingString, & file2); file = & file2; }
+		Picture_writeToPngFile_600 (praat_picture, file);
 	}
 }
 
@@ -1018,7 +1054,7 @@ OK
 DO
 	double position = GET_REAL (L"Position");
 	double x1WC, x2WC, y1WC, y2WC, dy;
-	{
+	{// scope
 		autoPraatPicture picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
@@ -1038,7 +1074,7 @@ OK
 DO
 	double position = GET_REAL (L"Position");
 	double x1WC, x2WC, y1WC, y2WC, dy;
-	{
+	{// scope
 		autoPraatPicture picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
@@ -1058,7 +1094,7 @@ OK
 DO
 	double position = GET_REAL (L"Position");
 	double x1WC, x2WC, y1WC, y2WC, dx;
-	{
+	{// scope
 		autoPraatPicture picture;   // WHY?
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
@@ -1078,7 +1114,7 @@ OK
 DO
 	double position = GET_REAL (L"Position");
 	double x1WC, x2WC, y1WC, y2WC, dx;
-	{
+	{// scope
 		autoPraatPicture picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
@@ -1106,7 +1142,7 @@ OK
 DO
 	double position = GET_REAL (L"Position");
 	double x1WC, x2WC, y1WC, y2WC, dy;
-	{
+	{// scope
 		autoPraatPicture picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
@@ -1126,7 +1162,7 @@ OK
 DO
 	double position = GET_REAL (L"Position");
 	double x1WC, x2WC, y1WC, y2WC, dy;
-	{
+	{// scope
 		autoPraatPicture picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
@@ -1146,7 +1182,7 @@ OK
 DO
 	double position = GET_REAL (L"Position");
 	double x1WC, x2WC, y1WC, y2WC, dx;
-	{
+	{// scope
 		autoPraatPicture picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
@@ -1166,7 +1202,7 @@ OK
 DO
 	double position = GET_REAL (L"Position");
 	double x1WC, x2WC, y1WC, y2WC, dx;
-	{
+	{// scope
 		autoPraatPicture picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
@@ -1345,7 +1381,7 @@ static void cb_selectionChanged (Picture p, void *closure,
 		double xmargin = fontSize * 4.2 / 72.0, ymargin = fontSize * 2.8 / 72.0;
 		if (ymargin > 0.4 * (theCurrentPraatPicture -> y2NDC - theCurrentPraatPicture -> y1NDC)) ymargin = 0.4 * (theCurrentPraatPicture -> y2NDC - theCurrentPraatPicture -> y1NDC);
 		if (xmargin > 0.4 * (theCurrentPraatPicture -> x2NDC - theCurrentPraatPicture -> x1NDC)) xmargin = 0.4 * (theCurrentPraatPicture -> x2NDC - theCurrentPraatPicture -> x1NDC);
-		UiHistory_write (L"\ndo (\"Select inner viewport...\", ");
+		UiHistory_write (L"\nSelect inner viewport: ");
 		UiHistory_write (Melder_single (theCurrentPraatPicture -> x1NDC + xmargin));
 		UiHistory_write (L", ");
 		UiHistory_write (Melder_single (theCurrentPraatPicture -> x2NDC - xmargin));
@@ -1353,9 +1389,8 @@ static void cb_selectionChanged (Picture p, void *closure,
 		UiHistory_write (Melder_single (12 - theCurrentPraatPicture -> y2NDC + ymargin));
 		UiHistory_write (L", ");
 		UiHistory_write (Melder_single (12 - theCurrentPraatPicture -> y1NDC - ymargin));
-		UiHistory_write (L")");
 	} else {
-		UiHistory_write (L"\ndo (\"Select outer viewport...\", ");
+		UiHistory_write (L"\nSelect outer viewport: ");
 		UiHistory_write (Melder_single (theCurrentPraatPicture -> x1NDC));
 		UiHistory_write (L", ");
 		UiHistory_write (Melder_single (theCurrentPraatPicture -> x2NDC));
@@ -1363,7 +1398,6 @@ static void cb_selectionChanged (Picture p, void *closure,
 		UiHistory_write (Melder_single (12 - theCurrentPraatPicture -> y2NDC));
 		UiHistory_write (L", ");
 		UiHistory_write (Melder_single (12 - theCurrentPraatPicture -> y1NDC));
-		UiHistory_write (L")");
 	}
 }
 
@@ -1490,7 +1524,7 @@ void praat_picture_init (void) {
 			width += margin * 2;
 		#endif
 		sprintf (pictureWindowTitle, "%s Picture", praatP.title);
-		dialog = GuiWindow_create (x, y, width, height, Melder_peekUtf8ToWcs (pictureWindowTitle), NULL, NULL, 0);
+		dialog = GuiWindow_create (x, y, width, height, 400, 200, Melder_peekUtf8ToWcs (pictureWindowTitle), NULL, NULL, 0);
 		dialog -> f_addMenuBar ();
 	}
 	if (! theCurrentPraatApplication -> batch) {
@@ -1506,35 +1540,34 @@ void praat_picture_init (void) {
 
 	praat_addMenuCommand (L"Picture", L"File", L"Picture info", 0, 0, DO_Picture_settings_report);
 	praat_addMenuCommand (L"Picture", L"File", L"Picture settings report", 0, praat_HIDDEN, DO_Picture_settings_report);
-	praat_addMenuCommand (L"Picture", L"File", L"-- read --", 0, 0, 0);
-	praat_addMenuCommand (L"Picture", L"File", L"Read from praat picture file...", 0, 0, DO_Picture_readFromPraatPictureFile);
-	praat_addMenuCommand (L"Picture", L"File", L"-- write --", 0, 0, 0);
-	praat_addMenuCommand (L"Picture", L"File", L"Save as praat picture file...", 0, 0, DO_Picture_writeToPraatPictureFile);
-	praat_addMenuCommand (L"Picture", L"File", L"Write to praat picture file...", 0, praat_HIDDEN, DO_Picture_writeToPraatPictureFile);
-	#ifdef _WIN32
-	praat_addMenuCommand (L"Picture", L"File", L"Save as Windows metafile...", 0, 0, DO_Picture_writeToWindowsMetafile);
-	praat_addMenuCommand (L"Picture", L"File", L"Write to Windows metafile...", 0, praat_HIDDEN, DO_Picture_writeToWindowsMetafile);
-	#endif
-	#if defined (macintosh)
+	praat_addMenuCommand (L"Picture", L"File", L"-- save --", 0, 0, 0);
+	#if defined (macintosh) || defined (UNIX)
 		praat_addMenuCommand (L"Picture", L"File", L"Save as PDF file...", 0, 'S', DO_Picture_writeToPdfFile);
 		praat_addMenuCommand (L"Picture", L"File", L"Write to PDF file...", 0, praat_HIDDEN, DO_Picture_writeToPdfFile);
-		praat_addMenuCommand (L"Picture", L"File", L"Save EPS file", 0, 0, NULL);
-			praat_addMenuCommand (L"Picture", L"File", L"PostScript settings...", 0, 1, DO_PostScript_settings);
-			praat_addMenuCommand (L"Picture", L"File", L"Save as EPS file...", 0, 1, DO_Picture_writeToEpsFile);
-			praat_addMenuCommand (L"Picture", L"File", L"Write to EPS file...", 0, praat_HIDDEN + praat_DEPTH_1, DO_Picture_writeToEpsFile);
-			praat_addMenuCommand (L"Picture", L"File", L"Save as fontless EPS file (XIPA)...", 0, 1, DO_Picture_writeToFontlessEpsFile_xipa);
-			praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (XIPA)...", 0, praat_HIDDEN + praat_DEPTH_1, DO_Picture_writeToFontlessEpsFile_xipa);
-			praat_addMenuCommand (L"Picture", L"File", L"Save as fontless EPS file (SILIPA)...", 0, 1, DO_Picture_writeToFontlessEpsFile_silipa);
-			praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (SILIPA)...", 0, praat_HIDDEN + praat_DEPTH_1, DO_Picture_writeToFontlessEpsFile_silipa);
-	#else
-		praat_addMenuCommand (L"Picture", L"File", L"PostScript settings...", 0, 0, DO_PostScript_settings);
-		praat_addMenuCommand (L"Picture", L"File", L"Save as EPS file...", 0, 'S', DO_Picture_writeToEpsFile);
-		praat_addMenuCommand (L"Picture", L"File", L"Write to EPS file...", 0, praat_HIDDEN, DO_Picture_writeToEpsFile);
-		praat_addMenuCommand (L"Picture", L"File", L"Save as fontless EPS file (XIPA)...", 0, 0, DO_Picture_writeToFontlessEpsFile_xipa);
-		praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (XIPA)...", 0, praat_HIDDEN, DO_Picture_writeToFontlessEpsFile_xipa);
-		praat_addMenuCommand (L"Picture", L"File", L"Save as fontless EPS file (SILIPA)...", 0, 0, DO_Picture_writeToFontlessEpsFile_silipa);
-		praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (SILIPA)...", 0, praat_HIDDEN, DO_Picture_writeToFontlessEpsFile_silipa);
 	#endif
+	praat_addMenuCommand (L"Picture", L"File", L"Save as 300-dpi PNG file...", 0, 0, DO_Picture_writeToPngFile_300);
+	#if defined (_WIN32)
+		praat_addMenuCommand (L"Picture", L"File", L"Save as 600-dpi PNG file...", 0, 'S', DO_Picture_writeToPngFile_600);
+	#endif
+	#if defined (macintosh) || defined (UNIX)
+		praat_addMenuCommand (L"Picture", L"File", L"Save as 600-dpi PNG file...", 0, 0, DO_Picture_writeToPngFile_600);
+	#endif
+	praat_addMenuCommand (L"Picture", L"File", L"Save as EPS file", 0, 0, NULL);
+		praat_addMenuCommand (L"Picture", L"File", L"PostScript settings...", 0, 1, DO_PostScript_settings);
+		praat_addMenuCommand (L"Picture", L"File", L"Save as EPS file...", 0, 1, DO_Picture_writeToEpsFile);
+		praat_addMenuCommand (L"Picture", L"File", L"Write to EPS file...", 0, praat_HIDDEN + praat_DEPTH_1, DO_Picture_writeToEpsFile);
+		praat_addMenuCommand (L"Picture", L"File", L"Save as fontless EPS file (XIPA)...", 0, 1, DO_Picture_writeToFontlessEpsFile_xipa);
+		praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (XIPA)...", 0, praat_HIDDEN + praat_DEPTH_1, DO_Picture_writeToFontlessEpsFile_xipa);
+		praat_addMenuCommand (L"Picture", L"File", L"Save as fontless EPS file (SILIPA)...", 0, 1, DO_Picture_writeToFontlessEpsFile_silipa);
+		praat_addMenuCommand (L"Picture", L"File", L"Write to fontless EPS file (SILIPA)...", 0, praat_HIDDEN + praat_DEPTH_1, DO_Picture_writeToFontlessEpsFile_silipa);
+	#ifdef _WIN32
+		praat_addMenuCommand (L"Picture", L"File", L"Save as Windows metafile...", 0, 0, DO_Picture_writeToWindowsMetafile);
+		praat_addMenuCommand (L"Picture", L"File", L"Write to Windows metafile...", 0, praat_HIDDEN, DO_Picture_writeToWindowsMetafile);
+	#endif
+	praat_addMenuCommand (L"Picture", L"File", L"-- praat picture file --", 0, 0, 0);
+	praat_addMenuCommand (L"Picture", L"File", L"Read from praat picture file...", 0, 0, DO_Picture_readFromPraatPictureFile);
+	praat_addMenuCommand (L"Picture", L"File", L"Save as praat picture file...", 0, 0, DO_Picture_writeToPraatPictureFile);
+	praat_addMenuCommand (L"Picture", L"File", L"Write to praat picture file...", 0, praat_HIDDEN, DO_Picture_writeToPraatPictureFile);
 	praat_addMenuCommand (L"Picture", L"File", L"-- print --", 0, 0, 0);
 	#if defined (macintosh)
 		praat_addMenuCommand (L"Picture", L"File", L"Page setup...", 0, 0, DO_Page_setup);

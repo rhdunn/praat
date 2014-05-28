@@ -1,6 +1,6 @@
 /* HyperPage.cpp
  *
- * Copyright (C) 1996-2011,2012,2013 Paul Boersma
+ * Copyright (C) 1996-2011,2012,2013,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -556,6 +556,9 @@ if (! my printing) {
 		Graphics_WCtoDC (my ps, 0.0, 0.0, & x1DC, & y2DC);
 		Graphics_WCtoDC (my ps, 1.0, 1.0, & x2DC, & y1DC);
 		long shift = (long) (Graphics_getResolution (my ps) * true_height_inches) + (y1DCold - y2DCold);
+		#if cocoa
+			shift = 0;   // this is a FIX
+		#endif
 		Graphics_resetWsViewport (my ps, x1DC, x2DC, y1DC + shift, y2DC + shift);
 		Graphics_setWsWindow (my ps, 0, width_inches, 0, height_inches);
 		theCurrentPraatPicture -> x1NDC = 0;
@@ -795,9 +798,10 @@ static void gui_cb_verticalScroll (I, GuiScrollBarEvent	event) {
 }
 
 static void createVerticalScrollBar (HyperPage me, GuiForm parent) {
+	int height = Machine_getTextHeight ();
 	my verticalScrollBar = GuiScrollBar_createShown (parent,
 		- Machine_getScrollBarWidth (), 0,
-		Machine_getMenuBarHeight () + Machine_getTextHeight () + 12, - Machine_getScrollBarWidth (),
+		Machine_getMenuBarHeight () + (my d_hasExtraRowOfTools ? 2 * height + 19 : height + 12), - Machine_getScrollBarWidth (),
 		0, PAGE_HEIGHT * 5, 0, 25, 1, 24,
 		gui_cb_verticalScroll, me, 0);
 }
@@ -967,7 +971,9 @@ void structHyperPage :: v_createChildren () {
 
 	/***** Create drawing area. *****/
 
-	drawingArea = GuiDrawingArea_createShown (d_windowForm, 0, - Machine_getScrollBarWidth (), y + height + 9, - Machine_getScrollBarWidth (),
+	drawingArea = GuiDrawingArea_createShown (d_windowForm,
+		0, - Machine_getScrollBarWidth (),
+		y + ( d_hasExtraRowOfTools ? 2 * height + 16 : height + 9 ), - Machine_getScrollBarWidth (),
 		gui_drawingarea_cb_expose, gui_drawingarea_cb_click, NULL, gui_drawingarea_cb_resize, this, GuiDrawingArea_BORDER);
 	drawingArea -> f_setSwipable (NULL, verticalScrollBar);
 }

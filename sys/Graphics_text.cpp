@@ -1,6 +1,6 @@
 /* Graphics_text.cpp
  *
- * Copyright (C) 1992-2011,2012,2013 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1992-2011,2012,2013,2014 Paul Boersma, 2013 Tom Naughton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,8 +77,7 @@ extern const char * ipaSerifRegular24 [1 + 255-33+1 + 1] [24 + 1];
 
 #if win
 	#define win_MAXIMUM_FONT_SIZE  500
-	static HFONT screenFonts [1 + kGraphics_font_DINGBATS] [1+win_MAXIMUM_FONT_SIZE] [1 + Graphics_BOLD_ITALIC];
-	static HFONT printerFonts [1 + kGraphics_font_DINGBATS] [1+win_MAXIMUM_FONT_SIZE] [1 + Graphics_BOLD_ITALIC];
+	static HFONT fonts [1 + kGraphics_resolution_MAX] [1 + kGraphics_font_CHINESE] [1+win_MAXIMUM_FONT_SIZE] [1 + Graphics_BOLD_ITALIC];
 	static int ipaAvailable = FALSE;
 	static int win_size2isize (int size) { return size > win_MAXIMUM_FONT_SIZE ? win_MAXIMUM_FONT_SIZE : size; }
 	static int win_isize2size (int isize) { return isize; }
@@ -88,8 +87,12 @@ extern const char * ipaSerifRegular24 [1 + 255-33+1 + 1] [24 + 1];
         #include <Carbon/Carbon.h>
     #endif
 	#include "macport_off.h"
-	static ATSFontRef theTimesAtsuiFont, theHelveticaAtsuiFont, theCourierAtsuiFont, theSymbolAtsuiFont,
-		thePalatinoAtsuiFont, theIpaTimesAtsuiFont, theIpaPalatinoAtsuiFont, theZapfDingbatsAtsuiFont, theArabicAtsuiFont;
+	#if useCarbon
+		static ATSFontRef theTimesAtsuiFont, theHelveticaAtsuiFont, theCourierAtsuiFont, theSymbolAtsuiFont,
+			thePalatinoAtsuiFont, theIpaTimesAtsuiFont, theIpaPalatinoAtsuiFont, theZapfDingbatsAtsuiFont, theArabicAtsuiFont;
+	#else
+		static bool hasTimes, hasHelvetica, hasCourier, hasSymbol, hasPalatino, hasDoulos, hasCharis, hasIpaSerif;
+	#endif
 	static CTFontRef theScreenFonts [1 + kGraphics_font_DINGBATS] [1 + Graphics_BOLD_ITALIC];
 	static RGBColor theWhiteColour = { 0xFFFF, 0xFFFF, 0xFFFF }, theBlueColour = { 0, 0, 0xFFFF };
 #endif
@@ -119,11 +122,16 @@ static HFONT loadFont (GraphicsScreen me, int font, int size, int style) {
 	spec. lfWeight = style & Graphics_BOLD ? FW_BOLD : 0;
 	spec. lfItalic = style & Graphics_ITALIC ? 1 : 0;
 	spec. lfUnderline = spec. lfStrikeOut = 0;
-	spec. lfCharSet = font == kGraphics_font_SYMBOL ? SYMBOL_CHARSET : font >= kGraphics_font_IPATIMES ? DEFAULT_CHARSET : ANSI_CHARSET;
+	spec. lfCharSet =
+		font == kGraphics_font_SYMBOL ? SYMBOL_CHARSET :
+		font == kGraphics_font_CHINESE ? DEFAULT_CHARSET :
+		font >= kGraphics_font_IPATIMES ? DEFAULT_CHARSET :
+		ANSI_CHARSET;
 	spec. lfOutPrecision = spec. lfClipPrecision = spec. lfQuality = 0;
 	spec. lfPitchAndFamily =
 		( font == kGraphics_font_COURIER ? FIXED_PITCH : font == kGraphics_font_IPATIMES ? DEFAULT_PITCH : VARIABLE_PITCH ) |
 		( font == kGraphics_font_HELVETICA ? FF_SWISS : font == kGraphics_font_COURIER ? FF_MODERN :
+		  font == kGraphics_font_CHINESE ? FF_DONTCARE :
 		  font >= kGraphics_font_IPATIMES ? FF_DONTCARE : FF_ROMAN );
 	if (font == kGraphics_font_IPATIMES && ! ipaInited && Melder_debug != 15) {
 		LOGFONTW logFont;
@@ -149,6 +157,7 @@ static HFONT loadFont (GraphicsScreen me, int font, int size, int style) {
 		font == kGraphics_font_SYMBOL    ? L"Symbol" :
 		font == kGraphics_font_IPATIMES  ? ( doulosAvailable && style == 0 ? L"Doulos SIL" : charisAvailable ? L"Charis SIL" : L"Times New Roman" ) :
 		font == kGraphics_font_DINGBATS  ? L"Wingdings" :
+		font == kGraphics_font_CHINESE   ? L"SimSun" :
 		L"");
 	return CreateFontIndirectW (& spec);
 }
@@ -216,17 +225,15 @@ static void charSize (I, _Graphics_widechar *lc) {
 			font = info -> alphabet == Longchar_SYMBOL ? kGraphics_font_SYMBOL :
 			       info -> alphabet == Longchar_PHONETIC ? kGraphics_font_IPATIMES :
 			       info -> alphabet == Longchar_DINGBATS ? kGraphics_font_DINGBATS : lc -> font.integer;
+			if ((unsigned int) lc -> kar >= 0x2E80 && (unsigned int) lc -> kar <= 0x9FFF)
+				font = kGraphics_font_CHINESE;
 			size = lc -> size < 100 ? smallSize : normalSize;
 			style = lc -> style & (Graphics_ITALIC | Graphics_BOLD);   // take out Graphics_CODE
-			fontInfo = my printer || my metafile ? printerFonts [font] [size] [style] : screenFonts [font] [size] [style];
+			fontInfo = fonts [my resolutionNumber] [font] [size] [style];
 			if (! fontInfo) {
 				fontInfo = loadFont (me, font, size, style);
 				if (! fontInfo) return;
-				if (my printer || my metafile) {
-					printerFonts [font] [size] [style] = fontInfo;
-				} else {
-					screenFonts [font] [size] [style] = fontInfo;
-				}
+				fonts [my resolutionNumber] [font] [size] [style] = fontInfo;
 			}
 			if (font == kGraphics_font_IPATIMES && ! ipaAvailable) {
 				int overstrike = ipaSerifRegular24 [info -> psEncoding - 32] [0] [0] == 'o';
@@ -238,7 +245,13 @@ static void charSize (I, _Graphics_widechar *lc) {
 			} else {
 				SIZE extent;
 				wchar_t code;
-				lc -> code = font == kGraphics_font_IPATIMES || font == kGraphics_font_TIMES || font == kGraphics_font_HELVETICA || font == kGraphics_font_COURIER ? (unsigned short) lc -> kar : info -> winEncoding;
+				lc -> code =
+					font == kGraphics_font_IPATIMES ||
+					font == kGraphics_font_TIMES ||
+					font == kGraphics_font_HELVETICA ||
+					font == kGraphics_font_CHINESE ||
+					font == kGraphics_font_COURIER ? (unsigned short) lc -> kar :
+					info -> winEncoding;
 				if (lc -> code == 0) {
 					_Graphics_widechar *lc2;
 					if (lc -> kar == UNICODE_LATIN_SMALL_LETTER_SCHWA_WITH_HOOK) {
@@ -268,24 +281,64 @@ static void charSize (I, _Graphics_widechar *lc) {
 			lc -> font.integer = font;   // kGraphics_font_HELVETICA .. kGraphics_font_DINGBATS
 			lc -> size = size;   // 0..4 instead of 10..24
 			lc -> style = style;   // without Graphics_CODE
-        #elif cocoa
+		#elif cocoa
 			/*
 			 * Determine the font family.
 			 */
 			Longchar_Info info = Longchar_getInfoFromNative (lc -> kar);
 			int font =
-				info -> alphabet == Longchar_SYMBOL ? kGraphics_font_SYMBOL :
+				info -> alphabet == Longchar_SYMBOL || // ? kGraphics_font_SYMBOL :
 				info -> alphabet == Longchar_PHONETIC ?
-					( my font == kGraphics_font_TIMES && lc -> style == 0 ? kGraphics_font_IPATIMES : kGraphics_font_IPAPALATINO ) :
-				lc -> kar == '/' ? kGraphics_font_PALATINO :   // override Courier
-				info -> alphabet == Longchar_DINGBATS ? kGraphics_font_DINGBATS :
-				lc -> font.integer == kGraphics_font_COURIER ? kGraphics_font_COURIER :
-				my font == kGraphics_font_TIMES ? ( lc -> style == 0 ? kGraphics_font_IPATIMES : kGraphics_font_TIMES ) :
-				my font == kGraphics_font_HELVETICA ? kGraphics_font_HELVETICA :
-				my font == kGraphics_font_PALATINO ? kGraphics_font_IPAPALATINO :
+					( my font == kGraphics_font_TIMES ?
+						( hasDoulos ?
+							( lc -> style == 0 ?
+								kGraphics_font_IPATIMES :
+							  hasCharis ?
+								kGraphics_font_IPAPALATINO :   // other styles in Charis, because Doulos has no bold or italic
+								kGraphics_font_TIMES
+							) :
+						  hasCharis ?
+							kGraphics_font_IPAPALATINO :
+							kGraphics_font_TIMES   // on newer systems, Times and Times New Roman have a lot of phonetic characters
+						) :
+					  my font == kGraphics_font_HELVETICA || my font == kGraphics_font_COURIER ?
+						my font :   // sans serif or wide, so fall back on Lucida Grande for phonetic characters
+					  /* my font must be kGraphics_font_PALATINO */
+					  hasCharis ?
+						kGraphics_font_IPAPALATINO :
+					  hasDoulos ?
+					    ( lc -> style == 0 ?
+							kGraphics_font_IPATIMES :
+							kGraphics_font_TIMES
+						) :
+						kGraphics_font_PALATINO
+					) :
+				lc -> kar == '/' ?
+					kGraphics_font_PALATINO :   // override Courier
+				info -> alphabet == Longchar_DINGBATS ?
+					kGraphics_font_DINGBATS :
+				lc -> font.integer == kGraphics_font_COURIER ?
+					kGraphics_font_COURIER :
+				my font == kGraphics_font_TIMES ?
+					( hasDoulos ?
+						( lc -> style == 0 ?
+							kGraphics_font_IPATIMES :
+						  hasCharis ?
+							kGraphics_font_IPAPALATINO :
+							kGraphics_font_TIMES 
+						) :
+						kGraphics_font_TIMES
+					) :   // needed for correct placement of diacritics
+				my font == kGraphics_font_HELVETICA ?
+					kGraphics_font_HELVETICA :
+				my font == kGraphics_font_PALATINO ?
+					( hasCharis ?
+						kGraphics_font_IPAPALATINO :
+						kGraphics_font_PALATINO
+					) :
 				my font;   // why not lc -> font.integer?
 			Melder_assert (font >= 0 && font <= kGraphics_font_DINGBATS);
-            lc -> font.string = NULL;   // this erases font.integer!
+			lc -> font.string = NULL;   // this erases font.integer!
 
 			/*
 			 * Determine the style.
@@ -321,8 +374,8 @@ static void charSize (I, _Graphics_widechar *lc) {
  				theScreenFonts [font] [style] = ctFont;
 			}
 
-            int normalSize = my fontSize * my resolution / 72.0;
-            lc -> size = lc -> size < 100 ? (3 * normalSize + 2) / 4 : normalSize;
+			int normalSize = my fontSize * my resolution / 72.0;
+			lc -> size = lc -> size < 100 ? (3 * normalSize + 2) / 4 : normalSize;
         
 			uint16_t codes16 [2];
 			int nchars = 1;
@@ -339,44 +392,35 @@ static void charSize (I, _Graphics_widechar *lc) {
 				length: nchars * 2
 				encoding: NSUTF16LittleEndianStringEncoding   // BUG: should be NSUTF16NativeStringEncoding, except that that doesn't exist
 				];
-			//CGContextRef context = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
-            //NSCAssert (context, @"nil context");
 
-			//[NSGraphicsContext setCurrentContext: my d_macGraphicsContext];
-			//Melder_assert (my d_macGraphicsContext != NULL);
-			//Melder_assert (context == my d_macGraphicsContext);
-            //CGContextSaveGState (context);
-            //CGContextSetTextMatrix (context, CGAffineTransformIdentity);   // this could set the "current context" for CoreText
+			CFRange textRange = CFRangeMake (0, [s length]);
 
-            CFRange textRange = CFRangeMake (0, [s length]);
-            
-            CFMutableAttributedStringRef string = CFAttributedStringCreateMutable (kCFAllocatorDefault, [s length]);
-            CFAttributedStringReplaceString (string, CFRangeMake (0, 0), (CFStringRef) s);
-            CFAttributedStringSetAttribute (string, textRange, kCTFontAttributeName, ctFont);
-        
-            /*
-             * Measure.
-             */
-        
+			CFMutableAttributedStringRef string = CFAttributedStringCreateMutable (kCFAllocatorDefault, [s length]);
+			CFAttributedStringReplaceString (string, CFRangeMake (0, 0), (CFStringRef) s);
+			CFAttributedStringSetAttribute (string, textRange, kCTFontAttributeName, ctFont);
+
+			/*
+			 * Measure.
+			 */
+
             // Create a path to render text in
-            CGMutablePathRef path = CGPathCreateMutable ();
-            NSRect measureRect = NSMakeRect (0, 0, CGFLOAT_MAX, CGFLOAT_MAX);
-            CGPathAddRect (path, NULL, (CGRect) measureRect);
-            
+			CGMutablePathRef path = CGPathCreateMutable ();
+			NSRect measureRect = NSMakeRect (0, 0, CGFLOAT_MAX, CGFLOAT_MAX);
+			CGPathAddRect (path, NULL, (CGRect) measureRect);
+        
 			CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString ((CFAttributedStringRef) string);
 			CFRange fitRange;
 			CGSize targetSize = CGSizeMake (lc -> width, CGFLOAT_MAX);
 			CGSize frameSize = CTFramesetterSuggestFrameSizeWithConstraints (framesetter, textRange, NULL, targetSize, & fitRange);
-            CFRelease (framesetter);
-            CFRelease (string);
-            [s release];
-            //CGContextRestoreGState (context);
+			CFRelease (framesetter);
+			CFRelease (string);
+			[s release];
+			CFRelease (path);
 
 			bool isDiacritic = info -> ps.times == 0;
-            lc -> width = isDiacritic ? 0.0 : frameSize.width * lc -> size / 100.0;
-			if (font == kGraphics_font_IPATIMES || font == kGraphics_font_IPAPALATINO) lc -> baseline -= 6;   // BUG: not good enough
-            lc -> baseline *= my fontSize * 0.01;
-            lc -> code = lc -> kar;
+			lc -> width = isDiacritic ? 0.0 : frameSize.width * lc -> size / 100.0;
+			lc -> baseline *= 0.01 * normalSize;
+			lc -> code = lc -> kar;
 			lc -> font.integer = font;
 		#elif mac
 			Longchar_Info info = Longchar_getInfoFromNative (lc -> kar);
@@ -672,6 +716,7 @@ static void charDraw (I, int xDC, int yDC, _Graphics_widechar *lc,
 		if (lc -> link) my d_printf (my d_file, "0 0 0 setrgbcolor\n");
 	} else if (my screen) {
 		iam (GraphicsScreen);
+		bool needBitmappedIPA = false;
 		#if cairo
 			if (my duringXor) {
 			} else {
@@ -679,7 +724,6 @@ static void charDraw (I, int xDC, int yDC, _Graphics_widechar *lc,
 				// TODO!
 			}
 			int font = lc -> font.integer;
-			int needBitmappedIPA = 0;
 		#elif cocoa
 			/*
 			 * Determine the font family.
@@ -695,7 +739,7 @@ static void charDraw (I, int xDC, int yDC, _Graphics_widechar *lc,
 			 * Determine the font-style combination.
 			 */
 			CTFontSymbolicTraits ctStyle = ( style & Graphics_BOLD ? kCTFontBoldTrait : 0 ) | ( lc -> style & Graphics_ITALIC ? kCTFontItalicTrait : 0 );
-			#if 1
+			#if 0
 				CFStringRef key = kCTFontSymbolicTrait;
 				CFNumberRef value = CFNumberCreate (NULL, kCFNumberIntType, & ctStyle);
 				CFIndex numberOfValues = 1;
@@ -744,7 +788,6 @@ static void charDraw (I, int xDC, int yDC, _Graphics_widechar *lc,
 			CTFontRef ctFont = CTFontCreateWithFontDescriptor (ctFontDescriptor, lc -> size, NULL);
 			CFRelease (ctFontDescriptor);
 
-			int needBitmappedIPA = 0;
 			bool hasHighUnicodeValues = false;
 			for (long i = 0; i < nchars; i ++) {
 				hasHighUnicodeValues |= codes [i] > 0xFFFF;
@@ -793,77 +836,46 @@ static void charDraw (I, int xDC, int yDC, _Graphics_widechar *lc,
              * Draw.
              */
     
-            // Create a path to render text in
-            CGMutablePathRef path = CGPathCreateMutable ();
-            NSRect measureRect = NSMakeRect (0, 0, CGFLOAT_MAX, CGFLOAT_MAX);
-            CGPathAddRect (path, NULL, (CGRect) measureRect);
-
             CGContextSetTextMatrix (my d_macGraphicsContext, CGAffineTransformIdentity);   // this could set the "current context" for CoreText
-
-            // create the framesetter and render text
-            CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString ((CFAttributedStringRef) string);
-			Melder_assert (framesetter != NULL);
-            CTFrameRef frame = CTFramesetterCreateFrame (framesetter, CFRangeMake (0, length), path, NULL);
-			Melder_assert (frame != NULL);
-        
-            CFRange fitRange;
-            CGSize targetSize = CGSizeMake (CGFLOAT_MAX, CGFLOAT_MAX);
-            CGSize frameSize = CTFramesetterSuggestFrameSizeWithConstraints (framesetter, textRange, NULL, targetSize, & fitRange);
-            CFRelease (path);
             CFRelease (color);
-            CFRelease (frame);
-            path = CGPathCreateMutable ();
-            NSRect drawRect = NSMakeRect (0, 0, frameSize.width, frameSize.height);
-			trace ("frame %f %f", frameSize.width, frameSize.height);
-            CGPathAddRect (path, NULL, (CGRect) drawRect);
-            frame = CTFramesetterCreateFrame (framesetter, CFRangeMake (0, length), path, NULL);
-			Melder_assert (frame != NULL);
 
 			if (my d_macView) {
 				[my d_macView   lockFocus];
 				my d_macGraphicsContext = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
 			}
             CGContextSaveGState (my d_macGraphicsContext);
-            CGContextTranslateCTM (my d_macGraphicsContext, xDC, yDC + descent);
+            CGContextTranslateCTM (my d_macGraphicsContext, xDC, yDC);
             if (my yIsZeroAtTheTop) CGContextScaleCTM (my d_macGraphicsContext, 1.0, -1.0);
             CGContextRotateCTM (my d_macGraphicsContext, my textRotation * NUMpi / 180.0);
 
-			//CGContextRef context = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
-			//Melder_assert (my d_macGraphicsContext != NULL);
-			//Melder_assert (context == my d_macGraphicsContext);
+			CTLineRef line = CTLineCreateWithAttributedString (string);
             if (my duringXor) {
                 CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeDifference);
                 CGContextSetAllowsAntialiasing (my d_macGraphicsContext, false);
-                CTFrameDraw (frame, my d_macGraphicsContext);
+				CTLineDraw (line, my d_macGraphicsContext);
                 CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeNormal);
                 CGContextSetAllowsAntialiasing (my d_macGraphicsContext, true);
             } else {
-                CTFrameDraw (frame, my d_macGraphicsContext);
+				CTLineDraw (line, my d_macGraphicsContext);
             }
+			CFRelease (line);
             CGContextRestoreGState (my d_macGraphicsContext);
-            //CGContextRestoreGState (my d_macGraphicsContext);
 
             // Clean up
-            CFRelease (frame);
-            CFRelease (path);
-            CFRelease (framesetter);
             CFRelease (string);
-			#if 1
-				CFRelease (s);
-			#else
-            	[s release];
-			#endif
+			CFRelease (s);
 			CFRelease (ctFont);
 			if (my d_macView) {
-				CGContextSynchronize (my d_macGraphicsContext);
+				#if useCarbon
+					CGContextSynchronize (my d_macGraphicsContext);
+				#endif
 				[my d_macView   unlockFocus];
 			}
         
 		#elif win
 			int font = lc -> font.integer;
-			int needBitmappedIPA = font == kGraphics_font_IPATIMES && ! ipaAvailable;
+			needBitmappedIPA = font == kGraphics_font_IPATIMES && ! ipaAvailable;
 		#elif mac
-			int needBitmappedIPA = 0;
 			ATSFontRef atsuiFont = (ATSFontRef) lc -> font.integer;
 			Melder_assert (atsuiFont != 0);
 			/*
@@ -966,11 +978,19 @@ static void charDraw (I, int xDC, int yDC, _Graphics_widechar *lc,
 			if (! needBitmappedIPA) {
 				#if cairo
 					if (my duringXor) {
-						static GdkFont *font = NULL;
-						if (font == NULL) {
-							font = gdk_font_load ("-*-courier-medium-r-normal--*-120-*-*-*-*-iso8859-1");
-						}
-						gdk_draw_text_wc (my d_window, font, my d_gdkGraphicsContext, xDC, yDC, (const GdkWChar *) codes, nchars);
+						#if ALLOW_GDK_DRAWING
+							static GdkFont *font = NULL;
+							if (font == NULL) {
+								font = gdk_font_load ("-*-courier-medium-r-normal--*-120-*-*-*-*-iso8859-1");
+								if (! font) {
+									font = gdk_font_load ("-*-courier 10 pitch-medium-r-normal--*-120-*-*-*-*-iso8859-1");
+								}
+							}
+							if (font) {
+								gdk_draw_text_wc (my d_window, font, my d_gdkGraphicsContext, xDC, yDC, (const GdkWChar *) codes, nchars);
+							}
+							gdk_flush ();
+						#endif
 					} else {
 						Melder_assert (my d_cairoGraphicsContext);
 						enum _cairo_font_slant slant   = (lc -> style & Graphics_ITALIC ? CAIRO_FONT_SLANT_ITALIC : CAIRO_FONT_SLANT_NORMAL);
@@ -1010,16 +1030,14 @@ static void charDraw (I, int xDC, int yDC, _Graphics_widechar *lc,
 						}
 						width += 4;   // For slant.
 						Rectangle (dc, 0, top, width, bottom);
-						SelectFont (dc, my printer || my metafile ? printerFonts [font] [lc -> size] [lc -> style] :
-							screenFonts [font] [lc -> size] [lc -> style]);
+						SelectFont (dc, fonts [my resolutionNumber] [font] [lc -> size] [lc -> style]);
 						SetTextColor (dc, my d_winForegroundColour);
 						TextOutW (dc, 0, baseline, (const wchar_t *) codes16, nchars);
 						BitBlt (my d_gdiGraphicsContext, xDC, yDC - ascent, width, bottom - top, dc, 0, top, SRCINVERT);
 					} else {
 						SelectPen (my d_gdiGraphicsContext, my d_winPen), SelectBrush (my d_gdiGraphicsContext, my d_winBrush);
 						if (lc -> link) SetTextColor (my d_gdiGraphicsContext, RGB (0, 0, 255)); else SetTextColor (my d_gdiGraphicsContext, my d_winForegroundColour);
-						SelectFont (my d_gdiGraphicsContext, my printer || my metafile ? printerFonts [font] [lc -> size] [lc -> style] :
-							screenFonts [font] [lc -> size] [lc -> style]);
+						SelectFont (my d_gdiGraphicsContext, fonts [my resolutionNumber] [font] [lc -> size] [lc -> style]);
 						TextOutW (my d_gdiGraphicsContext, xDC, yDC, (const wchar_t *) codes16, nchars);
 						if (lc -> link) SetTextColor (my d_gdiGraphicsContext, my d_winForegroundColour);
 						SelectPen (my d_gdiGraphicsContext, GetStockPen (BLACK_PEN)), SelectBrush (my d_gdiGraphicsContext, GetStockBrush (NULL_BRUSH));
@@ -1150,8 +1168,7 @@ static void charDraw (I, int xDC, int yDC, _Graphics_widechar *lc,
 					if (1) {
 						SelectPen (my d_gdiGraphicsContext, my d_winPen), SelectBrush (my d_gdiGraphicsContext, my d_winBrush);
 						if (lc -> link) SetTextColor (my d_gdiGraphicsContext, RGB (0, 0, 255)); else SetTextColor (my d_gdiGraphicsContext, my d_winForegroundColour);
-						SelectFont (my d_gdiGraphicsContext, my printer || my metafile ? printerFonts [font] [lc -> size] [lc -> style] :
-							screenFonts [font] [lc -> size] [lc -> style]);
+						SelectFont (my d_gdiGraphicsContext, fonts [my resolutionNumber] [font] [lc -> size] [lc -> style]);
 						int restore = SaveDC (my d_gdiGraphicsContext);
 						SetGraphicsMode (my d_gdiGraphicsContext, GM_ADVANCED);
 						double a = my textRotation * NUMpi / 180.0, cosa = cos (a), sina = sin (a);
@@ -1192,8 +1209,7 @@ static void charDraw (I, int xDC, int yDC, _Graphics_widechar *lc,
 					//Rectangle (dc, 0, 0, maxWidth, maxHeight);
 					SelectPen (dc, GetStockPen (BLACK_PEN));
 					SelectBrush (dc, GetStockBrush (NULL_BRUSH));
-					SelectFont (dc, my printer || my metafile ? printerFonts [font] [lc -> size] [lc -> style] :
-							screenFonts [font] [lc -> size] [lc -> style]);
+					SelectFont (dc, fonts [my resolutionNumber] [font] [lc -> size] [lc -> style]);
 					TextOutW (dc, 0, baseline, (const wchar_t *) codes16, nchars);
 				#endif
 				if (my textRotation == 90.0) { cosa = 0.0; sina = 1.0; }
@@ -1317,10 +1333,10 @@ static void drawOneCell (Graphics me, int xDC, int yDC, _Graphics_widechar lc []
 	_Graphics_widechar *plc, *lastlc;
 	int inLink = 0;
 	switch (my horizontalTextAlignment) {
-		case Graphics_LEFT:      dx = 2; break;
+		case Graphics_LEFT:      dx = 1 + (0.1/72) * my fontSize * my resolution; break;
 		case Graphics_CENTRE:    dx = - width / 2; break;
-		case Graphics_RIGHT:     dx = width ? - width - 1 : 0; break;   // if width is zero, do not step left
-		default:                 dx = 2; break;
+		case Graphics_RIGHT:     dx = width ? - width - (0.1/72) * my fontSize * my resolution : 0; break;   // if width is zero, do not step left
+		default:                 dx = 1 + (0.1/72) * my fontSize * my resolution; break;
 	}
 	switch (my verticalTextAlignment) {
 		case Graphics_BOTTOM:    dy = (0.4/72) * my fontSize * my resolution; break;
@@ -1615,17 +1631,18 @@ static void parseTextIntoCellsLinesRuns (Graphics me, const wchar_t *txt, _Graph
 				in += 2;
 			}
 		} else if (kar == '\"') {
-			kar = ++nquote & 1 ? UNICODE_LEFT_DOUBLE_QUOTATION_MARK : UNICODE_RIGHT_DOUBLE_QUOTATION_MARK;
+			if (! (my font == kGraphics_font_COURIER || my fontStyle == Graphics_CODE || wordCode || globalCode))
+				kar = ++nquote & 1 ? UNICODE_LEFT_DOUBLE_QUOTATION_MARK : UNICODE_RIGHT_DOUBLE_QUOTATION_MARK;
 		} else if (kar == '\'') {
 			kar = UNICODE_RIGHT_SINGLE_QUOTATION_MARK;
 		} else if (kar == '`') {
 			kar = UNICODE_LEFT_SINGLE_QUOTATION_MARK;
 		} else if (kar >= 32 && kar <= 126) {
 			if (kar == 'f') {
-				if (in [0] == 'i' && HAS_FI_AND_FL_LIGATURES) {
+				if (in [0] == 'i' && HAS_FI_AND_FL_LIGATURES && ! (my font == kGraphics_font_COURIER || my fontStyle == Graphics_CODE || wordCode || globalCode)) {
 					kar = UNICODE_LATIN_SMALL_LIGATURE_FI;
 					in ++;
-				} else if (in [0] == 'l' && HAS_FI_AND_FL_LIGATURES) {
+				} else if (in [0] == 'l' && HAS_FI_AND_FL_LIGATURES && ! (my font == kGraphics_font_COURIER || my fontStyle == Graphics_CODE || wordCode || globalCode)) {
 					kar = UNICODE_LATIN_SMALL_LIGATURE_FL;
 					in ++;
 				}
@@ -1864,7 +1881,8 @@ double Graphics_textWidth_ps (Graphics me, const wchar_t *txt, bool useSilipaPS)
 	return Graphics_dxMMtoWC (me, Graphics_textWidth_ps_mm (me, txt, useSilipaPS));
 }
 
-#if mac && useCarbon
+#if mac
+#if useCarbon
 static ATSFontRef findFont (CFStringRef name) {
 	ATSFontRef fontRef = ATSFontFindFromPostScriptName (name, kATSOptionFlagsDefault);
 	if (fontRef == 0 || fontRef == kATSUInvalidFontID) {
@@ -1875,7 +1893,9 @@ static ATSFontRef findFont (CFStringRef name) {
 	}
 	return fontRef;		
 }
-bool _GraphicsMac_tryToInitializeAtsuiFonts (void) {
+#endif
+bool _GraphicsMac_tryToInitializeFonts (void) {
+#if useCarbon
 	if (theTimesAtsuiFont != 0) return true;   // once
 	theTimesAtsuiFont = findFont (CFSTR ("Times"));
 	if (! theTimesAtsuiFont) theTimesAtsuiFont = findFont (CFSTR ("Times New Roman"));
@@ -1912,25 +1932,46 @@ bool _GraphicsMac_tryToInitializeAtsuiFonts (void) {
 	Melder_assert (theTimesAtsuiFont != 0);
 	ATSUFindFontFromName (NULL, 0, 0, 0, 0, kFontArabicLanguage, & theArabicAtsuiFont);
 	return true;
+#else
+    static bool inited = false;
+    if (inited) return true;
+    NSArray *fontNames = [[NSFontManager sharedFontManager] availableFontFamilies];
+    hasTimes = [fontNames containsObject: @"Times"];
+    if (! hasTimes) hasTimes = [fontNames containsObject: @"Times New Roman"];
+    hasHelvetica = [fontNames containsObject: @"Helvetica"];
+    if (! hasHelvetica) hasHelvetica = [fontNames containsObject: @"Arial"];
+    hasCourier = [fontNames containsObject: @"Courier"];
+    if (! hasCourier) hasCourier = [fontNames containsObject: @"Courier New"];
+    hasSymbol = [fontNames containsObject: @"Symbol"];
+    hasPalatino = [fontNames containsObject: @"Palatino"];
+    if (! hasPalatino) hasPalatino = [fontNames containsObject: @"Book Antiqua"];
+    hasDoulos = [fontNames containsObject: @"Doulos SIL"];
+    hasCharis = [fontNames containsObject: @"Charis SIL"];
+	hasIpaSerif = hasDoulos || hasCharis;
+    inited = true;
+    return true;
+#endif
 }
 #endif
 
 void _GraphicsScreen_text_init (GraphicsScreen me) {   /* BUG: should be done as late as possible. */
 	#if gtk
 	#elif cocoa
+        (void) me;
+        Melder_assert (_GraphicsMac_tryToInitializeFonts ());   // should have been handled when setting my useQuartz to true
 	#elif win
 		int font, size, style;
 		if (my printer || my metafile)
 			for (font = kGraphics_font_MIN; font <= kGraphics_font_DINGBATS; font ++)
 				for (size = 0; size <= 4; size ++)
 					for (style = 0; style <= Graphics_BOLD_ITALIC; style ++)
-						if (printerFonts [font] [size] [style]) {
-							DeleteObject (printerFonts [font] [size] [style]);
-							printerFonts [font] [size] [style] = 0;
+						if (fonts [my resolutionNumber] [font] [size] [style]) {
+							//DeleteObject (fonts [my resolutionNumber] [font] [size] [style]);
+							//fonts [my resolutionNumber] [font] [size] [style] = 0;
 						}
 	#elif mac
 		if (theTimesAtsuiFont == 0) {
-			Melder_assert (_GraphicsMac_tryToInitializeAtsuiFonts ());   // should have been handled when setting my useQuartz to true
+			Melder_assert (_GraphicsMac_tryToInitializeFonts ());   // should have been handled when setting my useQuartz to true
 		}
 	#endif
 }

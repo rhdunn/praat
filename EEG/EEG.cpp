@@ -1,6 +1,6 @@
 /* EEG.cpp
  *
- * Copyright (C) 2011-2012 Paul Boersma
+ * Copyright (C) 2011-2012,2013,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -96,28 +96,29 @@ EEG EEG_readFromBdfFile (MelderFile file) {
 		autofile f = Melder_fopen (file, "rb");
 		char buffer [81];
 		fread (buffer, 1, 8, f); buffer [8] = '\0';
+		bool is24bit = buffer [0] == (char) 255;
 		fread (buffer, 1, 80, f); buffer [80] = '\0';
-		//Melder_casual ("Local subject identification: \"%s\"", buffer);
+		trace ("Local subject identification: \"%s\"", buffer);
 		fread (buffer, 1, 80, f); buffer [80] = '\0';
-		//Melder_casual ("Local recording identification: \"%s\"", buffer);
+		trace ("Local recording identification: \"%s\"", buffer);
 		fread (buffer, 1, 8, f); buffer [8] = '\0';
-		//Melder_casual ("Start date of recording: \"%s\"", buffer);
+		trace ("Start date of recording: \"%s\"", buffer);
 		fread (buffer, 1, 8, f); buffer [8] = '\0';
-		//Melder_casual ("Start time of recording: \"%s\"", buffer);
+		trace ("Start time of recording: \"%s\"", buffer);
 		fread (buffer, 1, 8, f); buffer [8] = '\0';
 		long numberOfBytesInHeaderRecord = atol (buffer);
-		//Melder_casual ("Number of bytes in header record: %ld", numberOfBytesInHeaderRecord);
+		trace ("Number of bytes in header record: %ld", numberOfBytesInHeaderRecord);
 		fread (buffer, 1, 44, f); buffer [44] = '\0';
-		//Melder_casual ("Version of data format: \"%s\"", buffer);
+		trace ("Version of data format: \"%s\"", buffer);
 		fread (buffer, 1, 8, f); buffer [8] = '\0';
 		long numberOfDataRecords = strtol (buffer, NULL, 10);
-		//Melder_casual ("Number of data records: %ld", numberOfDataRecords);
+		trace ("Number of data records: %ld", numberOfDataRecords);
 		fread (buffer, 1, 8, f); buffer [8] = '\0';
 		double durationOfDataRecord = atof (buffer);
-		//Melder_casual ("Duration of a data record: \"%f\"", durationOfDataRecord);
+		trace ("Duration of a data record: \"%f\"", durationOfDataRecord);
 		fread (buffer, 1, 4, f); buffer [4] = '\0';
 		long numberOfChannels = atol (buffer);
-		//Melder_casual ("Number of channels in data record: %ld", numberOfChannels);
+		trace ("Number of channels in data record: %ld", numberOfChannels);
 		if (numberOfBytesInHeaderRecord != (numberOfChannels + 1) * 256)
 			Melder_throw ("Number of bytes in header record (", numberOfBytesInHeaderRecord,
 				") doesn't match number of channels (", numberOfChannels, ").");
@@ -135,7 +136,9 @@ EEG EEG_readFromBdfFile (MelderFile file) {
 				}
 			}
 			channelNames [ichannel] = Melder_wcsdup (Melder_peekUtf8ToWcs (buffer));
+			trace ("Channel <<%ls>>", channelNames [ichannel]);
 		}
+		bool hasLetters = wcsequ (channelNames [numberOfChannels], L"EDF Annotations");
 		double samplingFrequency = NUMundefined;
 		for (long channel = 1; channel <= numberOfChannels; channel ++) {
 			fread (buffer, 1, 80, f); buffer [80] = '\0';   // transducer type
@@ -186,30 +189,112 @@ EEG EEG_readFromBdfFile (MelderFile file) {
 		autoEEG him = EEG_create (0, duration);
 		his d_numberOfChannels = numberOfChannels;
 		autoSound me = Sound_createSimple (numberOfChannels, duration, samplingFrequency);
+		Melder_assert (my nx == numberOfSamplesPerDataRecord * numberOfDataRecords);
+		autoNUMvector <unsigned char> dataBuffer (0L, 3 * numberOfSamplesPerDataRecord - 1);
 		for (long record = 1; record <= numberOfDataRecords; record ++) {
 			for (long channel = 1; channel <= numberOfChannels; channel ++) {
 				double factor = channel == numberOfChannels ? 1.0 : physicalMinimum [channel] / digitalMinimum [channel];
 				if (channel < numberOfChannels - his f_getNumberOfExtraSensors ()) factor /= 1000000.0;
-				for (long i = 1; i <= numberOfSamplesPerDataRecord; i ++) {
-					long sample = i + (record - 1) * numberOfSamplesPerDataRecord;
-					Melder_assert (sample <= my nx);
-					my z [channel] [sample] = bingeti3LE (f) * factor;
+				if (is24bit) {
+					fread (& dataBuffer [0], 3, numberOfSamplesPerDataRecord, f);
+					unsigned char *p = & dataBuffer [0];
+					for (long i = 1; i <= numberOfSamplesPerDataRecord; i ++) {
+						long sample = i + (record - 1) * numberOfSamplesPerDataRecord;
+						Melder_assert (sample <= my nx);
+						uint8_t lowByte = *p ++, midByte = *p ++, highByte = *p ++;
+						uint32_t externalValue = ((uint32_t) highByte << 16) | ((uint32_t) midByte << 8) | (uint32_t) lowByte;
+						if ((highByte & 128) != 0)   // is the 24-bit sign bit on?
+							externalValue |= 0xFF000000;   // extend negative sign to 32 bits
+						my z [channel] [sample] = (int32_t) externalValue * factor;
+					}
+				} else {
+					fread (& dataBuffer [0], 2, numberOfSamplesPerDataRecord, f);
+					unsigned char *p = & dataBuffer [0];
+					for (long i = 1; i <= numberOfSamplesPerDataRecord; i ++) {
+						long sample = i + (record - 1) * numberOfSamplesPerDataRecord;
+						Melder_assert (sample <= my nx);
+						uint8_t lowByte = *p ++, highByte = *p ++;
+						uint16_t externalValue = ((uint16_t) highByte << 8) | (uint16_t) lowByte;
+						my z [channel] [sample] = (int16_t) externalValue * factor;
+					}
 				}
 			}
 		}
-		autoTextGrid thee = TextGrid_create (0, duration, L"S1 S2 S3 S4 S5 S6 S7 S8", L"");
-		for (int bit = 1; bit <= 8; bit ++) {
-			unsigned long bitValue = 1 << (bit - 1);
-			IntervalTier tier = (IntervalTier) thy tiers -> item [bit];
+		int numberOfStatusBits = 8;
+		for (long i = 1; i <= my nx; i ++) {
+			unsigned long value = (long) my z [numberOfChannels] [i];
+			if (value & 0x0000FF00) {
+				numberOfStatusBits = 16;
+			}
+		}
+		autoTextGrid thee;
+		if (hasLetters) {
+			thee.reset (TextGrid_create (0, duration, L"Mark Trigger", L"Mark Trigger"));
+			autoMelderString letters;
+			double time = NUMundefined;
 			for (long i = 1; i <= my nx; i ++) {
-				unsigned long previousValue = i == 1 ? 0 : (long) my z [numberOfChannels] [i - 1];
-				unsigned long thisValue = (long) my z [numberOfChannels] [i];
-				if ((thisValue & bitValue) != (previousValue & bitValue)) {
-					double time = i == 1 ? 0.0 : my x1 + (i - 1.5) * my dx;
-					if (time != 0.0)
-						TextGrid_insertBoundary (thee.peek(), bit, time);
-					if ((thisValue & bitValue) != 0)
-						TextGrid_setIntervalText (thee.peek(), bit, tier -> intervals -> size, L"1");
+				unsigned long value = (long) my z [numberOfChannels] [i];
+				for (int byte = 1; byte <= numberOfStatusBits / 8; byte ++) {
+					unsigned long mask = byte == 1 ? 0x000000ff : 0x0000ff00;
+					wchar_t kar = byte == 1 ? (value & mask) : (value & mask) >> 8;
+					if (kar != '\0' && kar != 20) {
+						MelderString_appendCharacter (& letters, kar);
+					} else if (letters. string [0] != '\0') {
+						if (letters. string [0] == '+') {
+							if (NUMdefined (time)) {
+								try {
+									TextGrid_insertPoint (thee.peek(), 1, time, L"");
+								} catch (MelderError) {
+									Melder_throw ("Did not insert empty mark (", letters. string, ") on Mark tier.");
+								}
+								time = NUMundefined;   // defensive
+							}
+							time = Melder_atof (& letters. string [1]);
+							MelderString_empty (& letters);
+						} else {
+							if (! NUMdefined (time)) {
+								Melder_throw ("Undefined time for label at sample ", i, ".");
+							}
+							try {
+								if (Melder_wcsnequ (letters. string, L"Trigger-", 8)) {
+									try {
+										TextGrid_insertPoint (thee.peek(), 2, time, & letters. string [8]);
+									} catch (MelderError) {
+										Melder_clearError ();
+										trace ("Duplicate trigger at %f seconds: %ls", time, & letters. string [8]);
+									}
+								} else {
+									TextGrid_insertPoint (thee.peek(), 1, time, & letters. string [0]);
+								}
+							} catch (MelderError) {
+								Melder_throw ("Did not insert mark (", letters. string, ") on Trigger tier.");
+							}
+							time = NUMundefined;   // crucial
+							MelderString_empty (& letters);
+						}
+					}
+				}
+			}
+			if (NUMdefined (time)) {
+				TextGrid_insertPoint (thee.peek(), 1, time, L"");
+				time = NUMundefined;   // defensive
+			}
+		} else {
+			thee.reset (TextGrid_create (0, duration,
+				numberOfStatusBits == 8 ? L"S1 S2 S3 S4 S5 S6 S7 S8" : L"S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16", L""));
+			for (int bit = 1; bit <= numberOfStatusBits; bit ++) {
+				unsigned long bitValue = 1 << (bit - 1);
+				IntervalTier tier = (IntervalTier) thy tiers -> item [bit];
+				for (long i = 1; i <= my nx; i ++) {
+					unsigned long previousValue = i == 1 ? 0 : (long) my z [numberOfChannels] [i - 1];
+					unsigned long thisValue = (long) my z [numberOfChannels] [i];
+					if ((thisValue & bitValue) != (previousValue & bitValue)) {
+						double time = i == 1 ? 0.0 : my x1 + (i - 1.5) * my dx;
+						if (time != 0.0)
+							TextGrid_insertBoundary (thee.peek(), bit, time);
+						if ((thisValue & bitValue) != 0)
+							TextGrid_setIntervalText (thee.peek(), bit, tier -> intervals -> size, L"1");
+					}
 				}
 			}
 		}
@@ -539,6 +624,25 @@ void structEEG :: f_replaceTextGrid (TextGrid textgrid) {
 	} catch (MelderError) {
 		Melder_throw (this, ": TextGrid not replaced with ", textgrid, ".");
 	}
+}
+
+MixingMatrix structEEG :: f_to_MixingMatrix (long maxNumberOfIterations, double tol, int method) {
+	try {
+		autoCrossCorrelationTables tables = Sound_to_CrossCorrelationTables (d_sound, 0.0, 0.0, 0.002, 1);
+		autoMixingMatrix thee = MixingMatrix_create (d_sound -> ny, d_sound -> ny);
+		for (long ichan = 1; ichan <= d_numberOfChannels; ichan ++) {
+			TableOfReal_setRowLabel (thee.peek(), ichan, d_channelNames [ichan]);
+			TableOfReal_setColumnLabel (thee.peek(), ichan, Melder_wcscat (L"ic", Melder_integer (ichan)));
+		}
+		MixingMatrix_and_CrossCorrelationTables_improveUnmixing (thee.peek(), tables.peek(), maxNumberOfIterations, tol, method);
+		return thee.transfer();
+	} catch (MelderError) {
+		Melder_throw (this, ": no MixingMatrix created.");
+	}
+}
+
+void MixingMatrix_draw (MixingMatrix me) {
+	
 }
 
 /* End of file EEG.cpp */

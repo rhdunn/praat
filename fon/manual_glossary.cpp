@@ -1,6 +1,6 @@
 /* manual_glossary.cpp
  *
- * Copyright (C) 1992-2008 Paul Boersma
+ * Copyright (C) 1992-2008,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,19 +61,19 @@ INTRO (L"- the interpretation of values in tiers before the first point or after
 ENTRY (L"Example")
 NORMAL (L"The following is a @PitchTier with three points:")
 SCRIPT (4, 3, L""
-	"Create PitchTier... tier 0 0.5\n"
-	"Add point... 0.10 170\n"
-	"Add point... 0.20 180\n"
-	"Add point... 0.45 110\n"
-	"Draw... 0 0 50 250 yes\n"
+	"Create PitchTier: \"tier\", 0, 0.5\n"
+	"Add point: 0.10, 170\n"
+	"Add point: 0.20, 180\n"
+	"Add point: 0.45, 110\n"
+	"Draw: 0, 0, 50, 250, \"yes\"\n"
 	"Remove\n"
-	"One mark left... 100 yes yes yes\n"
-	"One mark left... 150 yes yes yes\n"
-	"One mark left... 200 yes yes yes\n"
-	"One mark bottom... 0.1 yes yes yes\n"
-	"One mark bottom... 0.2 yes yes yes\n"
-	"One mark bottom... 0.3 yes yes yes\n"
-	"One mark bottom... 0.4 yes yes yes\n"
+	"One mark left: 100, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark left: 150, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark left: 200, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark bottom: 0.1, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark bottom: 0.2, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark bottom: 0.3, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark bottom: 0.4, \"yes\", \"yes\", \"yes\", \"\"\n"
 )
 NORMAL (L"Between 0.10 and 0.20 seconds, the pitch rises from 170 to 180 Hz, "
 	"and between 0.20 and 0.45 seconds it falls from 180 to 110 Hz. "
@@ -147,19 +147,19 @@ INTRO (L"- the interpretation of values in tiers between the first point and the
 ENTRY (L"Example")
 NORMAL (L"The following is a @PitchTier with three points:")
 SCRIPT (4, 3, L""
-	"Create PitchTier... tier 0 0.5\n"
-	"Add point... 0.10 170\n"
-	"Add point... 0.20 180\n"
-	"Add point... 0.45 110\n"
-	"Draw... 0 0 50 250 yes\n"
+	"Create PitchTier: \"tier\", 0, 0.5\n"
+	"Add point: 0.10, 170\n"
+	"Add point: 0.20, 180\n"
+	"Add point: 0.45, 110\n"
+	"Draw: 0, 0, 50, 250, \"yes\"\n"
 	"Remove\n"
-	"One mark left... 100 yes yes yes\n"
-	"One mark left... 150 yes yes yes\n"
-	"One mark left... 200 yes yes yes\n"
-	"One mark bottom... 0.1 yes yes yes\n"
-	"One mark bottom... 0.2 yes yes yes\n"
-	"One mark bottom... 0.3 yes yes yes\n"
-	"One mark bottom... 0.4 yes yes yes\n"
+	"One mark left: 100, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark left: 150, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark left: 200, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark bottom: 0.1, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark bottom: 0.2, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark bottom: 0.3, \"yes\", \"yes\", \"yes\", \"\"\n"
+	"One mark bottom: 0.4, \"yes\", \"yes\", \"yes\", \"\"\n"
 )
 NORMAL (L"Between 0.10 and 0.20 seconds, the pitch rises linearly from 170 to 180 Hz, "
 	"and between 0.20 and 0.45 seconds it falls linearly from 180 to 110 Hz. "
@@ -452,7 +452,7 @@ NORMAL (L"On a clock, time runs around in circles. In Praat's editor windows, ti
 	"To see another part, you %scroll backward or forward.")
 MAN_END
 
-MAN_BEGIN (L"time domain", L"ppgb", 20110128)
+MAN_BEGIN (L"time domain", L"ppgb", 20140421)
 INTRO (L"This manual page assumes that you have read the @Intro.")
 NORMAL (L"Many objects in Praat are %%functions of time%. Examples are: "
 	"@Sound, @Pitch, @Spectrogram, @Formant, @Intensity, @TextGrid, "
@@ -484,12 +484,12 @@ LIST_ITEM (L"##Get end time")
 LIST_ITEM (L"##Get total duration")
 NORMAL (L"If you choose one of these commands, the Info window will tell you the result, "
 	"expressed in seconds. These commands are most useful in a Praat script. Example:")
-CODE (L"select Pitch hello")
+CODE (L"selectObject: \"Pitch hello\"")
 CODE (L"startTime = Get start time")
 CODE (L"endTime = Get end time")
 CODE (L"centreTime = (startTime + endTime) / 2")
-CODE (L"echo This Pitch runs from 'startTime' to 'endTime' seconds,")
-CODE (L"printline and the centre of its time domain is at 'centreTime' seconds.")
+CODE (L"writeInfoLine: \"This Pitch runs from \", startTime, \" to \", endTime, \" seconds,\"")
+CODE (L"appendInfoLine: \"and the centre of its time domain is at \", centreTime, \" seconds.\"")
 ENTRY (L"Details for hackers")
 NORMAL (L"If you select an object that is a function of time and you click @Inspect, "
 	"you can see how the time domain information is stored in the object: "

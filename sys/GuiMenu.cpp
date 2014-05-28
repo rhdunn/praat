@@ -53,9 +53,96 @@ void structGuiMenu :: v_destroy () {
 	static NSMenu *theMenuBar;
 	static int theNumberOfMenuBarItems = 0;
 	static NSMenuItem *theMenuBarItems [30];
-	@interface GuiCocoaApplicationDelegate : NSObject { }
-	@end
-	@implementation GuiCocoaApplicationDelegate
+	@implementation GuiCocoaApplication
+	/*
+	 * Override sendEvent() to capture navigation keys (Tab and Shift-Tab) as menu shortcuts
+	 * and to capture text-editing keys (Option-Backspace) as menu shortcuts.
+	 */
+	- (void) sendEvent: (NSEvent *) nsEvent {
+		if ([nsEvent type] == NSKeyDown) {
+			NSString *characters = [nsEvent characters];
+			if ([characters length] == 0) {   // only modifiers?
+				[super sendEvent: nsEvent];   // the default action
+				return;
+			}
+			unichar character = [characters characterAtIndex: 0];   // there is now at least one character, so no range exception can be raised
+			if (Melder_getTracing ()) {
+				for (NSUInteger i = 0; i < [characters length]; i ++) {
+					unichar kar = [characters characterAtIndex: 0];
+					trace ("character [%d]: %d", (int) i, (int) kar);
+				}
+				trace ("modifiers: %d", (int) [nsEvent modifierFlags]);
+			}
+			if (character == NSTabCharacter) {
+				NSWindow *cocoaKeyWindow = [NSApp keyWindow];
+				if ([cocoaKeyWindow class] == [GuiCocoaWindow class]) {
+					GuiWindow window = (GuiWindow) [(GuiCocoaWindow *) cocoaKeyWindow userData];
+					if (window -> d_tabCallback) {
+						try {
+							struct structGuiMenuItemEvent event = { NULL, 0 };
+							window -> d_tabCallback (window -> d_tabBoss, & event);
+						} catch (MelderError) {
+							Melder_flushError ("Tab key not completely handled.");
+						}
+						return;
+					}
+				}
+			} else if (character == NSBackTabCharacter) {
+				/*
+				 * One can get here by pressing Shift-Tab.
+				 *
+				 * But that is not the only way to get here:
+				 * NSBackTabCharacter equals 25, which may be the reason why
+				 * one can get here as well by pressing Ctrl-Y (Y is the 25th letter in the alphabet).
+				 */
+				NSWindow *cocoaKeyWindow = [NSApp keyWindow];
+				if ([cocoaKeyWindow class] == [GuiCocoaWindow class]) {
+					GuiWindow window = (GuiWindow) [(GuiCocoaWindow *) cocoaKeyWindow userData];
+					if ([nsEvent modifierFlags] & NSShiftKeyMask) {
+						/*
+						 * Make sure we got here by Shift-Tab rather than Ctrl-Y.
+						 */
+						if (window -> d_shiftTabCallback) {
+							try {
+								struct structGuiMenuItemEvent event = { NULL, 0 };
+								window -> d_shiftTabCallback (window -> d_shiftTabBoss, & event);
+							} catch (MelderError) {
+								Melder_flushError ("Tab key not completely handled.");
+							}
+							return;
+						}
+					} else {
+						/*
+						 * We probably got in this branch by pressing Ctrl-Y.
+						 * People sometimes press that because it means "yank" (= Paste) in Emacs,
+						 * and indeed sending this key combination on, as we do here,
+						 * implements (together with Ctrl-K = "kil" = Cut)
+						 * a special cut & paste operation in text fields.
+						 */
+						// do nothing, i.e. send on
+					}
+				}
+			} else if (character == NSDeleteCharacter) {
+				NSWindow *cocoaKeyWindow = [NSApp keyWindow];
+				if ([cocoaKeyWindow class] == [GuiCocoaWindow class]) {
+					GuiWindow window = (GuiWindow) [(GuiCocoaWindow *) cocoaKeyWindow userData];
+					if (([nsEvent modifierFlags] & NSAlternateKeyMask) && window -> d_optionBackspaceCallback) {
+						try {
+							struct structGuiMenuItemEvent event = { NULL, 0 };
+							window -> d_optionBackspaceCallback (window -> d_optionBackspaceBoss, & event);
+						} catch (MelderError) {
+							Melder_flushError ("Option-Backspace not completely handled.");
+						}
+						return;
+					}
+				}
+			}
+		}
+		[super sendEvent: nsEvent];   // the default action: send on
+	}
+	/*
+	 * The delegate methods.
+	 */
 	- (void) applicationWillFinishLaunching: (NSNotification *) note
 	{
 		(void) note;
@@ -66,7 +153,8 @@ void structGuiMenu :: v_destroy () {
 	}
 	- (void) application: (NSApplication *) sender openFiles: (NSArray *) fileNames
 	{
-		for (int i = 1; i <= [fileNames count]; i ++) {
+		(void) sender;
+		for (NSUInteger i = 1; i <= [fileNames count]; i ++) {
 			NSString *cocoaFileName = [fileNames objectAtIndex: i - 1];
 			structMelderFile file = { 0 };
 			Melder_8bitFileRepresentationToWcs_inline ([cocoaFileName UTF8String], file. path);
@@ -75,7 +163,6 @@ void structGuiMenu :: v_destroy () {
 		}
 	}
 	@end
-	static id theGuiCocoaApplicationDelegate;
 #elif motif
 	static void _guiMotifMenu_destroyCallback (GuiObject widget, XtPointer void_me, XtPointer call) {
 		(void) void_me;
@@ -94,6 +181,7 @@ void structGuiMenu :: v_hide () {
 	#if gtk
 		gtk_widget_hide (GTK_WIDGET (d_gtkMenuTitle));
 	#elif cocoa
+		[d_cocoaMenuButton setHidden: YES];
 	#elif motif
 		XtUnmanageChild (d_xmMenuTitle);
 	#endif
@@ -103,6 +191,7 @@ void structGuiMenu :: v_setSensitive (bool sensitive) {
 	#if gtk
 		gtk_widget_set_sensitive (GTK_WIDGET (d_gtkMenuTitle), sensitive);
 	#elif cocoa
+		[d_cocoaMenuButton setEnabled: sensitive];
 	#elif motif
 		XtSetSensitive (d_xmMenuTitle, sensitive);
 	#endif
@@ -113,6 +202,7 @@ void structGuiMenu :: v_show () {
 	#if gtk
 		gtk_widget_show (GTK_WIDGET (d_gtkMenuTitle));
 	#elif cocoa
+		[d_cocoaMenuButton setHidden: NO];
 	#elif motif
 		XtManageChild (d_xmMenuTitle);
 	#endif
@@ -201,11 +291,10 @@ GuiMenu GuiMenu_createInWindow (GuiWindow window, const wchar_t *title, long fla
 		gtk_menu_item_set_submenu (GTK_MENU_ITEM (my d_gtkMenuTitle), GTK_WIDGET (my d_widget));
 		_GuiObject_setUserData (my d_widget, me);
 	#elif cocoa
-		if (! theGuiCocoaApplicationDelegate) {
+		if (! theMenuBar) {
 			int numberOfMenus = [[[NSApp mainMenu] itemArray] count];
 			trace ("Number of menus: %d.", numberOfMenus);
-			theGuiCocoaApplicationDelegate = [[GuiCocoaApplicationDelegate alloc] init];
-			[NSApp   setDelegate: theGuiCocoaApplicationDelegate];
+			[NSApp   setDelegate: NSApp];   // the app is its own delegate
 			theMenuBar = [[NSMenu alloc] init];
 			[NSApp   setMainMenu: theMenuBar];
 		}
@@ -252,6 +341,8 @@ GuiMenu GuiMenu_createInWindow (GuiWindow window, const wchar_t *title, long fla
 			[my d_cocoaMenuButton   setImagePosition: NSImageAbove];   // this centers the text
 			//[nsPopupButton setBordered: NO];
             [my d_cocoaMenuButton   setAutoresizingMask: resizingMask]; // stick to top
+			if (flags & GuiMenu_INSENSITIVE)
+				[my d_cocoaMenuButton setEnabled: NO];
 
 			[[my d_cocoaMenuButton cell]   setArrowPosition: NSPopUpNoArrow /*NSPopUpArrowAtBottom*/];
 			[[my d_cocoaMenuButton cell]   setPreferredEdge: NSMaxYEdge];
@@ -346,6 +437,7 @@ GuiMenu GuiMenu_createInMenu (GuiMenu supermenu, const wchar_t *title, long flag
 		Melder_assert ([my d_cocoaMenu retainCount] == 2);
 		[my d_cocoaMenu release];   // ... so we can release the menu already, even before returning it
 		my d_widget = my d_cocoaMenu;
+		my d_menuItem -> d_widget = (GuiObject) item;
 	#elif motif
 		my d_menuItem -> d_widget = XmCreateCascadeButton (supermenu -> d_widget, Melder_peekWcsToUtf8 (title), NULL, 0);
 		my d_widget = XmCreatePulldownMenu (supermenu -> d_widget, Melder_peekWcsToUtf8 (title), NULL, 0);
@@ -430,7 +522,7 @@ GuiMenu GuiMenu_createInForm (GuiForm form, int left, int right, int top, int bo
 		[my d_cocoaMenuButton   setImagePosition: NSImageAbove];   // this centers the text
 		[[my d_cocoaMenuButton cell]   setArrowPosition: NSPopUpNoArrow /*NSPopUpArrowAtBottom*/];
 
-        NSString *menuTitle = (NSString*)Melder_peekWcsToCfstring (title);
+        NSString *menuTitle = (NSString*) Melder_peekWcsToCfstring (title);
         my d_widget = my d_cocoaMenu = [[GuiCocoaMenu alloc] initWithTitle:menuTitle];
 		[my d_cocoaMenu   setAutoenablesItems: NO];
 		/*

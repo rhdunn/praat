@@ -1,6 +1,6 @@
 /* GuiText.cpp
  *
- * Copyright (C) 1993-2011,2012,2013 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1993-2011,2012,2013,2014 Paul Boersma, 2013 Tom Naughton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -911,6 +911,7 @@ void _GuiText_exit (void) {
 		(void) aTextView;
 		(void) affectedCharRange;
 		(void) replacementString;
+		trace ("changing text to: %s", [replacementString UTF8String]);
 		GuiText me = d_userData;
 		if (me && my d_changeCallback) {
 			struct structGuiTextEvent event = { me };
@@ -1364,6 +1365,9 @@ void structGuiText :: f_remove () {
 			gtk_text_buffer_delete_selection (buffer, TRUE, gtk_text_view_get_editable (GTK_TEXT_VIEW (d_widget)));
 		}
 	#elif cocoa
+		if (d_cocoaTextView) {
+			[d_cocoaTextView delete: nil];
+		}
 	#elif win
 		if (! d_editable || ! NativeText_getSelectionRange (d_widget, NULL, NULL)) return;
 		SendMessage (d_widget -> window, WM_CLEAR, 0, 0);   /* This will send the EN_CHANGE message, hence no need to call the valueChangedCallbacks. */
@@ -1492,6 +1496,8 @@ void structGuiText :: f_scrollToSelection () {
 		gtk_text_view_scroll_to_iter (GTK_TEXT_VIEW (d_widget), & start, 0.1, false, 0.0, 0.0); 
 		//gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (d_widget), mark, 0.1, false, 0.0, 0.0);
 	#elif cocoa
+		if (d_cocoaTextView)
+			[d_cocoaTextView scrollRangeToVisible: [d_cocoaTextView selectedRange]];
 	#elif win
 		Edit_ScrollCaret (d_widget -> window);
 	#elif mac
@@ -1512,7 +1518,12 @@ void structGuiText :: f_setFontSize (int size) {
 	#if gtk
 		GtkRcStyle *modStyle = gtk_widget_get_modifier_style (GTK_WIDGET (d_widget));
 		trace ("before initializing Pango: locale is %s", setlocale (LC_ALL, NULL));
-		PangoFontDescription *fontDesc = modStyle -> font_desc != NULL ? modStyle->font_desc : pango_font_description_copy (GTK_WIDGET (d_widget) -> style -> font_desc);
+		PangoFontDescription *fontDesc = modStyle -> font_desc != NULL ? modStyle->font_desc :
+			#if ALLOW_GDK_DRAWING
+				pango_font_description_copy (GTK_WIDGET (d_widget) -> style -> font_desc);
+			#else
+				NULL;
+			#endif
 		trace ("during initializing Pango: locale is %s", setlocale (LC_ALL, NULL));
 		pango_font_description_set_absolute_size (fontDesc, size * PANGO_SCALE);
 		trace ("after initializing Pango: locale is %s", setlocale (LC_ALL, NULL));
@@ -1662,6 +1673,7 @@ void structGuiText :: f_setString (const wchar_t *text) {
 			[d_cocoaTextView shouldChangeTextInRange: nsRange replacementString: nsString];   // to make this action undoable
 			//[[d_cocoaTextView textStorage] replaceCharactersInRange: nsRange withString: nsString];
 			[d_cocoaTextView setString: nsString];
+			[d_cocoaTextView scrollRangeToVisible: NSMakeRange ([[d_cocoaTextView textStorage] length], 0)];   // to the end
 			//[[d_cocoaTextView window] setViewsNeedDisplay: YES];
 			//[[d_cocoaTextView window] display];
 		} else {

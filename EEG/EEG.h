@@ -2,7 +2,7 @@
 #define _EEG_h_
 /* EEG.h
  *
- * Copyright (C) 2011-2012 Paul Boersma
+ * Copyright (C) 2011-2012,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 #include "Sound.h"
 #include "TextGrid.h"
+#include "../dwtools/ICA.h"
 
 #include "EEG_def.h"
 oo_CLASS_CREATE (EEG, Function);

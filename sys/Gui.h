@@ -2,7 +2,7 @@
 #define _Gui_h_
 /* Gui.h
  *
- * Copyright (C) 1993-2011,2012,2013 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1993-2011,2012,2013,2014 Paul Boersma, 2013 Tom Naughton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,11 @@
 /*
  * Determine the widget set.
  */
-#if defined (UNIX)
+#if defined (NO_GRAPHICS)
+	#define gtk 0
+	#define motif 0
+	#define cocoa 0
+#elif defined (UNIX)
 	#define gtk 1
 	#define motif 0
 	#define cocoa 0
@@ -105,6 +109,7 @@
 		- (void) setUserData: (GuiThing) userData;
 	@end
 	typedef NSObject <GuiCocoaAny> *GuiObject;
+	@interface GuiCocoaApplication : NSApplication @end
 	@interface GuiCocoaButton : NSButton <GuiCocoaAny> @end
 	@interface GuiCocoaCheckButton : NSButton <GuiCocoaAny> @end
 	@interface GuiCocoaDrawingArea : NSView <GuiCocoaAny> @end
@@ -119,7 +124,11 @@
 	@interface GuiCocoaOptionMenu : NSPopUpButton <GuiCocoaAny> @end
 	@interface GuiCocoaProgressBar : NSProgressIndicator <GuiCocoaAny> @end
 	@interface GuiCocoaRadioButton : NSButton <GuiCocoaAny> @end
-	@interface GuiCocoaScrollBar : NSScroller <GuiCocoaAny> @end
+	@interface GuiCocoaScale : NSProgressIndicator <GuiCocoaAny> @end
+	@interface GuiCocoaScrollBar : NSScroller <GuiCocoaAny>
+		- (void) scrollBy: (double) step;
+		- (void) magnifyBy: (double) step;
+	@end
 	@interface GuiCocoaScrolledWindow : NSScrollView <GuiCocoaAny> @end
 	@interface GuiCocoaTextField : NSTextField <GuiCocoaAny> @end
 	@interface GuiCocoaTextView : NSTextView <GuiCocoaAny, NSTextViewDelegate> @end
@@ -298,6 +307,8 @@
 		int motif_win_mouseStillDown (void);
 		void motif_win_setUserMessageCallback (int (*userMessageCallback) (void));
 	#endif
+#else
+	typedef void *GuiObject;
 #endif
 
 int Gui_getResolution (GuiObject widget);
@@ -771,6 +782,9 @@ void GuiRadioGroup_end ();
 Thing_declare (GuiScale);
 
 Thing_define (GuiScale, GuiControl) { public:
+	#if cocoa
+		GuiCocoaScale *d_cocoaScale;
+	#endif
 	/*
 	 * Messages:
 	 */
@@ -798,6 +812,7 @@ Thing_define (GuiScrollBar, GuiControl) { public:
 	 * Messages:
 	 */
 	int f_getValue ();
+	int f_getSliderSize ();
 	void f_set (double minimum, double maximum, double value, double sliderSize, double increment, double pageIncrement);
 };
 
@@ -899,6 +914,12 @@ Thing_define (GuiWindow, GuiShell) { public:
 		GtkMenuBar *d_gtkMenuBar;
 	#elif cocoa
 		int d_menuBarWidth;
+		void (*d_tabCallback) (void *boss, GuiMenuItemEvent event);
+		void *d_tabBoss;
+		void (*d_shiftTabCallback) (void *boss, GuiMenuItemEvent event);
+		void *d_shiftTabBoss;
+		void (*d_optionBackspaceCallback) (void *boss, GuiMenuItemEvent event);
+		void *d_optionBackspaceBoss;
 	#elif motif
 		GuiObject d_xmMenuBar;
 	#endif
@@ -923,7 +944,7 @@ Thing_define (GuiWindow, GuiShell) { public:
 
 /* GuiWindow creation flags: */
 #define GuiWindow_FULLSCREEN  1
-GuiWindow GuiWindow_create (int x, int y, int width, int height,
+GuiWindow GuiWindow_create (int x, int y, int width, int height, int minimumWidth, int minimumHeight,
 	const wchar_t *title, void (*goAwayCallback) (void *goAwayBoss), void *goAwayBoss, unsigned long flags);
 	// returns a Form widget that has a new Shell parent.
 

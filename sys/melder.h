@@ -2,7 +2,7 @@
 #define _melder_h_
 /* melder.h
  *
- * Copyright (C) 1992-2012,2013 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,6 +64,12 @@ bool Melder_wcsequ_firstCharacterCaseInsensitive (const wchar_t *string1, const 
 #ifndef NULL
 	#define NULL  ((void *) 0)
 #endif
+
+/*
+ * Operating system version control.
+ */
+#define ALLOW_GDK_DRAWING  1
+/* */
 
 typedef struct { double red, green, blue, transparency; } double_rgbt;
 
@@ -572,6 +578,7 @@ void Melder_throw (const MelderArg& arg1, const MelderArg& arg2, const MelderArg
 	const MelderArg& arg9, const MelderArg& arg10, const MelderArg& arg11, const MelderArg& arg12,
 	const MelderArg& arg13, const MelderArg& arg14, const MelderArg& arg15, const MelderArg& arg16,
 	const MelderArg& arg17 = L"", const MelderArg& arg18 = L"", const MelderArg& arg19 = L"", const MelderArg& arg20 = L"");
+void Melder_error_noLine (const MelderArg& arg1);
 void Melder_error_ (const MelderArg& arg1);
 void Melder_error_ (const MelderArg& arg1, const MelderArg& arg2);
 void Melder_error_ (const MelderArg& arg1, const MelderArg& arg2, const MelderArg& arg3);
@@ -916,8 +923,6 @@ double MelderAudio_getOutputSilenceBefore (void);
 #endif
 void MelderAudio_setOutputSilenceAfter (double silenceAfter);
 double MelderAudio_getOutputSilenceAfter (void);
-void MelderAudio_setOutputUsesBlocking (bool outputUsesBlocking);
-bool MelderAudio_getOutputUsesBlocking (void);
 void MelderAudio_setUseInternalSpeaker (bool useInternalSpeaker);   // for HP-UX and Sun
 bool MelderAudio_getUseInternalSpeaker (void);
 void MelderAudio_setOutputMaximumAsynchronicity (enum kMelder_asynchronicityLevel maximumAsynchronicity);
@@ -990,8 +995,6 @@ void Melder_readAudioToShort (FILE *f, int numberOfChannels, int encoding, short
  */
 void MelderFile_writeFloatToAudio (MelderFile file, int numberOfChannels, int encoding, double **buffer, long numberOfSamples, int warnIfClipped);
 void MelderFile_writeShortToAudio (MelderFile file, int numberOfChannels, int encoding, const short *buffer, long numberOfSamples);
-
-void Melder_audioTrigger (void);
 
 /********** QUANTITY **********/
 

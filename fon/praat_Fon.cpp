@@ -1,6 +1,6 @@
 /* praat_Fon.cpp
  *
- * Copyright (C) 1992-2012,2013 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1142,6 +1142,11 @@ END
 DIRECT (Formant_PointProcess_to_FormantTier)
 	Formant formant = NULL;
 	PointProcess point = NULL;
+	LOOP {
+		if (CLASS == classFormant) formant = (Formant) OBJECT;
+		if (CLASS == classPointProcess) point = (PointProcess) OBJECT;
+		if (formant && point) break;
+	}
 	autoFormantTier thee = Formant_PointProcess_to_FormantTier (formant, point);
 	praat_new (thee.transfer(), formant -> name, L"_", point -> name);
 END
@@ -6211,7 +6216,7 @@ FORM (Praat_test, L"Praat test", 0)
 	SENTENCE (L"arg4", L"")
 	OK
 DO
-	Praat_tests (GET_INTEGER (L"Test"), GET_STRING (L"arg1"),
+	Praat_tests (GET_ENUM (kPraatTests, L"Test"), GET_STRING (L"arg1"),
 		GET_STRING (L"arg2"), GET_STRING (L"arg3"), GET_STRING (L"arg4"));
 END
 
@@ -6262,8 +6267,12 @@ static Any chronologicalTextGridTextFileRecognizer (int nread, const char *heade
 static Any imageFileRecognizer (int nread, const char *header, MelderFile file) {
 	const wchar_t *fileName = MelderFile_name (file);
 	(void) header;
-	if (wcsstr (fileName, L".jpg") || wcsstr (fileName, L".JPG") || wcsstr (fileName, L".png") || wcsstr (fileName, L".PNG") ||
-	    wcsstr (fileName, L".tiff") || wcsstr (fileName, L".TIFF") || wcsstr (fileName, L".tif") || wcsstr (fileName, L".TIFF")) {
+	if (wcsstr (fileName, L".jpg") || wcsstr (fileName, L".JPG") ||
+	    wcsstr (fileName, L".jpeg") || wcsstr (fileName, L".JPEG") ||
+	    wcsstr (fileName, L".png") || wcsstr (fileName, L".PNG") ||
+	    wcsstr (fileName, L".tiff") || wcsstr (fileName, L".TIFF") ||
+		wcsstr (fileName, L".tif") || wcsstr (fileName, L".TIF"))
+	{
 		return Photo_readFromImageFile (file);
 	}
 	return NULL;
@@ -6465,6 +6474,8 @@ praat_addAction1 (classDistributions, 0, L"Learn", 0, 0, 0);
 	praat_addAction1 (classDurationTier, 0, L"Query -", 0, 0, 0);
 		praat_TimeTier_query_init (classDurationTier);
 		praat_addAction1 (classDurationTier, 1, L"-- get content --", 0, 1, 0);
+		praat_addAction1 (classDurationTier, 1, L"Get value at time...", 0, 1, DO_DurationTier_getValueAtTime);
+		praat_addAction1 (classDurationTier, 1, L"Get value at index...", 0, 1, DO_DurationTier_getValueAtIndex);
 		praat_addAction1 (classDurationTier, 1, L"Get target duration...", 0, 1, DO_DurationTier_getTargetDuration);
 	praat_addAction1 (classDurationTier, 0, L"Modify -", 0, 0, 0);
 		praat_TimeTier_modify_init (classDurationTier);
@@ -6764,10 +6775,12 @@ praat_addAction1 (classMatrix, 0, L"Analyse", 0, 0, 0);
 	praat_addAction1 (classPhoto, 1, L"Save as TIFF file...", 0, 0, DO_Photo_saveAsTIFF);
 	praat_addAction1 (classPhoto, 1, L"Save as GIF file...", 0, 0, DO_Photo_saveAsGIF);
 	praat_addAction1 (classPhoto, 1, L"Save as Windows bitmap file...", 0, 0, DO_Photo_saveAsWindowsBitmapFile);
-	praat_addAction1 (classPhoto, 1, L"Save as JPEG file...", 0, 0, DO_Photo_saveAsJPEG);
-	praat_addAction1 (classPhoto, 1, L"Save as JPEG-2000 file...", 0, 0, DO_Photo_saveAsJPEG2000);
-	praat_addAction1 (classPhoto, 1, L"Save as Apple icon file...", 0, 0, DO_Photo_saveAsAppleIconFile);
-	praat_addAction1 (classPhoto, 1, L"Save as Windows icon file...", 0, 0, DO_Photo_saveAsWindowsIconFile);
+	praat_addAction1 (classPhoto, 1, L"Save as lossy JPEG file...", 0, 0, DO_Photo_saveAsJPEG);
+	#if defined (macintosh)
+		praat_addAction1 (classPhoto, 1, L"Save as JPEG-2000 file...", 0, 0, DO_Photo_saveAsJPEG2000);
+		praat_addAction1 (classPhoto, 1, L"Save as Apple icon file...", 0, 0, DO_Photo_saveAsAppleIconFile);
+		praat_addAction1 (classPhoto, 1, L"Save as Windows icon file...", 0, 0, DO_Photo_saveAsWindowsIconFile);
+	#endif
 
 	praat_addAction1 (classPitch, 0, L"Pitch help", 0, 0, DO_Pitch_help);
 	praat_addAction1 (classPitch, 1, L"View & Edit", 0, praat_ATTRACTIVE, DO_Pitch_edit);

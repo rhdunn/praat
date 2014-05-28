@@ -1,6 +1,6 @@
 /* Formula.cpp
  *
- * Copyright (C) 1992-2011,2013 Paul Boersma
+ * Copyright (C) 1992-2011,2013,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,14 +29,19 @@
 #include "Interpreter.h"
 #include "Ui.h"
 #include "praatP.h"
+#include "praat_script.h"
 #include "UnicodeData.h"
+#include "longchar.h"
 #include "UiPause.h"
 #include "DemoEditor.h"
 
 static Interpreter theInterpreter, theLocalInterpreter;
 static Data theSource;
 static const wchar_t *theExpression;
-static int theExpressionType, theOptimize;
+static int theLevel = 1;
+#define MAXIMUM_NUMBER_OF_LEVELS  20
+static int theExpressionType [1 + MAXIMUM_NUMBER_OF_LEVELS];
+static int theOptimize;
 
 static struct Formula_NumericArray theZeroNumericArray = { 0, 0, NULL };
 
@@ -62,7 +67,7 @@ enum { GEENSYMBOOL_,
 /* The list ends with "MINUS_" itself. */
 
 	/* Haakjes-openen. */
-	IF_, THEN_, ELSE_, HAAKJEOPENEN_, RECHTEHAAKOPENEN_, KOMMA_, FROM_, TO_,
+	IF_, THEN_, ELSE_, HAAKJEOPENEN_, RECHTEHAAKOPENEN_, KOMMA_, COLON_, FROM_, TO_,
 	/* Operatoren met boolean resultaat. */
 	OR_, AND_, NOT_, EQ_, NE_, LE_, LT_, GE_, GT_,
 	/* Operatoren met reeel resultaat. */
@@ -119,6 +124,7 @@ enum { GEENSYMBOOL_,
 		DO_, DOSTR_,
 		WRITE_INFO_, WRITE_INFO_LINE_, APPEND_INFO_, APPEND_INFO_LINE_,
 		WRITE_FILE_, WRITE_FILE_LINE_, APPEND_FILE_, APPEND_FILE_LINE_,
+		EXIT_SCRIPT_, RUN_SCRIPT_,
 		MIN_, MAX_, IMIN_, IMAX_,
 		LEFTSTR_, RIGHTSTR_, MIDSTR_,
 		SELECTED_, SELECTEDSTR_, NUMBER_OF_SELECTED_, SELECT_OBJECT_, PLUS_OBJECT_, MINUS_OBJECT_, REMOVE_OBJECT_,
@@ -131,17 +137,17 @@ enum { GEENSYMBOOL_,
 		DEMO_CLICKED_, DEMO_X_, DEMO_Y_, DEMO_KEY_PRESSED_, DEMO_KEY_,
 		DEMO_SHIFT_KEY_PRESSED_, DEMO_COMMAND_KEY_PRESSED_, DEMO_OPTION_KEY_PRESSED_, DEMO_EXTRA_CONTROL_KEY_PRESSED_,
 		ZERO_NUMAR_, LINEAR_NUMAR_, RANDOM_UNIFORM_NUMAR_, RANDOM_INTEGER_NUMAR_, RANDOM_GAUSS_NUMAR_,
-		NUMBER_OF_ROWS_, NUMBER_OF_COLUMNS_,
-	#define HIGH_FUNCTION_N  NUMBER_OF_COLUMNS_
+		NUMBER_OF_ROWS_, NUMBER_OF_COLUMNS_, EDITOR_,
+	#define HIGH_FUNCTION_N  EDITOR_
 
 	/* String functions. */
 	#define LOW_STRING_FUNCTION  LOW_FUNCTION_STR1
 	#define LOW_FUNCTION_STR1  LENGTH_
 		LENGTH_, STRING_TO_NUMBER_, FILE_READABLE_, DELETE_FILE_, CREATE_DIRECTORY_, VARIABLE_EXISTS_,
-		READ_FILE_, READ_FILESTR_,
-	#define HIGH_FUNCTION_STR1  READ_FILESTR_
+		READ_FILE_, READ_FILESTR_, UNICODE_TO_BACKSLASH_TRIGRAPHS_, BACKSLASH_TRIGRAPHS_TO_UNICODE_, ENVIRONMENTSTR_,
+	#define HIGH_FUNCTION_STR1  ENVIRONMENTSTR_
 		DATESTR_, INFOSTR_,
-		ENVIRONMENTSTR_, INDEX_, RINDEX_,
+		INDEX_, RINDEX_,
 		STARTS_WITH_, ENDS_WITH_, REPLACESTR_, INDEX_REGEX_, RINDEX_REGEX_, REPLACE_REGEXSTR_,
 		EXTRACT_NUMBER_, EXTRACT_WORDSTR_, EXTRACT_LINESTR_,
 		FIXEDSTR_, PERCENTSTR_,
@@ -188,7 +194,7 @@ enum { GEENSYMBOOL_,
 /* they are used in error messages and in debugging (see Formula_print). */
 
 static const wchar_t *Formula_instructionNames [1 + hoogsteSymbool] = { L"",
-	L"if", L"then", L"else", L"(", L"[", L",", L"from", L"to",
+	L"if", L"then", L"else", L"(", L"[", L",", L":", L"from", L"to",
 	L"or", L"and", L"not", L"=", L"<>", L"<=", L"<", L">=", L">",
 	L"+", L"-", L"*", L"/", L"div", L"mod", L"^", L"_call", L"_neg",
 	L"endif", L"fi", L")", L"]",
@@ -215,6 +221,7 @@ static const wchar_t *Formula_instructionNames [1 + hoogsteSymbool] = { L"",
 	L"do", L"do$",
 	L"writeInfo", L"writeInfoLine", L"appendInfo", L"appendInfoLine",
 	L"writeFile", L"writeFileLine", L"appendFile", L"appendFileLine",
+	L"exitScript", L"runScript",
 	L"min", L"max", L"imin", L"imax",
 	L"left$", L"right$", L"mid$",
 	L"selected", L"selected$", L"numberOfSelected", L"selectObject", L"plusObject", L"minusObject", L"removeObject",
@@ -227,12 +234,12 @@ static const wchar_t *Formula_instructionNames [1 + hoogsteSymbool] = { L"",
 	L"demoClicked", L"demoX", L"demoY", L"demoKeyPressed", L"demoKey$",
 	L"demoShiftKeyPressed", L"demoCommandKeyPressed", L"demoOptionKeyPressed", L"demoExtraControlKeyPressed",
 	L"zero#", L"linear#", L"randomUniform#", L"randomInteger#", L"randomGauss#",
-	L"numberOfRows", L"numberOfColumns",
+	L"numberOfRows", L"numberOfColumns", L"editor",
 
 	L"length", L"number", L"fileReadable",	L"deleteFile", L"createDirectory", L"variableExists",
-	L"readFile", L"readFile$",
+	L"readFile", L"readFile$", L"unicodeToBackslashTrigraphs$", L"backslashTrigraphsToUnicode$", L"environment$",
 	L"date$", L"info$",
-	L"environment$", L"index", L"rindex",
+	L"index", L"rindex",
 	L"startsWith", L"endsWith", L"replace$", L"index_regex", L"rindex_regex", L"replace_regex$",
 	L"extractNumber", L"extractWord$", L"extractLine$",
 	L"fixed$", L"percent$",
@@ -333,7 +340,7 @@ static void Formula_lexan (void) {
 	do {
 		nieuwkar;
 		if (kar == ' ' || kar == '\t') {
-			;   /* Ignore spaces and tabs. */
+			;   // ignore spaces and tabs
 		} else if (kar == '\0') {
 			nieuwtok (END_)
 		} else if (kar >= '0' && kar <= '9') {
@@ -403,13 +410,13 @@ static void Formula_lexan (void) {
 				 */
 				} else if (tok >= LOW_FUNCTION && tok <= HIGH_FUNCTION) {
 					/*
-					 * Look ahead to find out whether the next token is a left parenthesis.
+					 * Look ahead to find out whether the next token is a left parenthesis (or a colon).
 					 */
 					int jkar;
 					jkar = ikar + 1;
 					while (theExpression [jkar] == ' ' || theExpression [jkar] == '\t') jkar ++;
-					if (theExpression [jkar] == '(') {
-						nieuwtok (tok)   /* This must be a function name. */
+					if (theExpression [jkar] == '(' || theExpression [jkar] == ':') {
+						nieuwtok (tok)   // this must be a function name
 					} else {
 						/*
 						 * This could be a variable with the same name as a function.
@@ -471,26 +478,38 @@ static void Formula_lexan (void) {
 						/*
 						 * This must be a variable, since there is no "current object" here.
 						 */
-						InterpreterVariable var = Interpreter_hasVariable (theInterpreter, token.string);
-						if (var == NULL) {
-							nieuwtok (VARIABLE_NAME_)
+						int jkar = ikar + 1;
+						while (theExpression [jkar] == ' ' || theExpression [jkar] == '\t') jkar ++;
+						if (theExpression [jkar] == '[' && ! isArray) {
+							if (isString) {
+								nieuwtok (INDEXED_STRING_VARIABLE_)
+							} else {
+								nieuwtok (INDEXED_NUMERIC_VARIABLE_)
+							}
 							lexan [itok]. content.string = Melder_wcsdup_f (token.string);
 							numberOfStringConstants ++;
 						} else {
-							if (isArray) {
-								if (isString) {
-									nieuwtok (STRING_ARRAY_VARIABLE_)
-								} else {
-									nieuwtok (NUMERIC_ARRAY_VARIABLE_)
-								}
+							InterpreterVariable var = Interpreter_hasVariable (theInterpreter, token.string);
+							if (var == NULL) {
+								nieuwtok (VARIABLE_NAME_)
+								lexan [itok]. content.string = Melder_wcsdup_f (token.string);
+								numberOfStringConstants ++;
 							} else {
-								if (isString) {
-									nieuwtok (STRING_VARIABLE_)
+								if (isArray) {
+									if (isString) {
+										nieuwtok (STRING_ARRAY_VARIABLE_)
+									} else {
+										nieuwtok (NUMERIC_ARRAY_VARIABLE_)
+									}
 								} else {
-									nieuwtok (NUMERIC_VARIABLE_)
+									if (isString) {
+										nieuwtok (STRING_VARIABLE_)
+									} else {
+										nieuwtok (NUMERIC_VARIABLE_)
+									}
 								}
+								lexan [itok]. content.variable = var;
 							}
-							lexan [itok]. content.variable = var;
 						}
 					}
 				} else {
@@ -502,7 +521,7 @@ static void Formula_lexan (void) {
 				 */
 				int jkar = ikar + 1;
 				while (theExpression [jkar] == ' ' || theExpression [jkar] == '\t') jkar ++;
-				if (theExpression [jkar] == '(') {
+				if (theExpression [jkar] == '(' || theExpression [jkar] == ':') {
 					Melder_throw (
 						"Unknown function " L_LEFT_GUILLEMET, token.string, L_RIGHT_GUILLEMET " in formula.");
 				} else if (theExpression [jkar] == '[' && ! isArray) {
@@ -646,6 +665,8 @@ static void Formula_lexan (void) {
 			}
 		} else if (kar == ',') {
 			nieuwtok (KOMMA_)
+		} else if (kar == ':') {
+			nieuwtok (COLON_)
 		} else if (kar == ';') {
 			nieuwtok (END_)
 		} else if (kar == '^') {
@@ -722,6 +743,20 @@ static void pas (int symbol) {
 			L", but found ", needQuotes2 ? L"\"" : NULL, symbolName2, needQuotes2 ? L"\"" : NULL);
 		formulefout (melding.string, lexan [ilexan]. position);
 	}
+}
+
+static bool pasArguments () {
+    int symbol = nieuwlees;
+    if (symbol == HAAKJEOPENEN_) return true;   // success: a function call like: myFunction (...)
+    if (symbol == COLON_) return false;   // success: a function call like: myFunction: ...
+    static MelderString melding = { 0 };
+    MelderString_empty (& melding);
+    const wchar_t *symbolName2 = Formula_instructionNames [lexan [ilexan]. symbol];
+    bool needQuotes2 = wcschr (symbolName2, ' ') == NULL;
+    MelderString_append (& melding,
+                         L"Expected \"(\" or \":\", but found ", needQuotes2 ? L"\"" : NULL, symbolName2, needQuotes2 ? L"\"" : NULL);
+    formulefout (melding.string, lexan [ilexan]. position);
+    return false;   // will never occur
 }
 
 #define nieuwontleed(s)  parse [++ iparse]. symbol = (s)
@@ -1169,38 +1204,38 @@ static void parsePowerFactor (void) {
 	}
 
 	if (symbol >= LOW_FUNCTION_1 && symbol <= HIGH_FUNCTION_1) {
-		pas (HAAKJEOPENEN_);
+		bool isParenthesis = pasArguments ();
 		parseExpression ();
-		pas (HAAKJESLUITEN_);
+		if (isParenthesis) pas (HAAKJESLUITEN_);
 		nieuwontleed (symbol);
 		return;
 	}
 
 	if (symbol >= LOW_FUNCTION_2 && symbol <= HIGH_FUNCTION_2) {
-		pas (HAAKJEOPENEN_);
+		bool isParenthesis = pasArguments ();
 		parseExpression ();
 		pas (KOMMA_);
 		parseExpression ();
-		pas (HAAKJESLUITEN_);
+		if (isParenthesis) pas (HAAKJESLUITEN_);
 		nieuwontleed (symbol);
 		return;
 	}
 
 	if (symbol >= LOW_FUNCTION_3 && symbol <= HIGH_FUNCTION_3) {
-		pas (HAAKJEOPENEN_);
+		bool isParenthesis = pasArguments ();
 		parseExpression ();
 		pas (KOMMA_);
 		parseExpression ();
 		pas (KOMMA_);
 		parseExpression ();
-		pas (HAAKJESLUITEN_);
+		if (isParenthesis) pas (HAAKJESLUITEN_);
 		nieuwontleed (symbol);
 		return;
 	}
 
 	if (symbol >= LOW_FUNCTION_N && symbol <= HIGH_FUNCTION_N) {
 		int n = 0;
-		pas (HAAKJEOPENEN_);
+		bool isParenthesis = pasArguments ();
 		if (nieuwlees != HAAKJESLUITEN_) {
 			oudlees;
 			parseExpression ();
@@ -1210,7 +1245,7 @@ static void parsePowerFactor (void) {
 				n ++;
 			}
 			oudlees;
-			pas (HAAKJESLUITEN_);
+			if (isParenthesis) pas (HAAKJESLUITEN_);
 		}
 		nieuwontleed (NUMBER_); parsenumber (n);
 		nieuwontleed (symbol);
@@ -1220,7 +1255,7 @@ static void parsePowerFactor (void) {
 	if (symbol == CALL_) {
 		wchar_t *procedureName = lexan [ilexan]. content.string;   // reference copy!
 		int n = 0;
-		pas (HAAKJEOPENEN_);
+		bool isParenthesis = pasArguments ();
 		if (nieuwlees != HAAKJESLUITEN_) {
 			oudlees;
 			parseExpression ();
@@ -1230,7 +1265,7 @@ static void parsePowerFactor (void) {
 				n ++;
 			}
 			oudlees;
-			pas (HAAKJESLUITEN_);
+			if (isParenthesis) pas (HAAKJESLUITEN_);
 		}
 		nieuwontleed (NUMBER_); parsenumber (n);
 		nieuwontleed (CALL_);
@@ -1240,39 +1275,35 @@ static void parsePowerFactor (void) {
 
 	if (symbol >= LOW_STRING_FUNCTION && symbol <= HIGH_STRING_FUNCTION) {
 		if (symbol >= LOW_FUNCTION_STR1 && symbol <= HIGH_FUNCTION_STR1) {
-			pas (HAAKJEOPENEN_);
+            bool isParenthesis = pasArguments ();
 			parseExpression ();
-			pas (HAAKJESLUITEN_);
+			if (isParenthesis) pas (HAAKJESLUITEN_);
 		} else if (symbol == INDEX_ || symbol == RINDEX_ ||
 			symbol == STARTS_WITH_ || symbol == ENDS_WITH_ ||
 			symbol == INDEX_REGEX_ || symbol == RINDEX_REGEX_ || symbol == EXTRACT_NUMBER_)
 		{
-			pas (HAAKJEOPENEN_);
+            bool isParenthesis = pasArguments ();
 			parseExpression ();
 			pas (KOMMA_);
 			parseExpression ();
-			pas (HAAKJESLUITEN_);
+			if (isParenthesis) pas (HAAKJESLUITEN_);
 		} else if (symbol == DATESTR_ || symbol == INFOSTR_) {
 			pas (HAAKJEOPENEN_);
 			pas (HAAKJESLUITEN_);
 		} else if (symbol == EXTRACT_WORDSTR_ || symbol == EXTRACT_LINESTR_) {
-			pas (HAAKJEOPENEN_);
+            bool isParenthesis = pasArguments ();
 			parseExpression ();
 			pas (KOMMA_);
 			parseExpression ();
-			pas (HAAKJESLUITEN_);
-		} else if (symbol == ENVIRONMENTSTR_) {
-			pas (HAAKJEOPENEN_);
-			parseExpression ();
-			pas (HAAKJESLUITEN_);
+			if (isParenthesis) pas (HAAKJESLUITEN_);
 		} else if (symbol == FIXEDSTR_ || symbol == PERCENTSTR_) {
-			pas (HAAKJEOPENEN_);
+            bool isParenthesis = pasArguments ();
 			parseExpression ();
 			pas (KOMMA_);
 			parseExpression ();
-			pas (HAAKJESLUITEN_);
+			if (isParenthesis) pas (HAAKJESLUITEN_);
 		} else if (symbol == REPLACESTR_ || symbol == REPLACE_REGEXSTR_) {
-			pas (HAAKJEOPENEN_);
+            bool isParenthesis = pasArguments ();
 			parseExpression ();
 			pas (KOMMA_);
 			parseExpression ();
@@ -1280,7 +1311,7 @@ static void parsePowerFactor (void) {
 			parseExpression ();
 			pas (KOMMA_);
 			parseExpression ();
-			pas (HAAKJESLUITEN_);
+			if (isParenthesis) pas (HAAKJESLUITEN_);
 		} else {
 			oudlees;   // needed for retry if we are going to be in a string comparison?
 			formulefout (L"Function expected", lexan [ilexan + 1]. position);
@@ -1293,7 +1324,7 @@ static void parsePowerFactor (void) {
 		if (symbol == SUM_) {
 			//theOptimize = 1;
 			nieuwontleed (NUMBER_); parsenumber (0.0);   // initialize the sum
-			pas (HAAKJEOPENEN_);
+            bool isParenthesis = pasArguments ();
 			int symbol2 = nieuwlees;
 			if (symbol2 == NUMERIC_VARIABLE_) {   // an existing variable
 				nieuwontleed (VARIABLE_REFERENCE_);
@@ -1324,7 +1355,7 @@ static void parsePowerFactor (void) {
 			nieuwontleed (INCREMENT_GREATER_GOTO_); ontleedlabel (endLabel);
 			pas (KOMMA_);
 			parseExpression ();
-			pas (HAAKJESLUITEN_);
+			if (isParenthesis) pas (HAAKJESLUITEN_);
 			// now on stack: sum, loop variable, end value, value to add
 			nieuwontleed (ADD_3DOWN_);
 			// now on stack: sum, loop variable, end value
@@ -1463,7 +1494,7 @@ static void parseExpression (void) {
 
 /*
 	Translate the infix expression "my lexan" into the postfix expression "my parse":
-	remove parentheses and brackets, commas, FROM_, TO_,
+	remove parentheses and brackets, commas, colons, FROM_, TO_,
 	IF_ THEN_ ELSE_ ENDIF_ OR_ AND_;
 	introduce LABEL_ GOTO_ IFTRUE_ IFFALSE_ TRUE_ FALSE_
 	SELF0_ SELF1_ SELF2_ MATRIKS0_ MATRIKS1_ MATRIKS2_
@@ -1810,7 +1841,7 @@ void Formula_compile (Any interpreter, Any data, const wchar_t *expression, int 
 	}
 	theSource = (Data) data;
 	theExpression = expression;
-	theExpressionType = expressionType;
+	theExpressionType [theLevel] = expressionType;
 	theOptimize = optimize;
 	if (! lexan) {
 		lexan = Melder_calloc_f (struct structFormulaInstruction, 3000);
@@ -2542,7 +2573,7 @@ static void do_writeFile () {
 	Melder_assert (narg->which == Stackel_NUMBER);
 	int numberOfArguments = narg->number;
 	w -= numberOfArguments;
-	Stackel fileName = & theStack [1];
+	Stackel fileName = & theStack [w + 1];
 	if (fileName -> which != Stackel_STRING) {
 		Melder_throw ("The first argument of \"writeFile\" has to be a string (a file name), not ", Stackel_whichText (fileName), ".");
 	}
@@ -2566,7 +2597,7 @@ static void do_writeFileLine () {
 	Melder_assert (narg->which == Stackel_NUMBER);
 	int numberOfArguments = narg->number;
 	w -= numberOfArguments;
-	Stackel fileName = & theStack [1];
+	Stackel fileName = & theStack [w + 1];
 	if (fileName -> which != Stackel_STRING) {
 		Melder_throw ("The first argument of \"writeFile\" has to be a string (a file name), not ", Stackel_whichText (fileName), ".");
 	}
@@ -2591,7 +2622,7 @@ static void do_appendFile () {
 	Melder_assert (narg->which == Stackel_NUMBER);
 	int numberOfArguments = narg->number;
 	w -= numberOfArguments;
-	Stackel fileName = & theStack [1];
+	Stackel fileName = & theStack [w + 1];
 	if (fileName -> which != Stackel_STRING) {
 		Melder_throw ("The first argument of \"writeFile\" has to be a string (a file name), not ", Stackel_whichText (fileName), ".");
 	}
@@ -2615,7 +2646,7 @@ static void do_appendFileLine () {
 	Melder_assert (narg->which == Stackel_NUMBER);
 	int numberOfArguments = narg->number;
 	w -= numberOfArguments;
-	Stackel fileName = & theStack [1];
+	Stackel fileName = & theStack [w + 1];
 	if (fileName -> which != Stackel_STRING) {
 		Melder_throw ("The first argument of \"writeFile\" has to be a string (a file name), not ", Stackel_whichText (fileName), ".");
 	}
@@ -2631,6 +2662,41 @@ static void do_appendFileLine () {
 	structMelderFile file = { 0 };
 	Melder_relativePathToFile (fileName -> string, & file);
 	MelderFile_appendText (& file, text.transfer());
+	pushNumber (1);
+}
+static void do_exitScript () {
+	Stackel narg = pop;
+	Melder_assert (narg->which == Stackel_NUMBER);
+	int numberOfArguments = narg->number;
+	w -= numberOfArguments;
+	for (int iarg = 1; iarg <= numberOfArguments; iarg ++) {
+		Stackel arg = & theStack [w + iarg];
+		if (arg->which == Stackel_NUMBER)
+			Melder_error_noLine (Melder_double (arg->number));
+		else if (arg->which == Stackel_STRING)
+			Melder_error_noLine (arg->string);
+	}
+	Melder_throw ("\nScript exited.");
+	pushNumber (1);
+}
+static void do_runScript () {
+	Stackel narg = pop;
+	Melder_assert (narg->which == Stackel_NUMBER);
+	int numberOfArguments = narg->number;
+	if (numberOfArguments < 1)
+		Melder_throw ("The function \"runScript\" requires at least one argument, namely the file name.");
+	w -= numberOfArguments;
+	Stackel fileName = & theStack [w + 1];
+	if (fileName->which != Stackel_STRING)
+		Melder_throw ("The first argument to \"runScript\" has to be a string (the file name), not ", Stackel_whichText (fileName));
+	theLevel += 1;
+	try {
+		praat_executeScriptFromFileName (fileName->string, numberOfArguments - 1, & theStack [w + 1]);
+		theLevel -= 1;
+	} catch (MelderError) {
+		theLevel -= 1;
+		throw;
+	}
 	pushNumber (1);
 }
 static void do_min (void) {
@@ -2819,6 +2885,27 @@ static void do_numberOfColumns (void) {
 			" requires a numeric argument, not ", Stackel_whichText (array), ".");
 	}
 }
+static void do_editor (void) {
+	Stackel n = pop;
+	Melder_assert (n->which == Stackel_NUMBER);
+	if (n->number == 0) {
+		if (theInterpreter && theInterpreter -> editorClass) {
+			praatP. editor = praat_findEditorFromString (theInterpreter -> environmentName);
+		} else {
+			Melder_throw ("The function \"editor\" requires an argument when called from outside an editor.");
+		}
+	} else if (n->number == 1) {
+		Stackel editor = pop;
+		if (editor->which == Stackel_STRING) {
+			praatP. editor = praat_findEditorFromString (editor->string);
+		} else {
+			Melder_throw ("The function \"editor\" requires a string argument, not ", Stackel_whichText (editor), ".");
+		}
+	} else {
+		Melder_throw ("The function \"editor\" requires 0 or 1 arguments, not ", n->number, ".");
+	}
+	pushNumber (1);
+}
 static void do_numericArrayElement (void) {
 	Stackel n = pop;
 	Melder_assert (n -> which == Stackel_NUMBER);
@@ -3005,6 +3092,28 @@ static void do_midStr (void) {
 		}
 	} else {
 		Melder_throw ("The function \"mid$\" requires two or three arguments.");
+	}
+}
+static void do_unicodeToBackslashTrigraphsStr () {
+	Stackel s = pop;
+	if (s->which == Stackel_STRING) {
+		long length = wcslen (s->string);
+		autostring trigraphs = Melder_calloc (wchar_t, 3 * length + 1);
+		Longchar_genericizeW (s->string, trigraphs.peek());
+		pushString (trigraphs.transfer());
+	} else {
+		Melder_throw ("The function \"unicodeToBackslashTrigraphs$\" requires a string, not ", Stackel_whichText (s), ".");
+	}
+}
+static void do_backslashTrigraphsToUnicodeStr () {
+	Stackel s = pop;
+	if (s->which == Stackel_STRING) {
+		long length = wcslen (s->string);
+		autostring unicode = Melder_calloc (wchar_t, length + 1);
+		Longchar_nativizeW (s->string, unicode.peek(), false);
+		pushString (unicode.transfer());
+	} else {
+		Melder_throw ("The function \"unicodeToBackslashTrigraphs$\" requires a string, not ", Stackel_whichText (s), ".");
 	}
 }
 static void do_environmentStr (void) {
@@ -4614,6 +4723,8 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 } break; case WRITE_FILE_LINE_ : { do_writeFileLine  ();
 } break; case APPEND_FILE_     : { do_appendFile     ();
 } break; case APPEND_FILE_LINE_: { do_appendFileLine ();
+} break; case EXIT_SCRIPT_: { do_exitScript ();
+} break; case RUN_SCRIPT_: { do_runScript ();
 } break; case MIN_: { do_min ();
 } break; case MAX_: { do_max ();
 } break; case IMIN_: { do_imin ();
@@ -4625,6 +4736,7 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 } break; case RANDOM_GAUSS_NUMAR_: { do_function_dd_d_numar (NUMrandomGauss);
 } break; case NUMBER_OF_ROWS_: { do_numberOfRows ();
 } break; case NUMBER_OF_COLUMNS_: { do_numberOfColumns ();
+} break; case EDITOR_: { do_editor ();
 /********** String functions: **********/
 } break; case LENGTH_: { do_length ();
 } break; case STRING_TO_NUMBER_: { do_number ();
@@ -4634,6 +4746,8 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 } break; case LEFTSTR_: { do_leftStr ();
 } break; case RIGHTSTR_: { do_rightStr ();
 } break; case MIDSTR_: { do_midStr ();
+} break; case UNICODE_TO_BACKSLASH_TRIGRAPHS_: { do_unicodeToBackslashTrigraphsStr ();
+} break; case BACKSLASH_TRIGRAPHS_TO_UNICODE_: { do_backslashTrigraphsToUnicodeStr ();
 } break; case ENVIRONMENTSTR_: { do_environmentStr ();
 } break; case INDEX_: { do_index ();
 } break; case RINDEX_: { do_rindex ();
@@ -4805,54 +4919,38 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 			programPointer ++;
 		} // endwhile
 		if (w != 1) Melder_fatal ("Formula: stackpointer ends at %ld instead of 1.", w);
-		if (theExpressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
+		if (theExpressionType [theLevel] == kFormula_EXPRESSION_TYPE_NUMERIC) {
 			if (theStack [1]. which == Stackel_STRING) Melder_throw ("Found a string expression instead of a numeric expression.");
 			if (theStack [1]. which == Stackel_NUMERIC_ARRAY) Melder_throw ("Found a numeric array expression instead of a numeric expression.");
-			if (result) {
+			result -> expressionType = kFormula_EXPRESSION_TYPE_NUMERIC;
+			result -> result.numericResult = theStack [1]. number;
+		} else if (theExpressionType [theLevel] == kFormula_EXPRESSION_TYPE_STRING) {
+			if (theStack [1]. which == Stackel_NUMBER)
+				Melder_throw ("Found a numeric expression (value ", theStack [1]. number, ") instead of a string expression.");
+			if (theStack [1]. which == Stackel_NUMERIC_ARRAY) Melder_throw ("Found a numeric array expression instead of a string expression.");
+			result -> expressionType = kFormula_EXPRESSION_TYPE_STRING;
+			result -> result.stringResult = theStack [1]. string;   // dangle...
+			theStack [1]. string = NULL;   // ...undangle (and disown)
+		} else if (theExpressionType [theLevel] == kFormula_EXPRESSION_TYPE_NUMERIC_ARRAY) {
+			if (theStack [1]. which == Stackel_NUMBER) Melder_throw ("Found a numeric expression instead of a numeric array expression.");
+			if (theStack [1]. which == Stackel_STRING) Melder_throw ("Found a string expression instead of a numeric array expression.");
+			result -> expressionType = kFormula_EXPRESSION_TYPE_NUMERIC_ARRAY;
+			result -> result.numericArrayResult = theStack [1]. numericArray;   // dangle
+			theStack [1]. numericArray = theZeroNumericArray;   // ...undangle (and disown)
+		} else {
+			Melder_assert (theExpressionType [theLevel] == kFormula_EXPRESSION_TYPE_UNKNOWN);
+			if (theStack [1]. which == Stackel_NUMBER) {
 				result -> expressionType = kFormula_EXPRESSION_TYPE_NUMERIC;
 				result -> result.numericResult = theStack [1]. number;
 			} else {
-				Melder_information (Melder_double (theStack [1]. number));
-			}
-		} else if (theExpressionType == kFormula_EXPRESSION_TYPE_STRING) {
-			if (theStack [1]. which == Stackel_NUMBER) Melder_throw ("Found a numeric expression instead of a string expression.");
-			if (theStack [1]. which == Stackel_NUMERIC_ARRAY) Melder_throw ("Found a numeric array expression instead of a string expression.");
-			if (result) {
-				result -> expressionType = kFormula_EXPRESSION_TYPE_STRING;
-				result -> result.stringResult = theStack [1]. string; theStack [1]. string = NULL;   /* Undangle. */
-			} else {
-				Melder_information (theStack [1]. string);
-			}
-		} else if (theExpressionType == kFormula_EXPRESSION_TYPE_NUMERIC_ARRAY) {
-			if (theStack [1]. which == Stackel_NUMBER) Melder_throw ("Found a numeric expression instead of a numeric array expression.");
-			if (theStack [1]. which == Stackel_STRING) Melder_throw ("Found a string expression instead of a numeric array expression.");
-			if (result) {
-				result -> expressionType = kFormula_EXPRESSION_TYPE_NUMERIC_ARRAY;
-				result -> result.numericArrayResult = theStack [1]. numericArray; theStack [1]. numericArray = theZeroNumericArray;   /* Undangle. */
-			} else {
-				//Melder_information (theStack [1]. string);  // TODO: implement
-			}
-		} else {
-			Melder_assert (theExpressionType == kFormula_EXPRESSION_TYPE_UNKNOWN);
-			if (theStack [1]. which == Stackel_NUMBER) {
-				if (result) {
-					result -> expressionType = kFormula_EXPRESSION_TYPE_NUMERIC;
-					result -> result.numericResult = theStack [1]. number;
-				} else {
-					Melder_information (Melder_double (theStack [1]. number));
-				}
-			} else {
 				Melder_assert (theStack [1]. which == Stackel_STRING);
-				if (result) {
-					result -> expressionType = kFormula_EXPRESSION_TYPE_STRING;
-					result -> result.stringResult = theStack [1]. string; theStack [1]. string = NULL;   /* Undangle. */
-				} else {
-					Melder_information (theStack [1]. string);
-				}
+				result -> expressionType = kFormula_EXPRESSION_TYPE_STRING;
+				result -> result.stringResult = theStack [1]. string;   // dangle...
+				theStack [1]. string = NULL;   // ...undangle (and disown)
 			}
 		}
 		/*
-			Clean up the stack (theStack [1] may have been disowned).
+			Clean up the stack (theStack [1] has probably been disowned).
 		*/
 		for (w = wmax; w > 0; w --) {
 			Stackel stackel = & theStack [w];
@@ -4860,13 +4958,17 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 		}
 	} catch (MelderError) {
 		/*
-			Clean up the stack (theStack [1] may have been disowned).
+			Clean up the stack (theStack [1] has probably not been disowned).
 		*/
 		for (w = wmax; w > 0; w --) {
 			Stackel stackel = & theStack [w];
 			if (stackel -> which > Stackel_NUMBER) Stackel_cleanUp (stackel);
 		}
-		Melder_throw ("Formula not run.");
+		if (Melder_hasError (L"Script exited.")) {
+			throw;
+		} else {
+			Melder_throw ("Formula not run.");
+		}
 	}
 }
 

@@ -187,7 +187,8 @@ static void drawNow (FunctionEditor me) {
 	 */
 	Graphics_setViewport (my d_graphics, my functionViewerLeft, my functionViewerRight, 0, my height);
 	Graphics_setWindow (my d_graphics, my functionViewerLeft, my functionViewerRight, 0, my height);
-	Graphics_setGrey (my d_graphics, 0.85);
+	Graphics_Colour windowBackgroundColour = { 0.90, 0.90, 0.85 } ;
+	Graphics_setColour (my d_graphics, windowBackgroundColour);
 	Graphics_fillRectangle (my d_graphics, my functionViewerLeft + MARGIN, my selectionViewerRight - MARGIN, my height - (TOP_MARGIN + space), my height);
 	Graphics_fillRectangle (my d_graphics, my functionViewerLeft, my functionViewerLeft + MARGIN, BOTTOM_MARGIN + ( leftFromWindow ? space * 2 : 0 ), my height);
 	Graphics_fillRectangle (my d_graphics, my functionViewerRight - MARGIN, my functionViewerRight, BOTTOM_MARGIN + ( rightFromWindow ? space * 2 : 0 ), my height);
@@ -336,6 +337,7 @@ static void drawNow (FunctionEditor me) {
 	/*
 	 * End of inner drawing.
 	 */
+	Graphics_flushWs (my d_graphics);
 	Graphics_setViewport (my d_graphics, my functionViewerLeft, my selectionViewerRight, 0, my height);
 }
 
@@ -879,23 +881,45 @@ static void gui_cb_scroll (I, GuiScrollBarEvent event) {
 	if (my d_graphics == NULL) return;   // ignore events during creation
 	double value = event -> scrollBar -> f_getValue ();
 	double shift = my d_tmin + (value - 1) * (my d_tmax - my d_tmin) / maximumScrollBarValue - my d_startWindow;
-	if (shift != 0.0) {
-		int i;
+	bool shifted = shift != 0.0;
+	double oldSliderSize = (my d_endWindow - my d_startWindow) / (my d_tmax - my d_tmin) * maximumScrollBarValue - 1;
+	double newSliderSize = event -> scrollBar -> f_getSliderSize ();
+	bool zoomed = newSliderSize != oldSliderSize;
+	#if ! cocoa
+		zoomed = false;
+	#endif
+	if (shifted) {
 		my d_startWindow += shift;
 		if (my d_startWindow < my d_tmin + 1e-12) my d_startWindow = my d_tmin;
 		my d_endWindow += shift;
 		if (my d_endWindow > my d_tmax - 1e-12) my d_endWindow = my d_tmax;
+	}
+	if (zoomed) {
+		double zoom = (newSliderSize + 1) * (my d_tmax - my d_tmin) / maximumScrollBarValue;
+		my d_endWindow = my d_startWindow + zoom;
+		if (my d_endWindow > my d_tmax - 1e-12) my d_endWindow = my d_tmax;
+	}
+	if (shifted || zoomed) {
 		my v_updateText ();
-		/*Graphics_clearWs (my d_graphics);*/
-		drawNow (me);   /* Do not wait for expose event. */
+		updateScrollBar (me);
+		#if cocoa
+			Graphics_updateWs (my d_graphics);
+		#else
+			/*Graphics_clearWs (my d_graphics);*/
+			drawNow (me);   /* Do not wait for expose event. */
+		#endif
 		if (! my group || ! my pref_synchronizedZoomAndScroll ()) return;
-		for (i = 1; i <= maxGroup; i ++) if (theGroup [i] && theGroup [i] != me) {
+		for (int i = 1; i <= maxGroup; i ++) if (theGroup [i] && theGroup [i] != me) {
 			theGroup [i] -> d_startWindow = my d_startWindow;
 			theGroup [i] -> d_endWindow = my d_endWindow;
 			FunctionEditor_updateText (theGroup [i]);
 			updateScrollBar (theGroup [i]);
-			Graphics_clearWs (theGroup [i] -> d_graphics);
-			drawNow (theGroup [i]);
+			#if cocoa
+				Graphics_updateWs (theGroup [i] -> d_graphics);
+			#else
+				Graphics_clearWs (theGroup [i] -> d_graphics);
+				drawNow (theGroup [i]);
+			#endif
 		}
 	}
 }
@@ -1074,11 +1098,7 @@ static void gui_drawingarea_cb_click (I, GuiDrawingAreaClickEvent event) {
 		if (needsUpdate) my v_updateText ();
 		Graphics_setViewport (my d_graphics, my functionViewerLeft, my functionViewerRight, 0, my height);
 		if (needsUpdate) {
-			#if cocoa
-				Graphics_updateWs (my d_graphics);
-			#else
-				drawNow (me);
-			#endif
+			drawNow (me);
 		}
 		if (needsUpdate) updateGroup (me);
 	}
@@ -1155,9 +1175,14 @@ void structFunctionEditor :: v_createChildren () {
 
 	/***** Create drawing area. *****/
 
+	#if cocoa
+		int marginBetweenTextAndDrawingAreaToEnsureCorrectUnhighlighting = 3;
+	#else
+		int marginBetweenTextAndDrawingAreaToEnsureCorrectUnhighlighting = 0;
+	#endif
 	drawingArea = GuiDrawingArea_createShown (d_windowForm,
 		0, 0,
-		Machine_getMenuBarHeight () + ( v_hasText () ? TEXT_HEIGHT : 0), -8 - Gui_PUSHBUTTON_HEIGHT,
+		Machine_getMenuBarHeight () + ( v_hasText () ? TEXT_HEIGHT + marginBetweenTextAndDrawingAreaToEnsureCorrectUnhighlighting : 0), -8 - Gui_PUSHBUTTON_HEIGHT,
 		gui_drawingarea_cb_expose, gui_drawingarea_cb_click, NULL, gui_drawingarea_cb_resize, this, 0);
 	drawingArea -> f_setSwipable (scrollBar, NULL);
 }
@@ -1194,6 +1219,10 @@ static void drawWhileDragging (FunctionEditor me, double x1, double x2) {
 	Graphics_text1 (my d_graphics, xleft, 0.0, Melder_fixed (xleft, 6));
 	Graphics_setTextAlignment (my d_graphics, Graphics_LEFT, Graphics_BOTTOM);
 	Graphics_text1 (my d_graphics, xright, 0.0, Melder_fixed (xright, 6));
+	Graphics_setLineType (my d_graphics, Graphics_DOTTED);
+	Graphics_line (my d_graphics, xleft, 0.0, xleft, 1.0);
+	Graphics_line (my d_graphics, xright, 0.0, xright, 1.0);
+	Graphics_setLineType (my d_graphics, Graphics_DRAWN);
 	Graphics_xorOff (my d_graphics);
 }
 
@@ -1234,8 +1263,10 @@ int structFunctionEditor :: v_click (double xbegin, double ybegin, bool shiftKey
 			/*
 			 * Undraw the visible part of the old selection.
 			 */
-			if (endVisible > startVisible)
+			if (endVisible > startVisible) {
 				v_unhighlightSelection (startVisible, endVisible, 0, 1);
+				//Graphics_flushWs (d_graphics);
+			}
 		}
 		if (xbegin >= secondMark) {
 		 	/*
@@ -1352,23 +1383,23 @@ int structFunctionEditor :: v_click (double xbegin, double ybegin, bool shiftKey
 				continue;
             
 			/*
-			 * Undraw the text.
-			 */
-			drawWhileDragging (this, anchorForDragging, xold);
-			/*
 			 * Undraw previous dragged selection.
 			 */
 			if (xold > anchorForDragging) x1 = anchorForDragging, x2 = xold; else x1 = xold, x2 = anchorForDragging;
 			if (x1 != x2) v_unhighlightSelection (x1, x2, 0, 1);
 			/*
-			 * Draw new dragged selection.
+			 * Undraw the text.
 			 */
-			if (x > anchorForDragging) x1 = anchorForDragging, x2 = x; else x1 = x, x2 = anchorForDragging;
-			if (x1 != x2) v_highlightSelection (x1, x2, 0, 1);
+			drawWhileDragging (this, anchorForDragging, xold);
 			/*
 			 * Redraw the text at the new location.
 			 */
             drawWhileDragging (this, anchorForDragging, x);
+			/*
+			 * Draw new dragged selection.
+			 */
+			if (x > anchorForDragging) x1 = anchorForDragging, x2 = x; else x1 = x, x2 = anchorForDragging;
+			if (x1 != x2) v_highlightSelection (x1, x2, 0, 1);
         } ;
 		/*
 		 * Set the new selection.

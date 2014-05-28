@@ -1,6 +1,6 @@
 /* Picture.cpp
  *
- * Copyright (C) 1992-2011,2012,2013 Paul Boersma
+ * Copyright (C) 1992-2011,2012,2013,2014 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brauße
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,28 +17,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * pb 2002/03/07 GPL
- * pb 2003/07/19 extra null byte in Windows metafile name
- * pb 2004/02/19 outer selection
- * pb 2004/09/05 inner selection
- * pb 2005/05/19 EPS files have the option to switch off the screen preview
- * pb 2005/09/18 useSilipaPS
- * pb 2006/10/28 erased MacOS 9 stuff
- * pb 2007/11/30 erased Graphics_printf
- * sdk 2008/05/09 Picture_selfExpose
- * pb 2009/07/22 Picture_writeToPdfFile
- * fb 2010/03/01 cairo fix for black 1px borders
- * pb 2011/05/15 C++
- * pb 2011/07/08 C++
- * pb 2013/08/31 removed all GTK code that redrew the whole Picture window while dragging
- */
-
 #include "melder.h"
 #include "Gui.h"
 #include "Printer.h"
 #include "Picture.h"
 #include "site.h"
+#ifdef _WIN32
+	#include "GraphicsP.h"
+#endif
 
 struct structPicture {
 	GuiDrawingArea drawingArea;
@@ -136,8 +122,10 @@ static void gui_drawingarea_cb_expose (I, GuiDrawingAreaExposeEvent event) {
 		 * The size of the viewable part of the drawing area may have changed.
 		 */
 		Melder_assert (event -> widget);
-		gdk_cairo_reset_clip ((cairo_t *) Graphics_x_getCR (my graphics),          GDK_DRAWABLE (GTK_WIDGET (event -> widget -> d_widget) -> window));
-		gdk_cairo_reset_clip ((cairo_t *) Graphics_x_getCR (my selectionGraphics), GDK_DRAWABLE (GTK_WIDGET (event -> widget -> d_widget) -> window));
+		#if ALLOW_GDK_DRAWING
+			gdk_cairo_reset_clip ((cairo_t *) Graphics_x_getCR (my graphics),          GDK_DRAWABLE (GTK_WIDGET (event -> widget -> d_widget) -> window));
+			gdk_cairo_reset_clip ((cairo_t *) Graphics_x_getCR (my selectionGraphics), GDK_DRAWABLE (GTK_WIDGET (event -> widget -> d_widget) -> window));
+		#endif
 	#endif
 	drawMarkers (me);
 	Graphics_play ((Graphics) my graphics, (Graphics) my graphics);
@@ -175,6 +163,7 @@ static void gui_drawingarea_cb_click (I, GuiDrawingAreaClickEvent event) {
 		ixstart = ix < (ix1 + ix2) / 2 ? ix2 : ix1;
 		iystart = iy < (iy1 + iy2) / 2 ? iy2 : iy1;
 	}
+	//while (Graphics_mouseStillDown (my selectionGraphics)) {
 	do {
 		Graphics_getMouseLocation (my selectionGraphics, & xWC, & yWC);
 		ix = 1 + floor (xWC * SQUARES / SIDE);
@@ -199,6 +188,7 @@ static void gui_drawingarea_cb_click (I, GuiDrawingAreaClickEvent event) {
 			oldix = ix; oldiy = iy;
 		}
 	} while (Graphics_mouseStillDown (my selectionGraphics));
+	// }
 	#if cocoa
 		Graphics_updateWs (my selectionGraphics);   // to change the dark red back into black
 	#endif
@@ -229,11 +219,8 @@ Picture Picture_create (GuiDrawingArea drawingArea, bool sensitive) {
 		} else {
 			/*
 			 * Create a dummy Graphics.
-			 * This has device coordinates from 0 to 32767.
-			 * This will be mapped on an area of 12x12 inches,
-			 * so the resolution is 32767 / 12 = 2731.
 			 */
-			my graphics = Graphics_create (2731);
+			my graphics = Graphics_create (600);
 		}
 		Graphics_setWsWindow (my graphics, 0.0, 12.0, 0.0, 12.0);
 		Graphics_setViewport (my graphics, my selx1, my selx2, my sely1, my sely2);
@@ -373,7 +360,8 @@ static HENHMETAFILE copyToMetafile (Picture me) {
 	SetRect (& rect, my selx1 * 2540, (12 - my sely2) * 2540, my selx2 * 2540, (12 - my sely1) * 2540);
 	dc = CreateEnhMetaFile (defaultPrinter. hDC, NULL, & rect, L"Praat\0");
 	if (! dc) Melder_throw ("Cannot create Windows metafile.");
-	resolution = GetDeviceCaps (dc, LOGPIXELSX);   // Virtual PC: 360
+	resolution = GetDeviceCaps (dc, LOGPIXELSX);   // Virtual PC: 360; Parallels Desktop: 600
+	//Melder_fatal ("resolution %d", resolution);
 	if (Melder_debug == 6) {
 		DEVMODE *devMode = * (DEVMODE **) defaultPrinter. hDevMode;
 		MelderInfo_open ();
@@ -414,7 +402,7 @@ static HENHMETAFILE copyToMetafile (Picture me) {
 void Picture_copyToClipboard (Picture me) {
 	try {
 		HENHMETAFILE metafile = copyToMetafile (me);
-		OpenClipboard (NULL);
+		OpenClipboard (((GraphicsScreen) my graphics) -> d_winWindow);
 		EmptyClipboard ();
 		SetClipboardData (CF_ENHMETAFILE, metafile);
 		CloseClipboard ();
@@ -459,6 +447,24 @@ void Picture_writeToPdfFile (Picture me, MelderFile file) {
 		Graphics_play ((Graphics) my graphics, graphics.peek());
 	} catch (MelderError) {
 		Melder_throw ("Picture not written to PDF file ", file, ".");
+	}
+}
+
+void Picture_writeToPngFile_300 (Picture me, MelderFile file) {
+	try {
+		autoGraphics graphics = Graphics_create_pngfile (file, 300, my selx1, my selx2, my sely1, my sely2);
+		Graphics_play ((Graphics) my graphics, graphics.peek());
+	} catch (MelderError) {
+		Melder_throw ("Picture not written to PNG file ", file, ".");
+	}
+}
+
+void Picture_writeToPngFile_600 (Picture me, MelderFile file) {
+	try {
+		autoGraphics graphics = Graphics_create_pngfile (file, 600, my selx1, my selx2, my sely1, my sely2);
+		Graphics_play ((Graphics) my graphics, graphics.peek());
+	} catch (MelderError) {
+		Melder_throw ("Picture not written to PNG file ", file, ".");
 	}
 }
 

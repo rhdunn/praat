@@ -1,6 +1,6 @@
 /* TimeSoundEditor.cpp
  *
- * Copyright (C) 1992-2012,2013 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -551,18 +551,18 @@ void structTimeSoundEditor :: f_drawSound (double globalMinimum, double globalMa
 			double mid = 0.5 * (minimum + maximum);
 			Graphics_text1 (d_graphics, d_startWindow, mid, Melder_float (Melder_half (mid)));
 		} else {
-			if (not cursorVisible or Graphics_dyWCtoMM (d_graphics, cursorFunctionValue - minimum) > 5.0) {
+			if (not cursorVisible or ! NUMdefined (cursorFunctionValue) or Graphics_dyWCtoMM (d_graphics, cursorFunctionValue - minimum) > 5.0) {
 				Graphics_setTextAlignment (d_graphics, Graphics_RIGHT, Graphics_BOTTOM);
 				Graphics_text1 (d_graphics, d_startWindow, minimum, Melder_float (Melder_half (minimum)));
 			}
-			if (not cursorVisible or Graphics_dyWCtoMM (d_graphics, maximum - cursorFunctionValue) > 5.0) {
+			if (not cursorVisible or ! NUMdefined (cursorFunctionValue) or Graphics_dyWCtoMM (d_graphics, maximum - cursorFunctionValue) > 5.0) {
 				Graphics_setTextAlignment (d_graphics, Graphics_RIGHT, Graphics_TOP);
 				Graphics_text1 (d_graphics, d_startWindow, maximum, Melder_float (Melder_half (maximum)));
 			}
 		}
 		if (minimum < 0 && maximum > 0 && ! horizontal) {
 			Graphics_setWindow (d_graphics, 0, 1, minimum, maximum);
-			if (not cursorVisible or fabs (Graphics_dyWCtoMM (d_graphics, cursorFunctionValue - 0.0)) > 3.0) {
+			if (not cursorVisible or ! NUMdefined (cursorFunctionValue) or fabs (Graphics_dyWCtoMM (d_graphics, cursorFunctionValue - 0.0)) > 3.0) {
 				Graphics_setTextAlignment (d_graphics, Graphics_RIGHT, Graphics_HALF);
 				Graphics_text (d_graphics, 0, 0, L"0");
 			}
@@ -606,7 +606,7 @@ void structTimeSoundEditor :: f_drawSound (double globalMinimum, double globalMa
 		/*if (ichan == 1) FunctionEditor_SoundAnalysis_drawPulses (this);*/
 		if (sound) {
 			Graphics_setWindow (d_graphics, d_startWindow, d_endWindow, minimum, maximum);
-			if (cursorVisible)
+			if (cursorVisible && NUMdefined (cursorFunctionValue))
 				FunctionEditor_drawCursorFunctionValue (this, cursorFunctionValue, Melder_float (Melder_half (cursorFunctionValue)), L"");
 			Graphics_setColour (d_graphics, Graphics_BLACK);
 			Graphics_function (d_graphics, sound -> z [ichan], first, last,
@@ -630,7 +630,7 @@ int structTimeSoundEditor :: v_click (double xbegin, double ybegin, bool shiftKe
 		ybegin = (ybegin - v_getBottomOfSoundArea ()) / (1.0 - v_getBottomOfSoundArea ());
 		int nchan = sound ? sound -> ny : longSound -> numberOfChannels;
 		if (nchan > 8) {
-			//Melder_casual ("%f %f %d %d", xbegin, ybegin, (int) nchan, (int) this -> sound.channelOffset);
+			trace ("%f %f %d %d", xbegin, ybegin, (int) nchan, (int) d_sound.channelOffset);
 			if (xbegin >= d_endWindow && ybegin > 0.875 && ybegin <= 1.000 && d_sound.channelOffset > 0) {
 				d_sound.channelOffset -= 8;
 				return 1;

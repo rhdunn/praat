@@ -1,6 +1,6 @@
 /* praat_EEG.cpp
  *
- * Copyright (C) 2011-2012 Paul Boersma
+ * Copyright (C) 2011-2012,2013,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,18 +56,23 @@ FORM (EEG_editExternalElectrodeNames, L"Edit external electrode names", 0)
 int IOBJECT;
 LOOP {
 	iam (EEG);
-	SET_STRING (L"External electrode 1", my d_channelNames [my d_numberOfChannels - 15])
-	SET_STRING (L"External electrode 2", my d_channelNames [my d_numberOfChannels - 14])
-	SET_STRING (L"External electrode 3", my d_channelNames [my d_numberOfChannels - 13])
-	SET_STRING (L"External electrode 4", my d_channelNames [my d_numberOfChannels - 12])
-	SET_STRING (L"External electrode 5", my d_channelNames [my d_numberOfChannels - 11])
-	SET_STRING (L"External electrode 6", my d_channelNames [my d_numberOfChannels - 10])
-	SET_STRING (L"External electrode 7", my d_channelNames [my d_numberOfChannels -  9])
-	SET_STRING (L"External electrode 8", my d_channelNames [my d_numberOfChannels -  8])
+	if (my f_getNumberOfExternalElectrodes () == 8) {
+		const long offsetExternalElectrode = my f_getNumberOfCapElectrodes ();
+		SET_STRING (L"External electrode 1", my d_channelNames [offsetExternalElectrode + 1])
+		SET_STRING (L"External electrode 2", my d_channelNames [offsetExternalElectrode + 2])
+		SET_STRING (L"External electrode 3", my d_channelNames [offsetExternalElectrode + 3])
+		SET_STRING (L"External electrode 4", my d_channelNames [offsetExternalElectrode + 4])
+		SET_STRING (L"External electrode 5", my d_channelNames [offsetExternalElectrode + 5])
+		SET_STRING (L"External electrode 6", my d_channelNames [offsetExternalElectrode + 6])
+		SET_STRING (L"External electrode 7", my d_channelNames [offsetExternalElectrode + 7])
+		SET_STRING (L"External electrode 8", my d_channelNames [offsetExternalElectrode + 8])
+	}
 }
 DO
 	LOOP {
 		iam (EEG);
+		if (my f_getNumberOfExternalElectrodes () != 8)
+			Melder_throw ("You can do this only if there are 8 external electrodes.");
 		my f_setExternalElectrodeNames (GET_STRING (L"External electrode 1"), GET_STRING (L"External electrode 2"), GET_STRING (L"External electrode 3"),
 			GET_STRING (L"External electrode 4"), GET_STRING (L"External electrode 5"), GET_STRING (L"External electrode 6"),
 			GET_STRING (L"External electrode 7"), GET_STRING (L"External electrode 8"));
@@ -215,6 +220,55 @@ DO
 		int markerBit = GET_INTEGER (L"Marker bit");
 		autoERPTier thee = EEG_to_ERPTier (me, GET_REAL (L"From time"), GET_REAL (L"To time"), markerBit);
 		praat_new (thee.transfer(), my name, L"_bit", Melder_integer (markerBit));
+	}
+END
+
+FORM (EEG_to_ERPTier_triggers, L"To ERPTier (triggers)", 0)
+	REAL (L"From time (s)", L"-0.11")
+	REAL (L"To time (s)", L"0.39")
+	OPTIONMENU_ENUM (L"Get every event with a trigger that", kMelder_string, DEFAULT)
+	SENTENCE (L"...the text", L"1")
+	OK
+DO
+	LOOP {
+		iam (EEG);
+		autoERPTier thee = EEG_to_ERPTier_triggers (me, GET_REAL (L"From time"), GET_REAL (L"To time"),
+			GET_ENUM (kMelder_string, L"Get every event with a trigger that"), GET_STRING (L"...the text"));
+		praat_new (thee.transfer(), my name, L"_trigger", GET_STRING (L"...the text"));
+	}
+END
+
+FORM (EEG_to_ERPTier_triggers_preceded, L"To ERPTier (triggers, preceded)", 0)
+	REAL (L"From time (s)", L"-0.11")
+	REAL (L"To time (s)", L"0.39")
+	OPTIONMENU_ENUM (L"Get every event with a trigger that", kMelder_string, DEFAULT)
+	SENTENCE (L"...the text", L"1")
+	OPTIONMENU_ENUM (L"and is preceded by a trigger that", kMelder_string, DEFAULT)
+	SENTENCE (L" ...the text", L"4")
+	OK
+DO
+	LOOP {
+		iam (EEG);
+		autoERPTier thee = EEG_to_ERPTier_triggers_preceded (me, GET_REAL (L"From time"), GET_REAL (L"To time"),
+			GET_ENUM (kMelder_string, L"Get every event with a trigger that"), GET_STRING (L"...the text"),
+			GET_ENUM (kMelder_string, L"and is preceded by a trigger that"), GET_STRING (L" ...the text"));
+		praat_new (thee.transfer(), my name, L"_trigger", GET_STRING (L" ...the text"));
+	}
+END
+
+FORM (EEG_to_MixingMatrix, L"To MixingMatrix", 0)
+	NATURAL (L"Maximum number of iterations", L"100")
+	POSITIVE (L"Tolerance", L"0.001")
+	OPTIONMENU (L"Diagonalization method", 2)
+		OPTION (L"qdiag")
+		OPTION (L"ffdiag")
+	OK
+DO
+	LOOP {
+		iam (EEG);
+		autoMixingMatrix thee = my f_to_MixingMatrix (GET_INTEGER (L"Maximum number of iterations"), GET_REAL (L"Tolerance"),
+			GET_INTEGER (L"Diagonalization method"));
+		praat_new (thee.transfer(), my name);
 	}
 END
 
@@ -694,7 +748,7 @@ void praat_EEG_init (void) {
 	praat_addAction1 (classEEG, 0, L"Modify -", 0, 0, 0);
 		praat_addAction1 (classEEG, 0, L"Set channel name...", 0, 1, DO_EEG_setChannelName);
 		praat_addAction1 (classEEG, 1, L"Edit external electrode names...", 0, 1, DO_EEG_editExternalElectrodeNames);
-		praat_addAction1 (classEEG, 0, L"-- processing --", 0, 1, DO_EEG_detrend);
+		praat_addAction1 (classEEG, 0, L"-- processing --", 0, 1, 0);
 		praat_addAction1 (classEEG, 0, L"Subtract reference...", 0, 1, DO_EEG_subtractReference);
 		praat_addAction1 (classEEG, 0, L"Subtract mean channel...", 0, 1, DO_EEG_subtractMeanChannel);
 		praat_addAction1 (classEEG, 0, L"Detrend", 0, 1, DO_EEG_detrend);
@@ -704,6 +758,9 @@ void praat_EEG_init (void) {
 		praat_addAction1 (classEEG, 0, L"Extract channel...", 0, 0, DO_EEG_extractChannel);
 		praat_addAction1 (classEEG, 1, L"Extract part...", 0, 0, DO_EEG_extractPart);
 		praat_addAction1 (classEEG, 0, L"To ERPTier...", 0, 0, DO_EEG_to_ERPTier);
+		praat_addAction1 (classEEG, 0, L"To ERPTier (triggers)...", 0, 0, DO_EEG_to_ERPTier_triggers);
+		praat_addAction1 (classEEG, 0, L"To ERPTier (triggers, preceded)...", 0, 0, DO_EEG_to_ERPTier_triggers_preceded);
+		praat_addAction1 (classEEG, 0, L"To MixingMatrix...", 0, 0, DO_EEG_to_MixingMatrix);
 	praat_addAction1 (classEEG, 0, L"Synthesize", 0, 0, 0);
 		praat_addAction1 (classEEG, 0, L"Concatenate", 0, 0, DO_EEGs_concatenate);
 	praat_addAction1 (classEEG, 0, L"Hack -", 0, 0, 0);

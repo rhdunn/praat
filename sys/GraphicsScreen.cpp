@@ -1,6 +1,6 @@
 /* GraphicsScreen.cpp
  *
- * Copyright (C) 1992-2012 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1992-2012,2014 Paul Boersma, 2013 Tom Naughton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,9 @@
 #include "Printer.h"
 #include "GuiP.h"
 
-#if win
+#if gtk
+	#include <cairo/cairo-pdf.h>
+#elif win
 	//#include "winport_on.h"
 	#include <gdiplus.h>
 	//#include "winport_off.h"
@@ -49,11 +51,7 @@
 	#include "macport_on.h"
 	static RGBColor theBlackColour = { 0, 0, 0 };
 	static bool _GraphicsMacintosh_tryToInitializeQuartz (void) {
-		#if cocoa
-			return true;
-		#else
-			return _GraphicsMac_tryToInitializeAtsuiFonts ();
-		#endif
+		return _GraphicsMac_tryToInitializeFonts ();
 	}
 #endif
 
@@ -61,13 +59,28 @@ Thing_implement (GraphicsScreen, Graphics, 0);
 
 void structGraphicsScreen :: v_destroy () {
 	#if cairo
-		if (d_gdkGraphicsContext != NULL) {
-			g_object_unref (d_gdkGraphicsContext);			
-			d_gdkGraphicsContext = NULL;
-		}
+		#if ALLOW_GDK_DRAWING
+			if (d_gdkGraphicsContext != NULL) {
+				g_object_unref (d_gdkGraphicsContext);			
+				d_gdkGraphicsContext = NULL;
+			}
+		#endif
 		if (d_cairoGraphicsContext != NULL) {
 			cairo_destroy (d_cairoGraphicsContext);
 			d_cairoGraphicsContext = NULL;
+		}
+		if (d_cairoSurface != NULL) {
+			cairo_surface_flush (d_cairoSurface);
+			if (d_isPng) {
+				#if 1
+					cairo_surface_write_to_png (d_cairoSurface, Melder_peekWcsToUtf8 (d_file. path));
+				#else
+					unsigned char *bitmap = cairo_image_surface_get_data (my d_cairoSurface);   // peeking into the internal bits
+					// copy bitmap to PNG structure created with the PNG library
+					// save the PNG tructure to a file
+				#endif
+			}
+			cairo_surface_destroy (d_cairoSurface);
 		}
 	#elif win
 		if (d_gdiGraphicsContext != NULL) {
@@ -83,25 +96,132 @@ void structGraphicsScreen :: v_destroy () {
 			DeleteObject (d_winBrush);
 			d_winBrush = NULL;
 		}
+		if (d_isPng && d_gdiBitmap) {
+			trace ("saving the filled bitmap to a PNG file");
+			/*
+			 * Deselect the bitmap from the device context (otherwise GetDIBits won't work).
+			 */
+			//SelectBitmap (d_gdiGraphicsContext, NULL);
+			//SelectBitmap (d_gdiGraphicsContext, CreateCompatibleBitmap (NULL, 1, 1));
+
+			BITMAP bitmap;
+			GetObject (d_gdiBitmap, sizeof (BITMAP), & bitmap);
+			int width = bitmap. bmWidth, height = bitmap. bmHeight;
+			trace ("width %d, height %d", width, height);
+
+			/*
+			 * Get the bits from the HBITMAP;
+			 */
+			struct { BITMAPINFOHEADER header; } bitmapInfo;
+			bitmapInfo. header.biSize = sizeof (BITMAPINFOHEADER);
+			bitmapInfo. header.biWidth = width;
+			bitmapInfo. header.biHeight = height;
+			bitmapInfo. header.biPlanes = 1;
+			bitmapInfo. header.biBitCount = 32;
+			bitmapInfo. header.biCompression = BI_RGB;
+			bitmapInfo. header.biSizeImage = 0;
+			bitmapInfo. header.biXPelsPerMeter = 0;
+			bitmapInfo. header.biYPelsPerMeter = 0;
+			bitmapInfo. header.biClrUsed = 0;
+			bitmapInfo. header.biClrImportant = 0;
+			unsigned char *bits = Melder_calloc (unsigned char, 4 * width * height);
+			//HANDLE handle = GlobalAlloc (GHND, 4 * width * height);
+			//unsigned char *bits = (unsigned char *) GlobalLock (handle);
+			int numberOfLinesScanned = GetDIBits (GetDC (NULL), d_gdiBitmap, 0, height, bits, (BITMAPINFO *) & bitmapInfo, DIB_RGB_COLORS);
+			trace ("%d lines scanned", numberOfLinesScanned);
+
+			trace ("creating a savable bitmap");
+
+			//Gdiplus::Bitmap gdiplusBitmap (width, height, PixelFormat32bppARGB);
+			Gdiplus::Bitmap gdiplusBitmap ((BITMAPINFO *) & bitmapInfo, bits);
+			gdiplusBitmap. SetResolution (resolution, resolution);
+
+			trace ("copying the device-independent bits to the savable bitmap.");
+
+			/*
+			for (long irow = 1; irow <= height; irow ++) {
+				for (long icol = 1; icol <= width; icol ++) {
+					unsigned char blue = *bits ++, green = *bits ++, red = *bits ++, alpha = 255 - *bits ++;
+					Gdiplus::Color gdiplusColour (alpha, red, green, blue);
+					gdiplusBitmap. SetPixel (icol - 1, height - irow, gdiplusColour);
+				}
+			}
+			*/
+
+			trace ("saving");
+
+			UINT numberOfImageEncoders, sizeOfImageEncoderArray;
+			Gdiplus::GetImageEncodersSize (& numberOfImageEncoders, & sizeOfImageEncoderArray);
+			Gdiplus::ImageCodecInfo *imageEncoderInfos = Melder_malloc (Gdiplus::ImageCodecInfo, sizeOfImageEncoderArray);
+			Gdiplus::GetImageEncoders (numberOfImageEncoders, sizeOfImageEncoderArray, imageEncoderInfos);
+			for (int iencoder = 0; iencoder < numberOfImageEncoders; iencoder ++) {
+				if (Melder_wcsequ (imageEncoderInfos [iencoder]. MimeType, L"image/png")) {
+					gdiplusBitmap. Save (d_file. path, & imageEncoderInfos [iencoder]. Clsid, NULL);
+				}
+			}
+
+			trace ("cleaning up");
+
+			Melder_free (imageEncoderInfos);
+			//bits -= 4 * width * height;
+			Melder_free (bits);
+			//GlobalUnlock (handle);
+			//GlobalFree (handle);
+			DeleteObject (d_gdiBitmap);
+		}
 		/*
 		 * No ReleaseDC here, because we have not created it ourselves,
 		 * not even with GetDC.
 		 */
 	#elif mac
         #if useCarbon
-            if (d_macPort == NULL) {
+            if (d_macPort == NULL && ! d_isPng) {
                 CGContextEndPage (d_macGraphicsContext);
                 CGContextRelease (d_macGraphicsContext);
             }
-
         #else
-            if (d_macView == NULL) {
+            if (d_macView == NULL && ! d_isPng) {
                 CGContextEndPage (d_macGraphicsContext);
                 CGContextRelease (d_macGraphicsContext);
             }
         #endif
+		if (d_isPng && d_macGraphicsContext) {
+			/*
+			 * Turn the offscreen bitmap into an image.
+			 */
+			CGImageRef image = CGBitmapContextCreateImage (d_macGraphicsContext);
+			Melder_assert (image != NULL);
+			//CGContextRelease (d_macGraphicsContext);
+			/*
+			 * Create a dictionary with resolution properties.
+			 */
+			CFTypeRef keys [2], values [2];
+			keys [0] = kCGImagePropertyDPIWidth;
+			keys [1] = kCGImagePropertyDPIHeight;
+			float resolution_float = resolution;
+			values [1] = values [0] = CFNumberCreate (NULL, kCFNumberFloatType, & resolution_float);
+			CFDictionaryRef properties = CFDictionaryCreate (NULL,
+				(const void **) keys, (const void **) values, 2,
+				& kCFTypeDictionaryKeyCallBacks, & kCFTypeDictionaryValueCallBacks);
+			Melder_assert (properties != NULL);
+			/*
+			 */
+			CFURLRef url = CFURLCreateWithFileSystemPath (NULL,
+				(CFStringRef) Melder_peekWcsToCfstring (d_file. path), kCFURLPOSIXPathStyle, false);
+			CGImageDestinationRef imageDestination = CGImageDestinationCreateWithURL (url, kUTTypePNG, 1, NULL);
+			Melder_assert (imageDestination != NULL);
+			CGImageDestinationAddImage (imageDestination, image, properties);
+			CGImageRelease (image);
+			CFRelease (properties);
+			CGImageDestinationFinalize (imageDestination);
+			CFRelease (imageDestination);
+			CFRelease (url);
+		}
+		Melder_free (d_bits);
 	#endif
+	trace ("destroying parent");
 	GraphicsScreen_Parent :: v_destroy ();
+	trace ("exit");
 }
 
 void structGraphicsScreen :: v_flushWs () {
@@ -254,7 +374,9 @@ void structGraphicsScreen :: v_updateWs () {
 			cairo_rectangle (d_cairoGraphicsContext, rect.x, rect.y, rect.width, rect.height);
 			cairo_clip (d_cairoGraphicsContext);
 		}
-		gdk_window_clear (d_window);
+		#if ALLOW_GDK_DRAWING
+			gdk_window_clear (d_window);
+		#endif
 		gdk_window_invalidate_rect (d_window, & rect, true);
 		//gdk_window_process_updates (d_window, true);
 	#elif cocoa
@@ -299,18 +421,21 @@ void Graphics_updateWs (Graphics me) {
 		my v_updateWs ();
 }
 
-static int GraphicsScreen_init (GraphicsScreen me, void *voidDisplay, void *voidWindow, int resolution) {
+static int GraphicsScreen_init (GraphicsScreen me, void *voidDisplay, void *voidWindow) {
 
 	/* Fill in new members. */
 
 	#if cairo
 		my d_display = (GdkDisplay *) gdk_display_get_default ();
 		_GraphicsScreen_text_init (me);
-		my resolution = 100;
-		trace ("retrieving window");
-		my d_window = GDK_DRAWABLE (GTK_WIDGET (voidDisplay) -> window);
-		trace ("retrieved window");
-		my d_gdkGraphicsContext = gdk_gc_new (my d_window);
+		#if ALLOW_GDK_DRAWING
+			trace ("retrieving window");
+			my d_window = GDK_DRAWABLE (GTK_WIDGET (voidDisplay) -> window);
+			trace ("retrieved window");
+			my d_gdkGraphicsContext = gdk_gc_new (my d_window);
+		#else
+			my d_window = gtk_widget_get_window (GTK_WIDGET (voidDisplay));
+		#endif
 		my d_cairoGraphicsContext = gdk_cairo_create (my d_window);
 	#elif win
 		if (my printer) {
@@ -323,7 +448,6 @@ static int GraphicsScreen_init (GraphicsScreen me, void *voidDisplay, void *void
 			my d_gdiGraphicsContext = GetDC (my d_winWindow);   // window must have a constant display context; see XtInitialize ()
 		}
 		Melder_assert (my d_gdiGraphicsContext != NULL);
-		my resolution = resolution;
 		SetBkMode (my d_gdiGraphicsContext, TRANSPARENT);   // not the default!
 		/*
 		 * Create pens and brushes.
@@ -337,13 +461,18 @@ static int GraphicsScreen_init (GraphicsScreen me, void *voidDisplay, void *void
 		(void) voidDisplay;
         #if useCarbon
             my d_macPort = (GrafPtr) voidWindow;
+			(void) my d_macGraphicsContext;   // will be retrieved from QuickDraw with every drawing command!
         #else
-            my d_macView = (NSView*) voidWindow;
+			if (my printer) {
+				my d_macView = (NSView *) voidWindow;   // in case we do view-based printing
+				//my d_macGraphicsContext = (CGContextRef) voidWindow;   // in case we do context-based printing
+			} else {
+				my d_macView = (NSView *) voidWindow;
+				(void) my d_macGraphicsContext;   // will be retrieved from Core Graphics with every drawing command!
+			}
         #endif
 		my d_macColour = theBlackColour;
-		my resolution = resolution;
 		my d_depth = my resolution > 150 ? 1 : 8;   /* BUG: replace by true depth (1=black/white) */
-		(void) my d_macGraphicsContext;   // will be retreived from QuickDraw with every drawing command!
 		_GraphicsScreen_text_init (me);
 	#endif
 	return 1;
@@ -353,12 +482,12 @@ Graphics Graphics_create_screen (void *display, void *window, int resolution) {
 	GraphicsScreen me = Thing_new (GraphicsScreen);
 	my screen = true;
 	my yIsZeroAtTheTop = true;
-	Graphics_init (me);
+	Graphics_init (me, resolution);
 	Graphics_setWsViewport ((Graphics) me, 0, 100, 0, 100);
 	#if mac && useCarbon
-		GraphicsScreen_init (me, display, GetWindowPort ((WindowRef) window), resolution);
+		GraphicsScreen_init (me, display, GetWindowPort ((WindowRef) window));
 	#else
-		GraphicsScreen_init (me, display, window, resolution);
+		GraphicsScreen_init (me, display, window);
 	#endif
 	return (Graphics) me;
 }
@@ -371,9 +500,10 @@ Graphics Graphics_create_screenPrinter (void *display, void *window) {
 	#ifdef macintosh
 		_GraphicsMacintosh_tryToInitializeQuartz ();
 	#endif
-	Graphics_init (me);
+	Graphics_init (me, thePrinter. resolution);
 	my paperWidth = (double) thePrinter. paperWidth / thePrinter. resolution;
 	my paperHeight = (double) thePrinter. paperHeight / thePrinter. resolution;
+	//NSLog (@"Graphics_create_screenPrinter: %f %f", my paperWidth, my paperHeight);
 	my d_x1DC = my d_x1DCmin = thePrinter. resolution / 2;
 	my d_x2DC = my d_x2DCmax = (my paperWidth - 0.5) * thePrinter. resolution;
 	my d_y1DC = my d_y1DCmin = thePrinter. resolution / 2;
@@ -388,7 +518,7 @@ Graphics Graphics_create_screenPrinter (void *display, void *window) {
 		my d_y2DC -= GetDeviceCaps ((HDC) window, PHYSICALOFFSETY);
 	#endif
 	Graphics_setWsWindow ((Graphics) me, 0, my paperWidth - 1.0, 13.0 - my paperHeight, 12.0);
-	GraphicsScreen_init (me, display, window, thePrinter. resolution);
+	GraphicsScreen_init (me, display, window);
 	return (Graphics) me;
 }
 
@@ -434,25 +564,24 @@ Graphics Graphics_create_xmdrawingarea (GuiDrawingArea w) {
 	#elif mac
 		_GraphicsMacintosh_tryToInitializeQuartz ();
 	#endif
-	Graphics_init (me);
-	#if mac 
-    #if useCarbon
+	#if mac
+		Graphics_init (me, Gui_getResolution (NULL));
+		#if useCarbon
             GraphicsScreen_init (me,
                 XtDisplay (my d_drawingArea -> d_widget),
-                GetWindowPort ((WindowRef) XtWindow (my d_drawingArea -> d_widget)),
-                Gui_getResolution (NULL));
-    #else
+                GetWindowPort ((WindowRef) XtWindow (my d_drawingArea -> d_widget)));
+		#else
             GraphicsScreen_init (me,
                                  my d_drawingArea -> d_widget,
-                                 my d_drawingArea -> d_widget,
-                                 Gui_getResolution (NULL));
-    #endif
-    
+                                 my d_drawingArea -> d_widget);
+		#endif
 	#else
 		#if gtk
-			GraphicsScreen_init (me, GTK_WIDGET (my d_drawingArea -> d_widget), GTK_WIDGET (my d_drawingArea -> d_widget), Gui_getResolution (my d_drawingArea -> d_widget));
+			Graphics_init (me, Gui_getResolution (my d_drawingArea -> d_widget));
+			GraphicsScreen_init (me, GTK_WIDGET (my d_drawingArea -> d_widget), GTK_WIDGET (my d_drawingArea -> d_widget));
 		#elif motif
-			GraphicsScreen_init (me, XtDisplay (my d_drawingArea -> d_widget), XtWindow (my d_drawingArea -> d_widget), Gui_getResolution (my d_drawingArea -> d_widget));
+			Graphics_init (me, Gui_getResolution (my d_drawingArea -> d_widget));
+			GraphicsScreen_init (me, XtDisplay (my d_drawingArea -> d_widget), XtWindow (my d_drawingArea -> d_widget));
 		#endif
 	#endif
 
@@ -477,20 +606,110 @@ Graphics Graphics_create_xmdrawingarea (GuiDrawingArea w) {
 	return (Graphics) me;
 }
 
-Graphics Graphics_create_pdffile (MelderFile file, int resolution,
+Graphics Graphics_create_pngfile (MelderFile file, int resolution,
 	double x1inches, double x2inches, double y1inches, double y2inches)
 {
-	GraphicsScreen me = Thing_new (GraphicsScreen);
+	autoGraphicsScreen me = Thing_new (GraphicsScreen);
 	my screen = true;
 	my yIsZeroAtTheTop = true;
 	#ifdef macintosh
 		_GraphicsMacintosh_tryToInitializeQuartz ();
 	#endif
-	Graphics_init (me);
-	my resolution = resolution;
+	Graphics_init (me.peek(), resolution);
+	my d_isPng = true;
+	my d_file = *file;
+	my d_x1DC = my d_x1DCmin = 0;
+	my d_x2DC = my d_x2DCmax = (x2inches - x1inches) * resolution;
+	my d_y1DC = my d_y1DCmin = 0;
+	my d_y2DC = my d_y2DCmax = (y2inches - y1inches) * resolution;
+	Graphics_setWsWindow ((Graphics) me.peek(), x1inches, x2inches, y1inches, y2inches);
+	#if gtk
+		my d_cairoSurface = cairo_image_surface_create (CAIRO_FORMAT_RGB24,
+			(x2inches - x1inches) * resolution, (y2inches - y1inches) * resolution);
+		my d_cairoGraphicsContext = cairo_create (my d_cairoSurface);
+		//cairo_scale (my d_cairoGraphicsContext, 72.0 / resolution, 72.0 / resolution);
+		/*
+		 * Fill in the whole area with a white background.
+		 */
+		cairo_set_source_rgb (my d_cairoGraphicsContext, 1.0, 1.0, 1.0);
+		cairo_rectangle (my d_cairoGraphicsContext, 0, 0, my d_x2DC, my d_y2DC);
+		cairo_fill (my d_cairoGraphicsContext);
+		cairo_set_source_rgb (my d_cairoGraphicsContext, 0.0, 0.0, 0.0);
+	#elif mac
+		long width = (x2inches - x1inches) * resolution, height = (y2inches - y1inches) * resolution;
+		long stride = width * 4;
+		stride = (stride + 15) & ~15;   // CommonCode/AppDrawing.c: "a multiple of 16 bytes, for best performance"
+		my d_bits = Melder_malloc (uint8_t, stride * height);
+		static CGColorSpaceRef colourSpace = NULL;
+		if (colourSpace == NULL) {
+			colourSpace = CGColorSpaceCreateWithName (kCGColorSpaceGenericRGB);
+			Melder_assert (colourSpace != NULL);
+		}
+		my d_macGraphicsContext = CGBitmapContextCreate (my d_bits,
+			width, height,
+			8,   // bits per component
+			stride,
+			colourSpace,
+			kCGImageAlphaPremultipliedLast);
+    	if (my d_macGraphicsContext == NULL)
+			Melder_throw ("Could not create PNG file ", file, ".");
+		CGRect rect = CGRectMake (0, 0, width, height);
+		CGContextSetAlpha (my d_macGraphicsContext, 1.0);
+		CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeNormal);
+		CGContextSetRGBFillColor (my d_macGraphicsContext, 1.0, 1.0, 1.0, 1.0);
+		CGContextFillRect (my d_macGraphicsContext, rect);
+		CGContextTranslateCTM (my d_macGraphicsContext, 0, height);
+		CGContextScaleCTM (my d_macGraphicsContext, 1.0, -1.0);
+	#elif win
+		my metafile = TRUE;
+		HDC screenDC = GetDC (NULL);
+		my d_gdiGraphicsContext = CreateCompatibleDC (screenDC);
+		trace ("d_gdiGraphicsContext %p", my d_gdiGraphicsContext);
+		Melder_assert (my d_gdiGraphicsContext != NULL);
+		my d_gdiBitmap = CreateCompatibleBitmap (screenDC, (x2inches - x1inches) * resolution, (y2inches - y1inches) * resolution);
+		trace ("d_gdiBitmap %p", my d_gdiBitmap);
+		SelectObject (my d_gdiGraphicsContext, my d_gdiBitmap);
+		trace ("bitmap selected into device context");
+		my resolution = resolution;
+		SetBkMode (my d_gdiGraphicsContext, TRANSPARENT);
+		my d_winPen = CreatePen (PS_SOLID, 0, RGB (0, 0, 0));
+		my d_winBrush = CreateSolidBrush (RGB (0, 0, 0));
+		SetTextAlign (my d_gdiGraphicsContext, TA_LEFT | TA_BASELINE | TA_NOUPDATECP);
+		/*
+		 * Fill in the whole area with a white background.
+		 */
+		SelectPen (my d_gdiGraphicsContext, GetStockPen (NULL_PEN));
+		SelectBrush (my d_gdiGraphicsContext, GetStockBrush (WHITE_BRUSH));
+		Rectangle (my d_gdiGraphicsContext, 0, 0, my d_x2DC + 1, my d_y2DC + 1);   // plus 1, in order to prevent two black edges
+		SelectPen (my d_gdiGraphicsContext, GetStockPen (BLACK_PEN));
+		SelectBrush (my d_gdiGraphicsContext, GetStockBrush (NULL_BRUSH));
+	#endif
+	return (Graphics) me.transfer();
+}
+
+Graphics Graphics_create_pdffile (MelderFile file, int resolution,
+	double x1inches, double x2inches, double y1inches, double y2inches)
+{
+	autoGraphicsScreen me = Thing_new (GraphicsScreen);
+	my screen = true;
+	my yIsZeroAtTheTop = true;
 	#ifdef macintosh
+		_GraphicsMacintosh_tryToInitializeQuartz ();
+	#endif
+	Graphics_init (me.peek(), resolution);
+	#if gtk
+		my d_cairoSurface = cairo_pdf_surface_create (Melder_peekWcsToUtf8 (file -> path),
+			(x2inches - x1inches) * 72.0, (y2inches - y1inches) * 72.0);
+		my d_cairoGraphicsContext = cairo_create (my d_cairoSurface);
+		my d_x1DC = my d_x1DCmin = 0;
+		my d_x2DC = my d_x2DCmax = 7.5 * resolution;
+		my d_y1DC = my d_y1DCmin = 0;
+		my d_y2DC = my d_y2DCmax = 11.0 * resolution;
+		Graphics_setWsWindow ((Graphics) me.peek(), 0, 7.5, 1.0, 12.0);
+		cairo_scale (my d_cairoGraphicsContext, 72.0 / resolution, 72.0 / resolution);
+	#elif mac
 		CFURLRef url = CFURLCreateWithFileSystemPath (NULL, (CFStringRef) Melder_peekWcsToCfstring (file -> path), kCFURLPOSIXPathStyle, false);
-		CGRect rect = CGRectMake (0, 0, (x2inches - x1inches) * 72, (y2inches - y1inches) * 72);   // don't tire PDF viewers with funny origins
+		CGRect rect = CGRectMake (0, 0, (x2inches - x1inches) * 72.0, (y2inches - y1inches) * 72.0);   // don't tire PDF viewers with funny origins
 		CFStringRef key = (CFStringRef) Melder_peekWcsToCfstring (L"Creator");
 		CFStringRef value = (CFStringRef) Melder_peekWcsToCfstring (L"Praat");
 		CFIndex numberOfValues = 1;
@@ -499,19 +718,19 @@ Graphics Graphics_create_pdffile (MelderFile file, int resolution,
 		my d_macGraphicsContext = CGPDFContextCreateWithURL (url, & rect, dictionary);
 		CFRelease (url);
 		CFRelease (dictionary);
+    	if (my d_macGraphicsContext == NULL)
+			Melder_throw ("Could not create PDF file ", file, ".");
 		my d_x1DC = my d_x1DCmin = 0;
 		my d_x2DC = my d_x2DCmax = 7.5 * resolution;
 		my d_y1DC = my d_y1DCmin = 0;
 		my d_y2DC = my d_y2DCmax = 11.0 * resolution;
-		Graphics_setWsWindow ((Graphics) me, 0, 7.5, 1.0, 12.0);
-    NSCAssert(my d_macGraphicsContext, @"nil context");
-
+		Graphics_setWsWindow ((Graphics) me.peek(), 0, 7.5, 1.0, 12.0);
 		CGContextBeginPage (my d_macGraphicsContext, & rect);
-		CGContextScaleCTM (my d_macGraphicsContext, 72.0/resolution, 72.0/resolution);
+		CGContextScaleCTM (my d_macGraphicsContext, 72.0 / resolution, 72.0 / resolution);
 		CGContextTranslateCTM (my d_macGraphicsContext, - x1inches * resolution, (12.0 - y1inches) * resolution);
 		CGContextScaleCTM (my d_macGraphicsContext, 1.0, -1.0);
 	#endif
-	return (Graphics) me;
+	return (Graphics) me.transfer();
 }
 Graphics Graphics_create_pdf (void *context, int resolution,
 	double x1inches, double x2inches, double y1inches, double y2inches)
@@ -522,8 +741,7 @@ Graphics Graphics_create_pdf (void *context, int resolution,
 	#ifdef macintosh
 		_GraphicsMacintosh_tryToInitializeQuartz ();
 	#endif
-	Graphics_init (me);
-	my resolution = resolution;
+	Graphics_init (me, resolution);
 	#ifdef macintosh
 		my d_macGraphicsContext = static_cast <CGContext *> (context);
 		CGRect rect = CGRectMake (0, 0, (x2inches - x1inches) * 72, (y2inches - y1inches) * 72);   // don't tire PDF viewers with funny origins
@@ -532,10 +750,9 @@ Graphics Graphics_create_pdf (void *context, int resolution,
 		my d_y1DC = my d_y1DCmin = 0;
 		my d_y2DC = my d_y2DCmax = 11.0 * resolution;
 		Graphics_setWsWindow ((Graphics) me, 0, 7.5, 1.0, 12.0);
-    NSCAssert(my d_macGraphicsContext, @"nil context");
-
+    	Melder_assert (my d_macGraphicsContext != NULL);
 		CGContextBeginPage (my d_macGraphicsContext, & rect);
-		CGContextScaleCTM (my d_macGraphicsContext, 72.0/resolution, 72.0/resolution);
+		CGContextScaleCTM (my d_macGraphicsContext, 72.0 / resolution, 72.0 / resolution);
 		CGContextTranslateCTM (my d_macGraphicsContext, - x1inches * resolution, (12.0 - y1inches) * resolution);
 		CGContextScaleCTM (my d_macGraphicsContext, 1.0, -1.0);
 	#endif
@@ -555,7 +772,7 @@ Graphics Graphics_create_pdf (void *context, int resolution,
 	void GraphicsQuartz_initDraw (GraphicsScreen me) {
 		#if useCarbon
 			if (my d_macPort) {
-					QDBeginCGContext (my d_macPort, & my d_macGraphicsContext);
+				QDBeginCGContext (my d_macPort, & my d_macGraphicsContext);
 				//CGContextSetAlpha (my macGraphicsContext, 1.0);
 				//CGContextSetAllowsAntialiasing (my macGraphicsContext, false);
 				if (my d_drawingArea != NULL) {
@@ -569,11 +786,14 @@ Graphics Graphics_create_pdf (void *context, int resolution,
         #else
             if (my d_macView) {            
                 [my d_macView lockFocus];
-                my d_macGraphicsContext = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+				//if (! my printer) {
+					my d_macGraphicsContext = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+				//}
                 Melder_assert (my d_macGraphicsContext != NULL);
-                GuiCocoaDrawingArea *cocoaDrawingArea = (GuiCocoaDrawingArea *) my d_drawingArea -> d_widget;
-                CGContextTranslateCTM (my d_macGraphicsContext, 0, cocoaDrawingArea.bounds.size.height);
-                CGContextScaleCTM (my d_macGraphicsContext, 1.0, -1.0);
+				if (my printer) {
+					//CGContextTranslateCTM (my d_macGraphicsContext, 0, [my d_macView bounds]. size. height);
+					//CGContextScaleCTM (my d_macGraphicsContext, 1.0, -1.0);
+				}
 			}
 		#endif
 	}
@@ -585,7 +805,7 @@ Graphics Graphics_create_pdf (void *context, int resolution,
 			}
         #else
             if (my d_macView) {
-                CGContextSynchronize (my d_macGraphicsContext);   // BUG: should not be needed
+                //CGContextSynchronize (my d_macGraphicsContext);   // BUG: should not be needed
                 [my d_macView unlockFocus];
             }
 		#endif

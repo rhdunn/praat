@@ -1,6 +1,6 @@
 /* praat_TextGrid_init.cpp
  *
- * Copyright (C) 1992-2012 Paul Boersma
+ * Copyright (C) 1992-2012,2014 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -985,6 +985,36 @@ DO
 	Melder_information (Melder_integer (highIndex));
 END
 
+FORM (TextGrid_getHighIntervalAtTime, L"TextGrid: Get high interval at time", 0)
+	NATURAL (STRING_TIER_NUMBER, L"1")
+	REAL (L"Time (s)", L"0.5")
+	OK
+DO
+	IntervalTier intervalTier = pr_TextGrid_peekIntervalTier (dia);
+	long index = IntervalTier_timeToLowIndex (intervalTier, GET_REAL (L"Time"));
+	Melder_information (Melder_integer (index));
+END
+
+FORM (TextGrid_getIntervalBoundaryFromTime, L"TextGrid: Get interval boundary from time", 0)
+	NATURAL (STRING_TIER_NUMBER, L"1")
+	REAL (L"Time (s)", L"0.5")
+	OK
+DO
+	IntervalTier intervalTier = pr_TextGrid_peekIntervalTier (dia);
+	long index = IntervalTier_hasBoundary (intervalTier, GET_REAL (L"Time"));
+	Melder_information (Melder_integer (index));
+END
+
+FORM (TextGrid_getIntervalEdgeFromTime, L"TextGrid: Get interval edge from time", 0)
+	NATURAL (STRING_TIER_NUMBER, L"1")
+	REAL (L"Time (s)", L"0.5")
+	OK
+DO
+	IntervalTier intervalTier = pr_TextGrid_peekIntervalTier (dia);
+	long index = IntervalTier_hasTime (intervalTier, GET_REAL (L"Time"));
+	Melder_information (Melder_integer (index));
+END
+
 FORM (TextGrid_getLowIndexFromTime, L"Get low index", L"AnyTier: Get low index from time...")
 	NATURAL (STRING_TIER_NUMBER, L"1")
 	REAL (L"Time (s)", L"0.5")
@@ -993,6 +1023,16 @@ DO
 	TextTier textTier = pr_TextGrid_peekTextTier (dia);
 	long lowIndex = AnyTier_timeToLowIndex (textTier, GET_REAL (L"Time"));
 	Melder_information (Melder_integer (lowIndex));
+END
+
+FORM (TextGrid_getLowIntervalAtTime, L"TextGrid: Get low interval at time", 0)
+	NATURAL (STRING_TIER_NUMBER, L"1")
+	REAL (L"Time (s)", L"0.5")
+	OK
+DO
+	IntervalTier intervalTier = pr_TextGrid_peekIntervalTier (dia);
+	long index = IntervalTier_timeToHighIndex (intervalTier, GET_REAL (L"Time"));
+	Melder_information (Melder_integer (index));
 END
 
 FORM (TextGrid_getNearestIndexFromTime, L"Get nearest index", L"AnyTier: Get nearest index from time...")
@@ -1270,6 +1310,44 @@ DO
 		iam (TextGrid);
 		autoPointProcess thee = TextGrid_getPoints (me, GET_INTEGER (STRING_TIER_NUMBER),
 			GET_ENUM (kMelder_string, L"Get points where label"), text);
+		praat_new (thee.transfer(), my name, L"_", text);
+	}
+END
+
+FORM (TextGrid_getPoints_followed, L"Get points (followed)", 0)
+	NATURAL (STRING_TIER_NUMBER, L"1")
+	OPTIONMENU_ENUM (L"Get points where label", kMelder_string, DEFAULT)
+	SENTENCE (L"...the text", L"hi")
+	OPTIONMENU_ENUM (L"followed by a label that", kMelder_string, DEFAULT)
+	SENTENCE (L" ...the text", L"there")
+	OK
+DO
+	wchar_t *text = GET_STRING (L"...the text");
+	wchar_t *following = GET_STRING (L" ...the text");
+	LOOP {
+		iam (TextGrid);
+		autoPointProcess thee = TextGrid_getPoints_followed (me, GET_INTEGER (STRING_TIER_NUMBER),
+			GET_ENUM (kMelder_string, L"Get points where label"), text,
+			GET_ENUM (kMelder_string, L"followed by a label that"), following);
+		praat_new (thee.transfer(), my name, L"_", text);
+	}
+END
+
+FORM (TextGrid_getPoints_preceded, L"Get points (preceded)", 0)
+	NATURAL (STRING_TIER_NUMBER, L"1")
+	OPTIONMENU_ENUM (L"Get points where label", kMelder_string, DEFAULT)
+	SENTENCE (L"...the text", L"there")
+	OPTIONMENU_ENUM (L"preceded by a label that", kMelder_string, DEFAULT)
+	SENTENCE (L" ...the text", L"hi")
+	OK
+DO
+	wchar_t *text = GET_STRING (L"...the text");
+	wchar_t *preceding = GET_STRING (L" ...the text");
+	LOOP {
+		iam (TextGrid);
+		autoPointProcess thee = TextGrid_getPoints_preceded (me, GET_INTEGER (STRING_TIER_NUMBER),
+			GET_ENUM (kMelder_string, L"Get points where label"), text,
+			GET_ENUM (kMelder_string, L"preceded by a label that"), preceding);
 		praat_new (thee.transfer(), my name, L"_", text);
 	}
 END
@@ -1602,11 +1680,17 @@ void praat_uvafon_TextGrid_init (void) {
 			praat_addAction1 (classTextGrid, 1, L"Get starting point...", 0, praat_HIDDEN + praat_DEPTH_2, DO_TextGrid_getStartingPoint);   // hidden 2008
 			praat_addAction1 (classTextGrid, 1, L"Get end point...", 0, 2, DO_TextGrid_getEndPoint);
 			praat_addAction1 (classTextGrid, 1, L"Get label of interval...", 0, 2, DO_TextGrid_getLabelOfInterval);
+			praat_addAction1 (classTextGrid, 1, L"-- query interval from time --", 0, 2, 0);
 			praat_addAction1 (classTextGrid, 1, L"Get interval at time...", 0, 2, DO_TextGrid_getIntervalAtTime);
+			praat_addAction1 (classTextGrid, 1, L"Get low interval at time...", 0, 2, DO_TextGrid_getLowIntervalAtTime);
+			praat_addAction1 (classTextGrid, 1, L"Get high interval at time...", 0, 2, DO_TextGrid_getHighIntervalAtTime);
+			praat_addAction1 (classTextGrid, 1, L"Get interval edge from time...", 0, 2, DO_TextGrid_getIntervalEdgeFromTime);
+			praat_addAction1 (classTextGrid, 1, L"Get interval boundary from time...", 0, 2, DO_TextGrid_getIntervalBoundaryFromTime);
 		praat_addAction1 (classTextGrid, 1, L"Query point tier", 0, 1, 0);
 			praat_addAction1 (classTextGrid, 1, L"Get number of points...", 0, 2, DO_TextGrid_getNumberOfPoints);
 			praat_addAction1 (classTextGrid, 1, L"Get time of point...", 0, 2, DO_TextGrid_getTimeOfPoint);
 			praat_addAction1 (classTextGrid, 1, L"Get label of point...", 0, 2, DO_TextGrid_getLabelOfPoint);
+			praat_addAction1 (classTextGrid, 1, L"-- query point from time --", 0, 2, 0);
 			praat_addAction1 (classTextGrid, 1, L"Get low index from time...", 0, 2, DO_TextGrid_getLowIndexFromTime);
 			praat_addAction1 (classTextGrid, 1, L"Get high index from time...", 0, 2, DO_TextGrid_getHighIndexFromTime);
 			praat_addAction1 (classTextGrid, 1, L"Get nearest index from time...", 0, 2, DO_TextGrid_getNearestIndexFromTime);
@@ -1644,6 +1728,8 @@ praat_addAction1 (classTextGrid, 0, L"Analyse", 0, 0, 0);
 		praat_addAction1 (classTextGrid, 1, L"Get centre points...", 0, 1, DO_TextGrid_getCentrePoints);
 	praat_addAction1 (classTextGrid, 1, L"Analyse point tier -", 0, 0, 0);
 		praat_addAction1 (classTextGrid, 1, L"Get points...", 0, 1, DO_TextGrid_getPoints);
+		praat_addAction1 (classTextGrid, 1, L"Get points (preceded)...", 0, 1, DO_TextGrid_getPoints_preceded);
+		praat_addAction1 (classTextGrid, 1, L"Get points (followed)...", 0, 1, DO_TextGrid_getPoints_followed);
 praat_addAction1 (classTextGrid, 0, L"Synthesize", 0, 0, 0);
 	praat_addAction1 (classTextGrid, 0, L"Merge", 0, 0, DO_TextGrids_merge);
 	praat_addAction1 (classTextGrid, 0, L"Concatenate", 0, 0, DO_TextGrids_concatenate);

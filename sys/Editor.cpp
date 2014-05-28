@@ -1,6 +1,6 @@
 /* Editor.cpp
  *
- * Copyright (C) 1992-2012,2013 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse
+ * Copyright (C) 1992-2012,2013,2014 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,14 +63,15 @@ void structEditorMenu :: v_destroy () {
 static void commonCallback (GUI_ARGS) {
 	GUI_IAM (EditorCommand);
 	if (my d_editor && my d_editor -> v_scriptable () && ! wcsstr (my itemTitle, L"...")) {
-		UiHistory_write (L"\ndo (\"");
-		UiHistory_write_expandQuotes (my itemTitle);
-		UiHistory_write (L"\")");
+		UiHistory_write (L"\n");
+		UiHistory_write_colonize (my itemTitle);
 	}
 	try {
 		my commandCallback (my d_editor, me, NULL, 0, NULL, NULL, NULL);
 	} catch (MelderError) {
-		Melder_error_ ("Menu command \"", my itemTitle, "\" not completed.");
+		if (! Melder_hasError (L"Script exited.")) {
+			Melder_error_ ("Menu command \"", my itemTitle, "\" not completed.");
+		}
 		Melder_flushError (NULL);
 	}
 }
@@ -135,34 +136,35 @@ static void Editor_scriptCallback (Editor me, EditorCommand cmd, UiForm sendingF
 GuiMenuItem Editor_addCommandScript (Editor me, const wchar_t *menuTitle, const wchar_t *itemTitle, long flags,
 	const wchar_t *script)
 {
-	try {
-		long numberOfMenus = my menus -> size;
-		for (long imenu = 1; imenu <= numberOfMenus; imenu ++) {
-			EditorMenu menu = (EditorMenu) my menus -> item [imenu];
-			if (wcsequ (menuTitle, menu -> menuTitle)) {
-				autoEditorCommand cmd = Thing_new (EditorCommand);
-				cmd -> d_editor = me;
-				cmd -> menu = menu;
-				cmd -> itemTitle = Melder_wcsdup_f (itemTitle);
-				cmd -> itemWidget = script == NULL ? GuiMenu_addSeparator (menu -> menuWidget) :
-					GuiMenu_addItem (menu -> menuWidget, itemTitle, flags, commonCallback, cmd.peek());   // DANGLE BUG
-				cmd -> commandCallback = Editor_scriptCallback;
-				if (wcslen (script) == 0) {
-					cmd -> script = Melder_wcsdup_f (L"");
-				} else {
-					structMelderFile file = { 0 };
-					Melder_relativePathToFile (script, & file);
-					cmd -> script = Melder_wcsdup_f (Melder_fileToPath (& file));
-				}
-				GuiMenuItem result = cmd -> itemWidget;
-				Collection_addItem (menu -> commands, cmd.transfer());
-				return result;
+	long numberOfMenus = my menus -> size;
+	for (long imenu = 1; imenu <= numberOfMenus; imenu ++) {
+		EditorMenu menu = (EditorMenu) my menus -> item [imenu];
+		if (wcsequ (menuTitle, menu -> menuTitle)) {
+			autoEditorCommand cmd = Thing_new (EditorCommand);
+			cmd -> d_editor = me;
+			cmd -> menu = menu;
+			cmd -> itemTitle = Melder_wcsdup_f (itemTitle);
+			cmd -> itemWidget = script == NULL ? GuiMenu_addSeparator (menu -> menuWidget) :
+				GuiMenu_addItem (menu -> menuWidget, itemTitle, flags, commonCallback, cmd.peek());   // DANGLE BUG
+			cmd -> commandCallback = Editor_scriptCallback;
+			if (wcslen (script) == 0) {
+				cmd -> script = Melder_wcsdup_f (L"");
+			} else {
+				structMelderFile file = { 0 };
+				Melder_relativePathToFile (script, & file);
+				cmd -> script = Melder_wcsdup_f (Melder_fileToPath (& file));
 			}
+			GuiMenuItem result = cmd -> itemWidget;
+			Collection_addItem (menu -> commands, cmd.transfer());
+			return result;
 		}
-		Melder_throw ("Menu \"", menuTitle, L"\" does not exist.");
-	} catch (MelderError) {
-		Melder_throw ("Command \"", itemTitle, "\" not inserted in menu \"", menuTitle, ".");
 	}
+	Melder_warning (
+		"Menu \"", menuTitle, L"\" does not exist.\n"
+		"Command \"", itemTitle, "\" not inserted in menu \"", menuTitle, ".\n"
+		"To fix this, go to Praat->Preferences->Buttons->Editors, and remove the script from this menu.\n"
+		"You may want to install the script in a different menu.");
+	return NULL;
 }
 
 void Editor_setMenuSensitive (Editor me, const wchar_t *menuTitle, int sensitive) {
@@ -282,6 +284,8 @@ static void menu_cb_undo (EDITOR_ARGS) {
 	else wcscpy (my undoText, L"Undo?");
 	#if gtk
 		gtk_label_set_label (GTK_LABEL (gtk_bin_get_child (GTK_BIN (my undoButton -> d_widget))), Melder_peekWcsToUtf8 (my undoText));
+	#elif cocoa
+		[(GuiCocoaMenuItem *) my undoButton -> d_widget   setTitle: (NSString *) Melder_peekWcsToCfstring (my undoText)];
 	#elif motif
 		char *text_utf8 = Melder_peekWcsToUtf8 (my undoText);
 		XtVaSetValues (my undoButton -> d_widget, XmNlabelString, text_utf8, NULL);
@@ -457,7 +461,7 @@ void Editor_init (Editor me, int x, int y, int width, int height, const wchar_t 
 		top += Machine_getTitleBarHeight ();
 		bottom += Machine_getTitleBarHeight ();
 	#endif
-	my d_windowForm = GuiWindow_create (left, top, width, height, title, gui_window_cb_goAway, me, my v_canFullScreen () ? GuiWindow_FULLSCREEN : 0);
+	my d_windowForm = GuiWindow_create (left, top, width, height, 450, 250, title, gui_window_cb_goAway, me, my v_canFullScreen () ? GuiWindow_FULLSCREEN : 0);
 	Thing_setName (me, title);
 	my data = data;
 	my v_copyPreferencesToInstance ();
@@ -467,6 +471,11 @@ void Editor_init (Editor me, int x, int y, int width, int height, const wchar_t 
 	if (my v_hasMenuBar ()) {
 		my menus = Ordered_create ();
 		my d_windowForm -> f_addMenuBar ();
+	}
+
+	my v_createChildren ();
+
+	if (my v_hasMenuBar ()) {
 		my v_createMenus ();
 		EditorMenu helpMenu = Editor_addMenu (me, L"Help", 0);
 		my v_createHelpMenuItems (helpMenu);
@@ -483,8 +492,6 @@ void Editor_init (Editor me, int x, int y, int width, int height, const wchar_t 
 		praat_addCommandsToEditor (me);
 		Editor_addCommand (me, L"File", L"Close", 'W', menu_cb_close);
 	}
-
-	my v_createChildren ();
 	my d_windowForm -> f_show ();
 }
 
@@ -495,6 +502,8 @@ void Editor_save (Editor me, const wchar_t *text) {
 	swprintf (my undoText, 100, L"Undo %ls", text);
 	#if gtk
 		gtk_label_set_label (GTK_LABEL (gtk_bin_get_child (GTK_BIN (my undoButton -> d_widget))), Melder_peekWcsToUtf8 (my undoText));
+	#elif cocoa
+		[(GuiCocoaMenuItem *) my undoButton -> d_widget   setTitle: (NSString *) Melder_peekWcsToCfstring (my undoText)];
 	#elif motif
 		char *text_utf8 = Melder_peekWcsToUtf8 (my undoText);
 		XtVaSetValues (my undoButton -> d_widget, XmNlabelString, text_utf8, NULL);
